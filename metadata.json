@@ -1,0 +1,6 @@
+{
+  "name": "منظومة ركيزة | RAKEEZA Cloud ERP",
+  "description": "منصة ERP سحابية متعددة الشركات Multi-Tenant SaaS تشمل لوحة تحكم المالك Owner Panel، الاشتراكات، التجربة المجانية، الصلاحيات المتقدمة، المبيعات والمشتريات، المخازن والمحاسبة، وتصدير وهجرة البيانات الشاملة",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

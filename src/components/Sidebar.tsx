@@ -1,0 +1,505 @@
+import React, { useState } from 'react';
+import {
+  vendorReports,
+  purchaseReports,
+  customerReports,
+  salesReports,
+  receiptsReports,
+  paymentsReports,
+  repsReports,
+  banksReports,
+  miscReports,
+} from '../utils/reportsData';
+
+interface SidebarProps {
+  isOpen: boolean;
+  activePage: string;
+  onNavigate: (page: string) => void;
+  pendingWebOrdersCount?: number;
+}
+
+interface ReportGroupDef {
+  key: string;
+  label: string;
+  reports: string[];
+}
+
+const reportGroups: ReportGroupDef[] = [
+  { key: 'vendors', label: '📁 الموردين', reports: vendorReports },
+  { key: 'purchases', label: '📁 المشتريات', reports: purchaseReports },
+  { key: 'customers', label: '📁 العملاء', reports: customerReports },
+  { key: 'sales', label: '📁 المبيعات', reports: salesReports },
+  { key: 'receipts', label: '📁 المقبوضات', reports: receiptsReports },
+  { key: 'payments', label: '📁 المدفوعات', reports: paymentsReports },
+  { key: 'reps', label: '📁 المندوبين', reports: repsReports },
+  { key: 'banks', label: '📁 البنوك', reports: banksReports },
+  { key: 'misc', label: '📁 تقارير متنوعة', reports: miscReports },
+];
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  activePage,
+  onNavigate,
+  pendingWebOrdersCount = 0,
+}) => {
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({
+    items: false,
+    operations: false,
+    accounting_tree: false,
+    reports_group: false,
+  });
+
+  const [openReportsSub, setOpenReportsSub] = useState<Record<string, boolean>>({});
+
+  const toggleItem = (key: string) => {
+    setOpenItems((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleReportSub = (key: string) => {
+    setOpenReportsSub((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  return (
+    <nav
+      className={`fixed top-[60px] right-0 bottom-0 w-[280px] sm:w-[290px] max-w-[85vw] bg-[#1a237e] text-white overflow-y-auto transition-all duration-300 z-40 py-2 shadow-2xl border-l border-white/10 no-print ${
+        isOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}
+    >
+      <div className="flex flex-col text-sm">
+        {/* 🏠 الرئيسية */}
+        <div
+          onClick={() => onNavigate('home')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'home' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🏠 الرئيسية</span>
+        </div>
+
+        {/* ⚡ نقطة البيع السريعة POS */}
+        <div
+          onClick={() => onNavigate('pos')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'pos' ? 'bg-white/15 text-[#ffd54f] font-bold' : 'text-amber-300 font-semibold'
+          }`}
+        >
+          <span>⚡ نقطة البيع (POS)</span>
+          <span className="bg-amber-400 text-slate-900 text-[10px] px-1.5 py-0.5 rounded font-black">سريع</span>
+        </div>
+
+        {/* 💰 المبيعات */}
+        <div
+          onClick={() => onNavigate('sales')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'sales' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>💰 إدارة المبيعات</span>
+        </div>
+
+        {/* 💰 إدارة الأسعار (Price Management - Master Source) */}
+        <div
+          onClick={() => onNavigate('price_management')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'price_management' ? 'bg-white/15 text-[#ffd54f] font-bold' : 'text-emerald-300 font-bold'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <span>🏷️</span> إدارة الأسعار
+          </span>
+          <span className="bg-emerald-500 text-slate-950 text-[10px] px-1.5 py-0.5 rounded font-black">تسعير</span>
+        </div>
+
+        {/* 📋 عروض الأسعار والطلبيات */}
+        <div
+          onClick={() => onNavigate('quotes_orders')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'quotes_orders' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>📑 عروض الأسعار والطلبيات</span>
+        </div>
+
+        {/* 📥 طلبات الويب سايت والكتالوج */}
+        <div
+          onClick={() => onNavigate('web_orders')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'web_orders'
+              ? 'bg-rose-600/30 text-rose-300 font-black border-r-4 border-rose-500'
+              : 'text-rose-200 hover:text-white'
+          }`}
+        >
+          <span className="flex items-center gap-1.5 font-bold">
+            <span>📥</span> طلبات الويب سايت
+          </span>
+          {(pendingWebOrdersCount ?? 0) > 0 ? (
+            <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">
+              {pendingWebOrdersCount} جديد
+            </span>
+          ) : (
+            <span className="bg-slate-700 text-slate-300 text-[10px] px-1.5 py-0.5 rounded font-bold">وارد</span>
+          )}
+        </div>
+
+        {/* 🛍️ إدارة منتجات وأسعار الكتالوج */}
+        <div
+          onClick={() => onNavigate('catalog_manager')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'catalog_manager'
+              ? 'bg-amber-500/20 text-amber-300 font-black border-r-4 border-amber-400'
+              : 'text-amber-200 hover:text-white'
+          }`}
+        >
+          <span className="flex items-center gap-1.5 font-bold">
+            <span>🏷️</span> منتجات وأسعار الويب سايت
+          </span>
+          <span className="bg-amber-400 text-slate-950 text-[10px] px-1.5 py-0.5 rounded font-black">تحكم</span>
+        </div>
+
+        {/* 🌐 معاينة متجر الكتالوج أونلاين (B2B / B2C) */}
+        <div
+          onClick={() => onNavigate('catalog')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'catalog' ? 'bg-white/15 text-[#ffd54f] font-bold' : 'text-slate-300 hover:text-white'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <span>🌐</span> معاينة المتجر الإلكتروني
+          </span>
+          <span className="bg-indigo-500 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">عرض</span>
+        </div>
+
+        {/* 🛒 المشتريات */}
+        <div
+          onClick={() => onNavigate('purchases')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'purchases' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🛒 إدارة المشتريات</span>
+        </div>
+
+        {/* 💵 قبض/صرف */}
+        <div
+          onClick={() => onNavigate('cash')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'cash' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>💵 سندات القبض والصرف</span>
+        </div>
+
+        {/* 📋 الحسابات */}
+        <div
+          onClick={() => onNavigate('accounts')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'accounts' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>📋 حسابات العملاء والموردين</span>
+        </div>
+
+        {/* 💳 الشيكات وأوراق القبض والدفع (Enterprise) */}
+        <div
+          onClick={() => onNavigate('cheques')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'cheques' ? 'bg-white/15 text-[#ffd54f] font-bold' : 'text-emerald-300'
+          }`}
+        >
+          <span>💳 الشيكات وأوراق القبض والدفع</span>
+          <span className="bg-emerald-500 text-slate-900 text-[10px] px-1.5 py-0.5 rounded font-black">جديد</span>
+        </div>
+
+        {/* 🎯 المندوبين والعمولات وسقف الائتمان (Enterprise) */}
+        <div
+          onClick={() => onNavigate('sales_reps')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'sales_reps' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🎯 المندوبين والعمولات والائتمان</span>
+        </div>
+
+        {/* 👥 الموارد البشرية والرواتب (Enterprise) */}
+        <div
+          onClick={() => onNavigate('hr_payroll')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'hr_payroll' ? 'bg-white/15 text-[#ffd54f] font-bold' : 'text-blue-200'
+          }`}
+        >
+          <span>👥 الموارد البشرية والرواتب (HR)</span>
+          <span className="bg-blue-400 text-slate-900 text-[10px] px-1.5 py-0.5 rounded font-black">ERP</span>
+        </div>
+
+        {/* 🏢 الأصول الثابتة والإهلاكات (Enterprise) */}
+        <div
+          onClick={() => onNavigate('fixed_assets')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'fixed_assets' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🏢 الأصول الثابتة والإهلاكات</span>
+        </div>
+
+        {/* ⚙️ التصنيع ومعادلات التكوين BOM (Enterprise) */}
+        <div
+          onClick={() => onNavigate('manufacturing')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'manufacturing' ? 'bg-white/15 text-[#ffd54f] font-bold' : 'text-amber-200'
+          }`}
+        >
+          <span>⚙️ التصنيع والإنتاج (BOM)</span>
+          <span className="bg-amber-400 text-slate-900 text-[10px] px-1.5 py-0.5 rounded font-black">BOM</span>
+        </div>
+
+        {/* 🏦 التسوية البنكية والموافقات (Enterprise) */}
+        <div
+          onClick={() => onNavigate('bank_reconciliation')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'bank_reconciliation' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🏦 التسوية البنكية والاعتمادات</span>
+        </div>
+
+        {/* 🌳 دليل الحسابات الشجري ومراكز التكلفة */}
+        <div
+          onClick={() => onNavigate('accounts_tree')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'accounts_tree' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🌳 دليل الحسابات ومراكز التكلفة</span>
+        </div>
+
+        {/* 📦 الأصناف والمخازن */}
+        <div>
+          <div
+            onClick={() => toggleItem('items')}
+            className="min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center"
+          >
+            <span>📦 المخزون والأصناف</span>
+            <span className={`text-xs transition-transform ${openItems.items ? 'rotate-90' : ''}`}>▶</span>
+          </div>
+          {openItems.items && (
+            <div className="bg-black/20 text-xs transition-all">
+              <div
+                onClick={() => onNavigate('items')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                إدارة الأصناف والأسعار
+              </div>
+              <div
+                onClick={() => onNavigate('item_movement')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                سجل حركة الصنف
+              </div>
+              <div
+                onClick={() => onNavigate('inventory')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                تقييم المخزون الإجمالي
+              </div>
+              <div
+                onClick={() => onNavigate('physical_inventory')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                الجرد الفعلي للمخازن
+              </div>
+              <div
+                onClick={() => onNavigate('inventory_settlement')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                مطابقة وتسوية الجرد
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 🏢 الفروع والتحويلات */}
+        <div
+          onClick={() => onNavigate('branches')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'branches' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🏢 الفروع والتحويلات المخزنية</span>
+        </div>
+
+        {/* 📊 العمليات والقوائم المالية */}
+        <div>
+          <div
+            onClick={() => toggleItem('operations')}
+            className="min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center"
+          >
+            <span>📊 المحاسبة والقوائم المالية</span>
+            <span className={`text-xs transition-transform ${openItems.operations ? 'rotate-90' : ''}`}>▶</span>
+          </div>
+          {openItems.operations && (
+            <div className="bg-black/20 text-xs">
+              <div
+                onClick={() => onNavigate('daily_operations')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                العمليات اليومية
+              </div>
+              <div
+                onClick={() => onNavigate('daily_entries')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                دفتر القيود المزدوجة
+              </div>
+              <div
+                onClick={() => onNavigate('trial_balance')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                ميزان المراجعة
+              </div>
+              <div
+                onClick={() => onNavigate('income_statement')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                قائمة الدخل والأرباح (P&L)
+              </div>
+              <div
+                onClick={() => onNavigate('balance_sheet')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center"
+              >
+                الميزانية العمومية
+              </div>
+              <div
+                onClick={() => onNavigate('year_end_closing')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-amber-300 hover:text-amber-200 font-bold flex justify-between items-center"
+              >
+                <span>الإقفال السنوي والترحيل المالي</span>
+                <span className="bg-amber-400 text-slate-900 text-[9px] px-1.5 py-0.5 rounded font-black">الختامي</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 🏛️ الفاتورة الإلكترونية والضرائب */}
+        <div
+          onClick={() => onNavigate('e_invoicing')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'e_invoicing' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🏛️ الفاتورة الإلكترونية والضرائب</span>
+        </div>
+
+        {/* 📈 ذكاء الأعمال BI */}
+        <div
+          onClick={() => onNavigate('bi_analytics')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'bi_analytics' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>📈 ذكاء الأعمال والتحليلات (BI)</span>
+        </div>
+
+        {/* 📊 التقارير الشاملة */}
+        <div>
+          <div
+            onClick={() => toggleItem('reports_group')}
+            className="min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center"
+          >
+            <span>📊 التقارير الشاملة</span>
+            <span className={`text-xs transition-transform ${openItems.reports_group ? 'rotate-90' : ''}`}>▶</span>
+          </div>
+          {openItems.reports_group && (
+            <div className="bg-black/25 text-xs">
+              <div
+                onClick={() => onNavigate('reports_group')}
+                className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-[#ffd54f] font-semibold flex items-center"
+              >
+                📋 نظرة عامة على التقارير
+              </div>
+              {reportGroups.map((group) => (
+                <div key={group.key}>
+                  <div
+                    onClick={() => toggleReportSub(group.key)}
+                    className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex justify-between items-center"
+                  >
+                    <span>{group.label}</span>
+                    <span className={`text-[10px] transition-transform ${openReportsSub[group.key] ? 'rotate-90' : ''}`}>
+                      ▶
+                    </span>
+                  </div>
+                  {openReportsSub[group.key] && (
+                    <div className="bg-black/30 pr-10">
+                      {group.reports.map((rep) => {
+                        const repPageId = `reports_${group.key}_${rep.replace(/\s+/g, '_')}`;
+                        return (
+                          <div
+                            key={rep}
+                            onClick={() => onNavigate(repPageId)}
+                            className="min-h-[38px] py-2 px-3 cursor-pointer border-b border-white/3 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 active:bg-white/10 truncate flex items-center"
+                            title={rep}
+                          >
+                            📄 {rep}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 🏦 الخزينة */}
+        <div
+          onClick={() => onNavigate('treasury')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'treasury' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🏦 الخزينة والأرصدة النقدية</span>
+        </div>
+
+        {/* 🛡️ سجل التدقيق والرقابة */}
+        <div
+          onClick={() => onNavigate('audit_trail')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'audit_trail' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>🛡️ سجل التدقيق والأمان</span>
+        </div>
+
+        {/* ⚙️ الإعدادات */}
+        <div
+          onClick={() => onNavigate('settings')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'settings' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>⚙️ الإعدادات العامة</span>
+        </div>
+
+        {/* 👥 المستخدمين */}
+        <div
+          onClick={() => onNavigate('users')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'users' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>👥 المستخدمين والصلاحيات</span>
+        </div>
+
+        {/* 💾 النسخ الاحتياطي */}
+        <div
+          onClick={() => onNavigate('backup')}
+          className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+            activePage === 'backup' ? 'bg-white/15 text-[#ffd54f] font-bold' : ''
+          }`}
+        >
+          <span>💾 النسخ الاحتياطي والاستعادة</span>
+        </div>
+      </div>
+    </nav>
+  );
+};
