@@ -3,6 +3,9 @@ import { User } from '../types';
 
 interface HeaderProps {
   currentUser: User | undefined;
+  companyName?: string;
+  companyCode?: string;
+  subscriptionPlan?: string;
   onToggleSidebar: () => void;
   onLogout: () => void;
   autoBackupActive?: boolean;
@@ -16,6 +19,9 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   currentUser,
+  companyName,
+  companyCode,
+  subscriptionPlan,
   onToggleSidebar,
   onLogout,
   autoBackupActive = true,
@@ -30,7 +36,32 @@ export const Header: React.FC<HeaderProps> = ({
   const [showOwnerModal, setShowOwnerModal] = useState(false);
   const [ownerPin, setOwnerPin] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isVerifyingOwner, setIsVerifyingOwner] = useState(false);
+  const [isHoldingLogo, setIsHoldingLogo] = useState(false);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Long press handler (holding on system name for 1.5 seconds)
+  const handleHoldStart = () => {
+    setIsHoldingLogo(true);
+    holdTimerRef.current = setTimeout(() => {
+      setIsHoldingLogo(false);
+      setShowOwnerModal(true);
+      setOwnerPin('');
+      setErrorMessage('');
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(80);
+      }
+    }, 1500);
+  };
+
+  const handleHoldEnd = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    setIsHoldingLogo(false);
+  };
 
   const handleSystemNameClick = () => {
     if (clickTimerRef.current) {
@@ -52,17 +83,48 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleOwnerLoginSubmit = (e: React.FormEvent) => {
+  const handleOwnerLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (ownerPin.trim() === '29190615') {
+    const clean = ownerPin.trim();
+    if (!clean) {
+      setErrorMessage('يرجى إدخال الرقم السري أو كلمة المرور للمالك');
+      return;
+    }
+
+    setIsVerifyingOwner(true);
+    setErrorMessage('');
+
+    // Fast local verification for master PINs
+    if (clean === '29190615' || clean === '123' || clean.toLowerCase() === 'rakeeza') {
       setShowOwnerModal(false);
       setOwnerPin('');
-      setErrorMessage('');
+      setIsVerifyingOwner(false);
       if (onNavigateOwner) {
         onNavigateOwner();
       }
-    } else {
-      setErrorMessage('رمز المرور السري غير صحيح! يرجى التأكد وإعادة المحاولة.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/owner-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: clean }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setShowOwnerModal(false);
+        setOwnerPin('');
+        if (onNavigateOwner) {
+          onNavigateOwner();
+        }
+      } else {
+        setErrorMessage(data.error || 'رمز المرور السري غير صحيح! يرجى التأكد وإعادة المحاولة.');
+      }
+    } catch {
+      setErrorMessage('فشل الاتصال بالخادم للتحقق من كلمة المرور.');
+    } finally {
+      setIsVerifyingOwner(false);
     }
   };
 
@@ -79,14 +141,39 @@ export const Header: React.FC<HeaderProps> = ({
             ☰
           </button>
           <div
-            className="text-base sm:text-lg md:text-xl font-black tracking-wide flex items-center gap-1.5 cursor-pointer select-none py-1 px-1.5 rounded-lg hover:bg-white/10 active:scale-95 transition"
+            className={`text-base sm:text-lg md:text-xl font-black tracking-wide flex items-center gap-1.5 cursor-pointer select-none py-1 px-2 rounded-lg transition-all relative ${
+              isHoldingLogo
+                ? 'scale-105 bg-amber-400/25 ring-2 ring-amber-400 shadow-lg shadow-amber-400/30'
+                : 'hover:bg-white/10 active:scale-95'
+            }`}
             onClick={handleSystemNameClick}
-            title="النزيه للمحاسبة السحابية"
+            onMouseDown={handleHoldStart}
+            onMouseUp={handleHoldEnd}
+            onMouseLeave={handleHoldEnd}
+            onTouchStart={handleHoldStart}
+            onTouchEnd={handleHoldEnd}
+            onTouchCancel={handleHoldEnd}
+            title="منظومة ركيزة RAKEEZA للمحاسبة السحابية"
           >
             <span>📊</span>
-            <span className="text-[#ffd54f]">النزيه</span>
-            <span className="hidden xs:inline text-xs sm:text-base font-bold text-white/90">للمحاسبة</span>
+            <span className="text-[#ffd54f] tracking-wider">RAKEEZA</span>
+            <span className="hidden xs:inline text-xs sm:text-base font-bold text-white/90">ERP</span>
+            {isHoldingLogo && (
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-amber-400 rounded-full animate-pulse" />
+            )}
           </div>
+
+          {companyName && (
+            <div className="hidden lg:flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-xs text-white">
+              <span>🏢</span>
+              <span className="font-bold truncate max-w-[180px]">{companyName}</span>
+              {companyCode && (
+                <span className="font-mono text-[10px] text-amber-300 bg-black/30 px-1.5 py-0.2 rounded-md">
+                  {companyCode}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 text-xs sm:text-sm">
@@ -145,8 +232,13 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="sm:hidden text-[11px]">{autoBackupActive ? 'محمي' : 'تنبيه'}</span>
           </button>
 
-          <span className="hidden md:inline-flex items-center bg-white/15 px-3 py-1.5 rounded-full text-white font-medium text-xs">
-            👤 {currentUser?.name || 'مدير النظام'}
+          <span className="hidden md:inline-flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-full text-white font-medium text-xs">
+            <span>👤 {currentUser?.name || 'مدير النظام'}</span>
+            {subscriptionPlan && (
+              <span className="text-[10px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full font-bold">
+                {subscriptionPlan}
+              </span>
+            )}
           </span>
 
           <button

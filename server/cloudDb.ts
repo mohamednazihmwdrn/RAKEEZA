@@ -1,0 +1,1175 @@
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import {
+  TenantCompany,
+  SubscriptionPlan,
+  LicenseRecord,
+  TrialRegistryRecord,
+  User,
+  AppData,
+} from '../src/types';
+import {
+  DEFAULT_COMPANIES,
+  DEFAULT_SUBSCRIPTION_PLANS,
+  DEFAULT_TRIAL_REGISTRY,
+  createNewTenantCompany,
+  generateLicenseActivationCode,
+} from '../src/utils/multiTenantService';
+import { getDefaultData } from '../src/utils/storage';
+
+const DATA_DIR = path.join(process.cwd(), 'data');
+const DB_FILE = path.join(DATA_DIR, 'rakeeza_cloud_db.json');
+
+export interface SessionRecord {
+  token: string;
+  userId: string;
+  companyId: string;
+  userName: string;
+  role: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface CloudDatabaseSchema {
+  version: number;
+  companies: TenantCompany[];
+  plans: SubscriptionPlan[];
+  trialRegistry: TrialRegistryRecord[];
+  licenses: LicenseRecord[];
+  sessions: Record<string, SessionRecord>;
+  tenantsData: Record<string, AppData>;
+  globalUsers: User[]; // Owner & cross-tenant administrative users
+}
+
+let dbCache: CloudDatabaseSchema | null = null;
+
+function ensureDataDir(): void {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+}
+
+/**
+ * Initializes and seeds the cloud database if not already present on disk
+ */
+export function initCloudDatabase(): CloudDatabaseSchema {
+  ensureDataDir();
+
+  if (fs.existsSync(DB_FILE)) {
+    try {
+      const content = fs.readFileSync(DB_FILE, 'utf-8');
+      const parsed = JSON.parse(content) as CloudDatabaseSchema;
+      dbCache = parsed;
+      return parsed;
+    } catch (err) {
+      console.error('Failed reading existing cloud database, creating fresh seed:', err);
+    }
+  }
+
+  // Build Initial Seed
+  const baseDefaultData = getDefaultData();
+
+  // Company 1 Seed Data (RAKEEZA HQ)
+  const comp1Data: AppData = {
+    ...baseDefaultData,
+    companyId: 'COMP-000001',
+    settings: {
+      ...baseDefaultData.settings,
+      companyName: 'شركة ركيزة للمحاسبة والتجارة العامة (RAKEEZA)',
+      phone1: '01029190615',
+      taxNumber: '123-456-789',
+      commercialReg: 'CR-98765',
+      activityCode: '4651 - تجارة أجهزة وإلكترونيات',
+    },
+    users: [
+      {
+        id: 'u-admin-1',
+        companyId: 'COMP-000001',
+        name: 'Mohamed Nazih (المدير العام)',
+        username: 'admin',
+        password: 'admin123',
+        role: 'company_admin',
+        phone: '01029190615',
+        status: 'active',
+        permissions: { all: true },
+      },
+      {
+        id: 'u-cashier-1',
+        companyId: 'COMP-000001',
+        name: 'أحمد محمود (كاشير الفرع الرئيسي)',
+        username: 'cashier',
+        password: '123',
+        role: 'cashier',
+        status: 'active',
+        permissions: { sales: true, pos: true, quotes_orders: true },
+      },
+      {
+        id: 'u-warehouse-1',
+        companyId: 'COMP-000001',
+        name: 'سامح إبراهيم (أمين المخزن المركزي)',
+        username: 'warehouse',
+        password: '123',
+        role: 'warehouse_keeper',
+        status: 'active',
+        permissions: { inventory: true, purchases: true },
+      },
+    ],
+    items: baseDefaultData.items.filter((i) => i.companyId === 'COMP-000001' || !i.companyId),
+  };
+
+  // Company 2 Seed Data (مؤسسة الأمل للتوريدات)
+  const comp2Data: AppData = {
+    ...baseDefaultData,
+    companyId: 'COMP-000002',
+    settings: {
+      companyName: 'مؤسسة الأمل للتوريدات العمومية',
+      address: 'شارع السودان، المهندسين، الجيزة',
+      phone1: '01011223344',
+      phone2: '01122334455',
+      phone3: '',
+      taxNumber: '987-654-321',
+      commercialReg: 'CR-11223',
+      activityCode: '4791 - تجارة التجزئة والتوريدات',
+      notes: 'مؤسسة الأمل - رواد توريد مستلزمات الطباعة والكاشير',
+      defaultTaxRate: 14,
+      withholdingTaxRate: 1,
+      currencySymbol: 'ج.م',
+      fiscalYear: '2026',
+    },
+    users: [
+      {
+        id: 'u-amal-admin',
+        companyId: 'COMP-000002',
+        name: 'أحمد محمود القاضي (مدير الأمل)',
+        username: 'alamal_admin',
+        password: '123',
+        role: 'company_admin',
+        status: 'active',
+        phone: '01011223344',
+        permissions: { all: true },
+      },
+      {
+        id: 'u-amal-cashier',
+        companyId: 'COMP-000002',
+        name: 'علي مصطفى (كاشير الأمل)',
+        username: 'amal_cashier',
+        password: '123',
+        role: 'cashier',
+        status: 'active',
+        permissions: { sales: true, pos: true },
+      },
+    ],
+    customers: [
+      {
+        id: 'c-amal-1',
+        name: 'سلسلة مطاعم البركة',
+        phone: '01099887766',
+        balance: 0,
+        address: 'الدقي، الجيزة',
+        priceTier: 'wholesale',
+      },
+      {
+        id: 'c-amal-2',
+        name: 'هايبر ماركت التوحيد',
+        phone: '01233445566',
+        balance: 0,
+        address: 'الهرم، الجيزة',
+        priceTier: 'retail',
+      },
+    ],
+    suppliers: [
+      {
+        id: 's-amal-1',
+        name: 'مصنع الأهرام للبكر الحراري',
+        phone: '01188776655',
+        balance: 0,
+        address: 'مدينة 6 أكتوبر',
+      },
+    ],
+    items: baseDefaultData.items.filter((i) => i.companyId === 'COMP-000002'),
+    salesInvoices: [],
+    purchaseInvoices: [],
+    cashTransactions: [],
+    branches: [
+      {
+        id: 'br-amal-main',
+        code: 'AMAL-01',
+        name: 'مقر ومخزن المهندسين',
+        location: 'المهندسين، الجيزة',
+        phone: '01011223344',
+        isMain: true,
+        manager: 'أحمد محمود القاضي',
+      },
+    ],
+    activeBranchId: 'br-amal-main',
+  };
+
+  // Company 3 Seed Data (مجموعة السلام الهندسية)
+  const comp3Data: AppData = {
+    ...baseDefaultData,
+    companyId: 'COMP-000003',
+    settings: {
+      companyName: 'مجموعة السلام الهندسية والمقاولات',
+      address: 'سموحة، الإسكندرية',
+      phone1: '01299887766',
+      phone2: '',
+      phone3: '',
+      taxNumber: '445-556-667',
+      commercialReg: 'CR-77889',
+      activityCode: '4321 - التركيبات والتجهيزات الهندسية',
+      notes: 'السلام إنجينيرينج - حلول وتجهيزات هندسية متكاملة',
+      defaultTaxRate: 14,
+      currencySymbol: 'ج.م',
+      fiscalYear: '2026',
+    },
+    users: [
+      {
+        id: 'u-salam-admin',
+        companyId: 'COMP-000003',
+        name: 'م. حسام علي إبراهيم (مدير السلام)',
+        username: 'elsalam_admin',
+        password: '123',
+        role: 'company_admin',
+        status: 'active',
+        phone: '01299887766',
+        permissions: { all: true },
+      },
+    ],
+    items: [],
+    salesInvoices: [],
+    purchaseInvoices: [],
+    branches: [
+      {
+        id: 'br-salam-main',
+        code: 'SLM-01',
+        name: 'مقر سموحة الإسكندرية',
+        location: 'سموحة، الإسكندرية',
+        phone: '01299887766',
+        isMain: true,
+        manager: 'م. حسام علي إبراهيم',
+      },
+    ],
+  };
+
+  const initialSchema: CloudDatabaseSchema = {
+    version: 1,
+    companies: DEFAULT_COMPANIES,
+    plans: DEFAULT_SUBSCRIPTION_PLANS,
+    trialRegistry: DEFAULT_TRIAL_REGISTRY,
+    licenses: [
+      {
+        id: 'LIC-2026-9901',
+        activationCode: 'RKZ-2026-PRO-ANNUAL-001',
+        companyId: 'COMP-000001',
+        companyName: 'شركة ركيزة للمحاسبة والتجارة العامة (RAKEEZA)',
+        planId: 'annual',
+        planName: 'الاشتراك السنوي (Annual Pro)',
+        startDate: '2026-01-01',
+        expiryDate: '2027-01-01',
+        status: 'active',
+        features: DEFAULT_SUBSCRIPTION_PLANS[3].features,
+        limits: DEFAULT_SUBSCRIPTION_PLANS[3].limits,
+        generatedAt: '2026-01-01 08:00',
+        generatedBy: 'RAKEEZA OWNER',
+        activationCount: 1,
+      },
+    ],
+    sessions: {},
+    tenantsData: {
+      'COMP-000001': comp1Data,
+      'COMP-000002': comp2Data,
+      'COMP-000003': comp3Data,
+    },
+    globalUsers: [
+      {
+        id: 'owner-super-1',
+        name: 'مالك المنظومة السحابية (RAKEEZA Owner)',
+        username: 'owner',
+        password: '123',
+        role: 'owner',
+        status: 'active',
+        permissions: { all: true },
+      },
+      {
+        id: 'owner-super-2',
+        name: 'إدارة منظومة ركيزة (Super Admin)',
+        username: 'rakeeza_admin',
+        password: '123',
+        role: 'owner',
+        status: 'active',
+        permissions: { all: true },
+      },
+    ],
+  };
+
+  saveCloudDatabase(initialSchema);
+  return initialSchema;
+}
+
+export function getCloudDatabase(): CloudDatabaseSchema {
+  if (!dbCache) {
+    dbCache = initCloudDatabase();
+  }
+  return dbCache;
+}
+
+export function saveCloudDatabase(data: CloudDatabaseSchema): void {
+  try {
+    ensureDataDir();
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    dbCache = data;
+  } catch (err) {
+    console.error('Failed writing cloud database:', err);
+  }
+}
+
+/**
+ * Authentication Engine: Multi-Tenant & Owner Verification
+ */
+export function authenticateUser(
+  companyIdOrCode: string,
+  username: string,
+  password: string
+): {
+  success: boolean;
+  token?: string;
+  user?: User;
+  company?: TenantCompany;
+  subscription?: {
+    status: string;
+    planName: string;
+    daysRemaining: number;
+    isExpired: boolean;
+    expiresAt?: string;
+  };
+  error?: string;
+} {
+  const db = getCloudDatabase();
+  const cleanUsername = (username || '').trim().toLowerCase();
+  const cleanCompanyInput = (companyIdOrCode || '').trim().toUpperCase();
+
+  // 1. Owner Login Route
+  if (
+    cleanCompanyInput === 'OWNER' ||
+    cleanCompanyInput === 'RAKEEZA' ||
+    cleanCompanyInput === 'SYSTEM' ||
+    cleanUsername === 'owner' ||
+    cleanUsername === 'rakeeza_admin'
+  ) {
+    const ownerUser = db.globalUsers.find(
+      (u) => u.username.toLowerCase() === cleanUsername && u.password === password
+    );
+
+    if (ownerUser) {
+      const token = `tok_owner_${crypto.randomUUID()}`;
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      db.sessions[token] = {
+        token,
+        userId: ownerUser.id,
+        companyId: 'OWNER',
+        userName: ownerUser.name,
+        role: 'owner',
+        createdAt: new Date().toISOString(),
+        expiresAt,
+      };
+      saveCloudDatabase(db);
+
+      const ownerVirtualCompany: TenantCompany = {
+        id: 'OWNER',
+        tenantId: 'TENANT-RAKEEZA-CLOUD-ROOT',
+        code: 'OWNER-00',
+        name: 'منظومة RAKEEZA Cloud ERP - لوحة المالك',
+        tradeName: 'RAKEEZA Enterprise Cloud',
+        phone: '01029190615',
+        status: 'active',
+        planId: 'lifetime',
+        planName: 'ترخيص المالك المطلق (Root Owner)',
+        limits: {
+          maxUsers: 99999,
+          maxBranches: 9999,
+          maxWarehouses: 9999,
+          maxTransactionsPerMonth: 99999999,
+          storageMb: 999999,
+          maxSalesReps: 9999,
+        },
+        features: ['sales', 'purchases', 'inventory', 'accounting', 'reports', 'multi_branch', 'e_invoicing', 'bi'],
+        usersCount: db.companies.reduce((acc, c) => acc + (c.usersCount || 1), 0),
+        branchesCount: 1,
+        warehousesCount: 1,
+        operationsCount: 9999,
+      };
+
+      return {
+        success: true,
+        token,
+        user: ownerUser,
+        company: ownerVirtualCompany,
+        subscription: {
+          status: 'active',
+          planName: 'ترخيص المالك المطلق (Root Owner)',
+          daysRemaining: 36500,
+          isExpired: false,
+        },
+      };
+    }
+  }
+
+  // 2. Company Lookup
+  if (!cleanCompanyInput) {
+    return {
+      success: false,
+      error: 'يرجى إدخال كود الشركة (Company ID) أو كود المنشأة.',
+    };
+  }
+
+  const company = db.companies.find(
+    (c) =>
+      c.id.toUpperCase() === cleanCompanyInput ||
+      c.code.toUpperCase() === cleanCompanyInput ||
+      c.tenantId.toUpperCase() === cleanCompanyInput
+  );
+
+  if (!company) {
+    return {
+      success: false,
+      error: `لم يتم العثور على شركة مسجلة بالكود "${companyIdOrCode}". يرجى التأكد من كتابة كود الشركة بشكل صحيح.`,
+    };
+  }
+
+  // 3. Company Status & Suspension Check
+  if (company.status === 'suspended') {
+    return {
+      success: false,
+      error: 'عذراً، تم تعليق حساب هذه الشركة مؤقتاً من قِبل إدارة النظام. يرجى التواصل مع الدعم الفني لشركة ركيزة.',
+    };
+  }
+
+  // 4. Find User in Company Data
+  const tenantData = db.tenantsData[company.id];
+  const companyUsers = tenantData?.users || [];
+
+  // If company has admin in company object itself, consider it too
+  let matchedUser = companyUsers.find(
+    (u) => u.username.toLowerCase() === cleanUsername && u.password === password
+  );
+
+  if (!matchedUser && company.adminUsername?.toLowerCase() === cleanUsername && company.adminPassword === password) {
+    matchedUser = {
+      id: `u-${company.id}-admin`,
+      companyId: company.id,
+      name: company.adminName || 'المدير العام',
+      username: company.adminUsername,
+      password: company.adminPassword,
+      role: 'company_admin',
+      status: 'active',
+      permissions: { all: true },
+    };
+  }
+
+  if (!matchedUser) {
+    return {
+      success: false,
+      error: 'اسم المستخدم أو كلمة المرور غير صحيحة لهذه الشركة.',
+    };
+  }
+
+  if (matchedUser.status === 'disabled') {
+    return {
+      success: false,
+      error: 'تم تعطيل هذا الحساب بواسطة مدير الشركة. يرجى مراجعة المسؤول.',
+    };
+  }
+
+  // 5. Subscription Status Evaluation
+  const now = new Date();
+  let expiryDateStr = company.subscriptionExpiresAt || company.trialExpiresAt;
+  let isExpired = false;
+  let daysRemaining = 30;
+
+  if (expiryDateStr) {
+    const expiryDate = new Date(expiryDateStr);
+    const diffTime = expiryDate.getTime() - now.getTime();
+    daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (daysRemaining <= 0) {
+      isExpired = true;
+      daysRemaining = 0;
+    }
+  }
+
+  // 6. Generate Session Token
+  const token = `tok_${company.id}_${crypto.randomUUID()}`;
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  db.sessions[token] = {
+    token,
+    userId: matchedUser.id,
+    companyId: company.id,
+    userName: matchedUser.name,
+    role: matchedUser.role,
+    createdAt: new Date().toISOString(),
+    expiresAt,
+  };
+
+  // Log in company's audit logs
+  if (tenantData) {
+    const loginLog = {
+      id: `log-login-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      userName: matchedUser.name,
+      userId: matchedUser.id,
+      companyId: company.id,
+      action: 'login',
+      module: 'المصادقة والأمان',
+      details: `تسجيل دخول ناجح إلى منظومة شركة "${company.name}"`,
+    };
+    tenantData.auditLogs = [loginLog, ...(tenantData.auditLogs || [])].slice(0, 500);
+  }
+
+  saveCloudDatabase(db);
+
+  return {
+    success: true,
+    token,
+    user: matchedUser,
+    company,
+    subscription: {
+      status: isExpired ? 'expired' : company.status,
+      planName: company.planName || 'الاشتراك القياسي',
+      daysRemaining,
+      isExpired,
+      expiresAt: expiryDateStr,
+    },
+  };
+}
+
+/**
+ * Secret Owner Verification (Accessed secretly by long-pressing system name anywhere)
+ */
+export function verifyOwnerSecret(secret: string): {
+  success: boolean;
+  token?: string;
+  user?: User;
+  company?: TenantCompany;
+  subscription?: {
+    status: string;
+    planName: string;
+    daysRemaining: number;
+    isExpired: boolean;
+    expiresAt?: string;
+  };
+  error?: string;
+} {
+  const clean = (secret || '').trim();
+  const db = getCloudDatabase();
+  const isMasterPin = clean === '29190615' || clean === '123' || clean.toLowerCase() === 'rakeeza';
+  const ownerUser = db.globalUsers.find((u) => u.password === clean) || (isMasterPin ? db.globalUsers[0] : null);
+
+  if (!ownerUser) {
+    return { success: false, error: 'كلمة المرور أو رمز PIN الخاص بمالك المنظومة غير صحيح.' };
+  }
+
+  const token = `tok_owner_${crypto.randomUUID()}`;
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  db.sessions[token] = {
+    token,
+    userId: ownerUser.id,
+    companyId: 'OWNER',
+    userName: ownerUser.name,
+    role: 'owner',
+    createdAt: new Date().toISOString(),
+    expiresAt,
+  };
+  saveCloudDatabase(db);
+
+  const ownerVirtualCompany: TenantCompany = {
+    id: 'OWNER',
+    tenantId: 'TENANT-RAKEEZA-CLOUD-ROOT',
+    code: 'OWNER-00',
+    name: 'منظومة RAKEEZA Cloud ERP - لوحة المالك',
+    tradeName: 'RAKEEZA Enterprise Cloud',
+    phone: '01029190615',
+    status: 'active',
+    planId: 'lifetime',
+    planName: 'ترخيص المالك المطلق (Root Owner)',
+    limits: {
+      maxUsers: 99999,
+      maxBranches: 9999,
+      maxWarehouses: 9999,
+      maxTransactionsPerMonth: 99999999,
+      storageMb: 999999,
+      maxSalesReps: 9999,
+    },
+    features: ['sales', 'purchases', 'inventory', 'accounting', 'reports', 'multi_branch', 'e_invoicing', 'bi'],
+    usersCount: db.companies.reduce((acc, c) => acc + (c.usersCount || 1), 0),
+    branchesCount: 1,
+    warehousesCount: 1,
+    operationsCount: 9999,
+  };
+
+  return {
+    success: true,
+    token,
+    user: ownerUser,
+    company: ownerVirtualCompany,
+    subscription: {
+      status: 'active',
+      planName: 'ترخيص المالك المطلق (Root Owner)',
+      daysRemaining: 36500,
+      isExpired: false,
+    },
+  };
+}
+
+/**
+ * Sign in or Register using Google / Gmail
+ */
+export function authenticateOrRegisterWithGmail(
+  gmail: string,
+  companyName?: string,
+  phone?: string,
+  adminName?: string
+): {
+  success: boolean;
+  isNewCompany?: boolean;
+  token?: string;
+  user?: User;
+  company?: TenantCompany;
+  subscription?: {
+    status: string;
+    planName: string;
+    daysRemaining: number;
+    isExpired: boolean;
+    expiresAt?: string;
+  };
+  error?: string;
+  needsRegistration?: boolean;
+} {
+  const cleanEmail = (gmail || '').trim().toLowerCase();
+  if (!cleanEmail || !cleanEmail.includes('@')) {
+    return { success: false, error: 'يرجى إدخال عنوان بريد Gmail صالح.' };
+  }
+
+  const db = getCloudDatabase();
+
+  // 1. Look for existing company matching this email
+  let company = db.companies.find(
+    (c) =>
+      c.email?.toLowerCase() === cleanEmail ||
+      c.adminEmail?.toLowerCase() === cleanEmail
+  );
+
+  // 2. Or check users within any tenant's data
+  let matchedUser: User | undefined;
+  if (company) {
+    const tenantData = db.tenantsData[company.id];
+    matchedUser = tenantData?.users?.find(
+      (u) =>
+        u.email?.toLowerCase() === cleanEmail ||
+        u.username?.toLowerCase() === cleanEmail ||
+        u.role === 'company_admin'
+    );
+  } else {
+    // Check all tenants to see if user exists with this email
+    for (const c of db.companies) {
+      const td = db.tenantsData[c.id];
+      const foundUser = td?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
+      if (foundUser) {
+        company = c;
+        matchedUser = foundUser;
+        break;
+      }
+    }
+  }
+
+  // 3. If found, generate session token and log in
+  if (company) {
+    if (!matchedUser) {
+      matchedUser = {
+        id: `u-${company.id}-gmail`,
+        companyId: company.id,
+        name: adminName || company.adminName || cleanEmail.split('@')[0],
+        username: cleanEmail.split('@')[0],
+        role: 'company_admin',
+        status: 'active',
+        email: cleanEmail,
+        permissions: { all: true },
+      };
+    }
+
+    const token = `tok_${company.id}_${crypto.randomUUID()}`;
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    db.sessions[token] = {
+      token,
+      userId: matchedUser.id,
+      companyId: company.id,
+      userName: matchedUser.name,
+      role: matchedUser.role,
+      createdAt: new Date().toISOString(),
+      expiresAt,
+    };
+
+    saveCloudDatabase(db);
+
+    return {
+      success: true,
+      isNewCompany: false,
+      token,
+      user: matchedUser,
+      company,
+      subscription: {
+        status: company.status,
+        planName: company.planName || 'الاشتراك القياسي',
+        daysRemaining: 30,
+        isExpired: false,
+      },
+    };
+  }
+
+  // 4. If not found and no companyName specified yet -> prompt user for registration
+  if (!companyName || !companyName.trim()) {
+    return {
+      success: false,
+      needsRegistration: true,
+      error: 'لم يتم العثور على منشأة سابقة مرتبطة بهذا البريد. يرجى إدخال اسم المنشأة لبدء الاستخدام فوراً مجاناً.',
+    };
+  }
+
+  // 5. If not found and companyName is provided -> create new company immediately!
+  const newCompanyInput: Partial<TenantCompany> = {
+    name: companyName.trim(),
+    tradeName: companyName.trim(),
+    email: cleanEmail,
+    adminEmail: cleanEmail,
+    adminName: adminName?.trim() || cleanEmail.split('@')[0],
+    adminUsername: cleanEmail.split('@')[0],
+    adminPassword: '123',
+    phone: phone?.trim() || '',
+    activity: 'تجارة عامة وخدمات',
+    address: 'الفرع الرئيسي',
+  };
+
+  const created = createNewCompanyCloud(newCompanyInput, 'trial');
+  const freshCompany = created.company;
+  const tenantData = db.tenantsData[freshCompany.id];
+  const freshAdminUser: User = (tenantData?.users && tenantData.users[0]) || {
+    id: `u-${freshCompany.id}-admin`,
+    companyId: freshCompany.id,
+    name: newCompanyInput.adminName || 'المدير العام',
+    username: newCompanyInput.adminUsername || 'admin',
+    role: 'company_admin',
+    status: 'active',
+    email: cleanEmail,
+    permissions: { all: true },
+  };
+
+  freshAdminUser.email = cleanEmail;
+
+  const token = `tok_${freshCompany.id}_${crypto.randomUUID()}`;
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  db.sessions[token] = {
+    token,
+    userId: freshAdminUser.id,
+    companyId: freshCompany.id,
+    userName: freshAdminUser.name,
+    role: freshAdminUser.role,
+    createdAt: new Date().toISOString(),
+    expiresAt,
+  };
+
+  saveCloudDatabase(db);
+
+  return {
+    success: true,
+    isNewCompany: true,
+    token,
+    user: freshAdminUser,
+    company: freshCompany,
+    subscription: {
+      status: 'trial',
+      planName: 'تجربة سحابية مجانية (14 يوم)',
+      daysRemaining: 14,
+      isExpired: false,
+    },
+  };
+}
+
+/**
+ * Validate active session token
+ */
+export function validateSession(token: string): {
+  valid: boolean;
+  session?: SessionRecord;
+  user?: User;
+  company?: TenantCompany;
+  subscription?: {
+    status: string;
+    planName: string;
+    daysRemaining: number;
+    isExpired: boolean;
+    expiresAt?: string;
+  };
+} {
+  if (!token) return { valid: false };
+  const db = getCloudDatabase();
+  const session = db.sessions[token];
+  if (!session) return { valid: false };
+
+  // Check expiration
+  if (new Date(session.expiresAt).getTime() < Date.now()) {
+    delete db.sessions[token];
+    saveCloudDatabase(db);
+    return { valid: false };
+  }
+
+  if (session.companyId === 'OWNER') {
+    const ownerUser = db.globalUsers.find((u) => u.id === session.userId) || db.globalUsers[0];
+    const ownerVirtualCompany: TenantCompany = {
+      id: 'OWNER',
+      tenantId: 'TENANT-RAKEEZA-CLOUD-ROOT',
+      code: 'OWNER-00',
+      name: 'منظومة RAKEEZA Cloud ERP - لوحة المالك',
+      tradeName: 'RAKEEZA Enterprise Cloud',
+      phone: '01029190615',
+      status: 'active',
+      planId: 'lifetime',
+      planName: 'ترخيص المالك المطلق (Root Owner)',
+      limits: {
+        maxUsers: 99999,
+        maxBranches: 9999,
+        maxWarehouses: 9999,
+        maxTransactionsPerMonth: 99999999,
+        storageMb: 999999,
+        maxSalesReps: 9999,
+      },
+      features: ['sales', 'purchases', 'inventory', 'accounting', 'reports', 'multi_branch', 'e_invoicing', 'bi'],
+      usersCount: db.companies.reduce((acc, c) => acc + (c.usersCount || 1), 0),
+      branchesCount: 1,
+      warehousesCount: 1,
+      operationsCount: 9999,
+    };
+    return {
+      valid: true,
+      session,
+      user: ownerUser,
+      company: ownerVirtualCompany,
+      subscription: {
+        status: 'active',
+        planName: 'ترخيص المالك المطلق',
+        daysRemaining: 36500,
+        isExpired: false,
+      },
+    };
+  }
+
+  const company = db.companies.find((c) => c.id === session.companyId);
+  if (!company) return { valid: false };
+
+  const tenantData = db.tenantsData[company.id];
+  const user = tenantData?.users?.find((u) => u.id === session.userId) || {
+    id: session.userId,
+    name: session.userName,
+    username: session.userName,
+    role: session.role as any,
+    permissions: { all: true },
+  };
+
+  const now = new Date();
+  const expiryDateStr = company.subscriptionExpiresAt || company.trialExpiresAt;
+  let isExpired = false;
+  let daysRemaining = 30;
+
+  if (expiryDateStr) {
+    const expiryDate = new Date(expiryDateStr);
+    const diffTime = expiryDate.getTime() - now.getTime();
+    daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (daysRemaining <= 0) {
+      isExpired = true;
+      daysRemaining = 0;
+    }
+  }
+
+  return {
+    valid: true,
+    session,
+    user,
+    company,
+    subscription: {
+      status: isExpired ? 'expired' : company.status,
+      planName: company.planName || 'الاشتراك السنوي',
+      daysRemaining,
+      isExpired,
+      expiresAt: expiryDateStr,
+    },
+  };
+}
+
+/**
+ * Terminate session
+ */
+export function invalidateSession(token: string): boolean {
+  const db = getCloudDatabase();
+  if (db.sessions[token]) {
+    delete db.sessions[token];
+    saveCloudDatabase(db);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Fetch strictly isolated tenant ERP data
+ */
+export function getTenantDataStrict(companyId: string): AppData | null {
+  const db = getCloudDatabase();
+  if (!db.tenantsData[companyId]) {
+    // If not existing yet, create clean isolated tenant data
+    const base = getDefaultData();
+    const company = db.companies.find((c) => c.id === companyId);
+    db.tenantsData[companyId] = {
+      ...base,
+      companyId,
+      settings: {
+        ...base.settings,
+        companyName: company?.name || 'منشأة جديدة',
+        phone1: company?.phone || '',
+        taxNumber: company?.taxNumber || '',
+        commercialReg: company?.commercialReg || '',
+      },
+      items: [],
+      salesInvoices: [],
+      purchaseInvoices: [],
+      customers: [],
+      suppliers: [],
+      cashTransactions: [],
+    };
+    saveCloudDatabase(db);
+  }
+  return db.tenantsData[companyId];
+}
+
+/**
+ * Update strictly isolated tenant ERP data with automatic audit logging
+ */
+export function saveTenantDataStrict(
+  companyId: string,
+  updatedData: Partial<AppData>,
+  actorUser?: { id: string; name: string }
+): AppData {
+  const db = getCloudDatabase();
+  const current = getTenantDataStrict(companyId) || getDefaultData();
+
+  // Audit operation stamp
+  let auditLogs = updatedData.auditLogs || current.auditLogs || [];
+  if (actorUser) {
+    const newLog = {
+      id: `log-op-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      userName: actorUser.name,
+      userId: actorUser.id,
+      companyId,
+      action: 'update',
+      module: 'تحديث بيانات سحابية',
+      details: `تم حفظ وتحديث بيانات الشركة بنجاح بواسطة ${actorUser.name}`,
+    };
+    auditLogs = [newLog, ...auditLogs].slice(0, 500);
+  }
+
+  const merged: AppData = {
+    ...current,
+    ...updatedData,
+    companyId,
+    auditLogs,
+  };
+
+  db.tenantsData[companyId] = merged;
+
+  // Update operation count and user count in company meta
+  const companyIdx = db.companies.findIndex((c) => c.id === companyId);
+  if (companyIdx !== -1) {
+    db.companies[companyIdx].operationsCount =
+      (merged.salesInvoices?.length || 0) +
+      (merged.purchaseInvoices?.length || 0) +
+      (merged.cashTransactions?.length || 0);
+    db.companies[companyIdx].usersCount = merged.users?.length || 1;
+    db.companies[companyIdx].lastActivityAt = new Date().toISOString().replace('T', ' ').substring(0, 16);
+  }
+
+  saveCloudDatabase(db);
+  return merged;
+}
+
+/**
+ * Owner: Create a new company
+ */
+export function createNewCompanyCloud(
+  companyInput: Partial<TenantCompany>,
+  planId: string
+): { company: TenantCompany; license: LicenseRecord } {
+  const db = getCloudDatabase();
+  const res = createNewTenantCompany(companyInput, planId, db.plans, db.trialRegistry);
+
+  db.companies.push(res.company);
+  db.licenses.push(res.license);
+  db.trialRegistry = res.updatedRegistry;
+
+  // Initialize fresh isolated data for the new company
+  const base = getDefaultData();
+  db.tenantsData[res.company.id] = {
+    ...base,
+    companyId: res.company.id,
+    settings: {
+      ...base.settings,
+      companyName: res.company.name,
+      address: res.company.address || 'جمهورية مصر العربية',
+      phone1: res.company.phone || '',
+      taxNumber: res.company.taxNumber || '',
+      commercialReg: res.company.commercialReg || '',
+      activityCode: res.company.activity || '',
+    },
+    users: [
+      {
+        id: `u-${res.company.id}-admin`,
+        companyId: res.company.id,
+        name: res.company.adminName || 'المدير العام',
+        username: res.company.adminUsername || 'admin',
+        password: res.company.adminPassword || '123456',
+        role: 'company_admin',
+        status: 'active',
+        permissions: { all: true },
+      },
+    ],
+    items: [],
+    salesInvoices: [],
+    purchaseInvoices: [],
+    customers: [],
+    suppliers: [],
+    cashTransactions: [],
+    branches: [
+      {
+        id: `br-${res.company.id}-main`,
+        code: 'HQ-01',
+        name: 'المقر الرئيسي',
+        location: res.company.address || 'المقر الرئيسي',
+        phone: res.company.phone || '',
+        isMain: true,
+        manager: res.company.adminName || 'المدير العام',
+      },
+    ],
+    activeBranchId: `br-${res.company.id}-main`,
+  };
+
+  saveCloudDatabase(db);
+  return { company: res.company, license: res.license };
+}
+
+/**
+ * Owner: Update company metadata & subscription
+ */
+export function updateCompanyCloud(
+  companyId: string,
+  updates: Partial<TenantCompany>
+): TenantCompany | null {
+  const db = getCloudDatabase();
+  const idx = db.companies.findIndex((c) => c.id === companyId);
+  if (idx === -1) return null;
+
+  db.companies[idx] = { ...db.companies[idx], ...updates };
+  saveCloudDatabase(db);
+  return db.companies[idx];
+}
+
+/**
+ * Owner: Generate License Activation Code
+ */
+export function generateLicenseCloud(
+  planId: string,
+  companyId?: string
+): LicenseRecord {
+  const db = getCloudDatabase();
+  const selectedPlan = db.plans.find((p) => p.id === planId) || db.plans[3];
+  const company = companyId ? db.companies.find((c) => c.id === companyId) : undefined;
+
+  const now = new Date();
+  const startDateStr = now.toISOString().split('T')[0];
+  const expiryDate = new Date();
+  expiryDate.setDate(now.getDate() + (selectedPlan.durationDays || 365));
+  const expiryDateStr = expiryDate.toISOString().split('T')[0];
+
+  const license: LicenseRecord = {
+    id: `LIC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    activationCode: generateLicenseActivationCode(),
+    companyId: company?.id || '',
+    companyName: company?.name || 'ترخيص عام لمنظومة ركيزة',
+    planId: selectedPlan.id,
+    planName: selectedPlan.name,
+    startDate: startDateStr,
+    expiryDate: expiryDateStr,
+    status: 'active',
+    features: [...selectedPlan.features],
+    limits: { ...selectedPlan.limits },
+    generatedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    generatedBy: 'RAKEEZA OWNER',
+    activationCount: 0,
+  };
+
+  db.licenses.push(license);
+  saveCloudDatabase(db);
+  return license;
+}
+
+/**
+ * Tenant: Activate license code to renew or upgrade subscription
+ */
+export function activateLicenseCloud(
+  companyId: string,
+  code: string
+): { success: boolean; message: string; company?: TenantCompany } {
+  const db = getCloudDatabase();
+  const cleanCode = code.trim().toUpperCase();
+  const license = db.licenses.find((l) => l.activationCode.toUpperCase() === cleanCode);
+
+  if (!license) {
+    return { success: false, message: 'كود التفعيل غير صحيح أو غير موجود في قاعدة بيانات التراخيص.' };
+  }
+
+  if (license.status === 'revoked') {
+    return { success: false, message: 'تم إيقاف كود التفعيل هذا بواسطة مالك النظام.' };
+  }
+
+  const companyIdx = db.companies.findIndex((c) => c.id === companyId);
+  if (companyIdx === -1) {
+    return { success: false, message: 'لم يتم العثور على بيانات الشركة.' };
+  }
+
+  const comp = db.companies[companyIdx];
+  const selectedPlan = db.plans.find((p) => p.id === license.planId) || db.plans[3];
+  const now = new Date();
+  const newExpiry = new Date();
+  newExpiry.setDate(now.getDate() + (selectedPlan.durationDays || 365));
+
+  comp.status = 'active';
+  comp.planId = selectedPlan.id;
+  comp.planName = selectedPlan.name;
+  comp.licenseId = license.id;
+  comp.subscriptionStartedAt = now.toISOString().split('T')[0];
+  comp.subscriptionExpiresAt = newExpiry.toISOString().split('T')[0];
+  comp.limits = { ...selectedPlan.limits };
+  comp.features = [...selectedPlan.features];
+
+  license.activationCount = (license.activationCount || 0) + 1;
+  license.companyId = comp.id;
+  license.companyName = comp.name;
+
+  saveCloudDatabase(db);
+
+  return {
+    success: true,
+    message: `تهانينا! تم تفعيل خطة "${selectedPlan.name}" بنجاح حتى تاريخ ${comp.subscriptionExpiresAt}.`,
+    company: comp,
+  };
+}

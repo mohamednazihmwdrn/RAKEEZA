@@ -52,7 +52,7 @@ export function downloadBackupJsonFile(appData: AppData, customName?: string): v
     const dataForExport = {
       ...appData,
       exportDate: new Date().toISOString(),
-      systemVersion: 'AlNazih-ERP-v8.0',
+      systemVersion: 'RAKEEZA-ERP-v8.0',
     };
 
     const jsonStr = JSON.stringify(dataForExport, null, 2);
@@ -61,7 +61,7 @@ export function downloadBackupJsonFile(appData: AppData, customName?: string): v
 
     const now = new Date();
     const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
-    const filename = customName || `النزيه_نسخة_احتياطية_${dateStr}.json`;
+    const filename = customName || `RAKEEZA_نسخة_احتياطية_${dateStr}.json`;
 
     const a = document.createElement('a');
     a.href = url;

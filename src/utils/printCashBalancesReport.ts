@@ -13,7 +13,7 @@ export function compileCashBalancesData(appData: AppData): {
   targetDate: string;
 } {
   const company = appData.settings || {
-    companyName: 'شركة النزيه التجارية',
+    companyName: 'شركة ركيزة التجارية RAKEEZA',
     address: 'الفرع الرئيسي - ش المعهد الديني، القاهرة',
     phone1: '01029190615',
     phone2: '',
@@ -147,7 +147,7 @@ export function generateCashBalancesReportHtml(appData: AppData): string {
   const { company, issuerName, cashData, targetDate } = compileCashBalancesData(appData);
 
   const phone = company.phone1 || '01029190615';
-  const companyTitle = company.companyName || 'شركة النزيه التجارية';
+  const companyTitle = company.companyName || 'شركة ركيزة التجارية RAKEEZA';
   const branchAddress = company.address || 'الفرع الرئيسي - ش المعهد الديني';
 
   const now = new Date();

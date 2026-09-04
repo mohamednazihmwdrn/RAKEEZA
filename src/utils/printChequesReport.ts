@@ -18,7 +18,7 @@ export interface ChequeReportOptions {
  */
 export function generateChequeVoucherPrintHtml(cheque: Cheque, appData: AppData): string {
   const settings: Partial<Settings> = appData.settings || {};
-  const companyName = settings.companyName || 'شركة النزيه التجارية';
+  const companyName = settings.companyName || 'شركة ركيزة التجارية RAKEEZA';
   const companySubtitle = settings.address || 'الفرع الرئيسي - ش المعهد الديني';
   const logoSrc = settings.logo || settings.logoUrl || '';
   const showLogo = settings.showLogoInPrint !== false && Boolean(logoSrc);
@@ -340,7 +340,7 @@ export function printChequeVoucher(cheque: Cheque, appData: AppData): void {
  */
 export function generateChequesReportPrintHtml(options: ChequeReportOptions, appData: AppData): string {
   const settings: Partial<Settings> = appData.settings || {};
-  const companyName = settings.companyName || 'شركة النزيه التجارية';
+  const companyName = settings.companyName || 'شركة ركيزة التجارية RAKEEZA';
   const companySubtitle = settings.address || 'الفرع الرئيسي - ش المعهد الديني';
   const logoSrc = settings.logo || settings.logoUrl || '';
   const showLogo = settings.showLogoInPrint !== false && Boolean(logoSrc);

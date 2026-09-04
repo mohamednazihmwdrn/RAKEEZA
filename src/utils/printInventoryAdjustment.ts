@@ -7,7 +7,7 @@ export { generateGoodsIssuePrintHtml, printGoodsIssueNote } from './printGoodsIs
  */
 export function generateStocktakePrintHtml(session: StocktakeSession, appData: AppData): string {
   const settings: Partial<Settings> = appData.settings || {};
-  const companyName = settings.companyName || 'شركة النزيه التجارية';
+  const companyName = settings.companyName || 'شركة ركيزة التجارية RAKEEZA';
   const companySubtitle = settings.address || 'الفرع الرئيسي - ش المعهد الديني';
   const logoSrc = settings.logo || settings.logoUrl || '';
   const showLogo = settings.showLogoInPrint !== false && Boolean(logoSrc);
@@ -341,7 +341,7 @@ ${getPrintToolbarScript()}
  */
 export function generateSettlementPrintHtml(voucher: InventoryAdjustmentVoucher, appData: AppData): string {
   const settings: Partial<Settings> = appData.settings || {};
-  const companyName = settings.companyName || 'شركة النزيه التجارية';
+  const companyName = settings.companyName || 'شركة ركيزة التجارية RAKEEZA';
   const companySubtitle = settings.address || 'الفرع الرئيسي - ش المعهد الديني';
   const logoSrc = settings.logo || settings.logoUrl || '';
   const showLogo = settings.showLogoInPrint !== false && Boolean(logoSrc);
@@ -649,7 +649,7 @@ ${getPrintToolbarScript()}
  */
 export function generateAnnualClosingPrintHtml(closingRecord: FiscalYearClosingRecord, appData: AppData): string {
   const settings: Partial<Settings> = appData.settings || {};
-  const companyName = settings.companyName || 'شركة النزيه التجارية';
+  const companyName = settings.companyName || 'شركة ركيزة التجارية RAKEEZA';
   const companySubtitle = settings.address || 'الفرع الرئيسي - ش المعهد الديني';
   const logoSrc = settings.logo || settings.logoUrl || '';
   const showLogo = settings.showLogoInPrint !== false && Boolean(logoSrc);

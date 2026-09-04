@@ -26,7 +26,7 @@ export function generateCashVoucherPrintHtml(
 ): string {
   // Normalize settings
   const settings: Settings = (appDataOrSettings as AppData).settings || (appDataOrSettings as Settings) || {
-    companyName: 'النزيه للمحاسبة',
+    companyName: 'منظومة RAKEEZA للمحاسبة',
     address: 'القاهرة، مصر',
     phone1: '01029190615',
     phone2: '',
@@ -41,7 +41,7 @@ export function generateCashVoucherPrintHtml(
     showLogoInPrint: true,
   };
 
-  const companyName = settings.companyName || 'النزيه للمحاسبة';
+  const companyName = settings.companyName || 'منظومة RAKEEZA للمحاسبة';
   const companyAddress = settings.address || 'القاهرة، مصر';
   const logoUrl = settings.logo || settings.logoUrl || '';
   const showLogo = settings.showLogoInPrint !== false && Boolean(logoUrl);

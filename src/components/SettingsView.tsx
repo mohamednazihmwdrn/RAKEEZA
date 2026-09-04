@@ -391,7 +391,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ appData, onUpdateDat
         </h4>
         <div className="text-sm space-y-1.5 opacity-95">
           <p>
-            اسم النظام الأصلي: <strong className="text-white text-base">النزيه للمحاسبة</strong>
+            اسم المنظومة: <strong className="text-white text-base">منظومة ركيزة | RAKEEZA Cloud ERP</strong>
           </p>
           <p>
             تطوير وبرمجة: <strong className="text-[#ffd54f] text-base">Mohamed Nazih</strong>

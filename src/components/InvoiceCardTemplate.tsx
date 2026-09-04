@@ -28,7 +28,7 @@ export const InvoiceCardTemplate: React.FC<InvoiceCardTemplateProps> = ({
     : (invoice as PurchaseInvoice).supplierName || 'مورد عام';
   const partyPhone = invoice.phone || (invoice as any).customerId || (invoice as any).supplierId || '-';
 
-  const companyName = settings.companyName || 'النزيه للمحاسبة';
+  const companyName = settings.companyName || 'منظومة RAKEEZA للمحاسبة';
   const companyAddress = settings.address || 'جمهورية مصر العربية';
   const companyPhone1 = settings.phone1 || '01029190615';
   const companyPhone2 = settings.phone2 || '';

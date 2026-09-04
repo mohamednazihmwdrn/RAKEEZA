@@ -17,7 +17,7 @@ export function generateInvoicePrintHtml(
   const companyPhone2 = settings.phone2 || '';
   const companyPhone3 = settings.phone3 || '';
 
-  const companyName = settings.companyName || 'النزيه للمحاسبة';
+  const companyName = settings.companyName || 'منظومة RAKEEZA للمحاسبة';
   const companyAddress = settings.address || 'جمهورية مصر العربية';
   const logoUrl = (settings as any).logo || (settings as any).logoUrl || '';
 

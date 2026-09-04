@@ -588,7 +588,7 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
 
         {/* Footer */}
         <div className="bg-slate-50 border-t border-slate-200 px-5 py-3 flex justify-between items-center text-xs">
-          <span className="text-slate-500">نظام النزيه للمحاسبة السحابية - المتجر الذكي</span>
+          <span className="text-slate-500">منظومة RAKEEZA للمحاسبة السحابية - المتجر الذكي</span>
           <button
             type="button"
             onClick={onClose}

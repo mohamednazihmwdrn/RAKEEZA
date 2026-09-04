@@ -307,7 +307,7 @@ export function compileStatementData(
 
   return {
     company: {
-      name: settings.companyName || 'شركة النزيه التجارية والأنظمة المحاسبية',
+      name: settings.companyName || 'منظومة RAKEEZA التجارية والأنظمة المحاسبية',
       address: settings.address || 'الفرع الرئيسي - جمهورية مصر العربية',
       logoUrl: (settings as any).logo || (settings as any).logoUrl || '',
       phones: phones,
@@ -691,7 +691,7 @@ export function generateStatementPrintHtml(data: StatementData, isSupplier: bool
     <!-- الترويسة -->
     <div class="header" id="invoiceHeader">
       <div class="header-right">
-        <h2 id="settingCompanyName">شركة النزيه التجارية</h2>
+        <h2 id="settingCompanyName">منظومة ركيزة | RAKEEZA ERP</h2>
         <p id="settingCompanyAddress">الفرع الرئيسي - ش المعهد الديني</p>
       </div>
       <div class="header-center">

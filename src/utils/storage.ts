@@ -54,7 +54,7 @@ export const defaultAccountsTree: AccountNode[] = [
 export function getDefaultData(): AppData {
   return {
     settings: {
-      companyName: 'النزيه للمحاسبة',
+      companyName: 'منظومة RAKEEZA للمحاسبة',
       address: 'القاهرة، مصر',
       phone1: '01029190615',
       phone2: '01100000000',
@@ -62,7 +62,7 @@ export function getDefaultData(): AppData {
       taxNumber: '123-456-789',
       commercialReg: 'CR-98765',
       activityCode: '4651 - تجارة أجهزة وإلكترونيات',
-      notes: 'شكراً لتعاملكم مع نظام النزيه للمحاسبة',
+      notes: 'شكراً لتعاملكم مع منظومة RAKEEZA للمحاسبة',
       defaultTaxRate: 14,
       withholdingTaxRate: 1,
       currencySymbol: 'ج.م',
@@ -515,7 +515,7 @@ export function getDefaultData(): AppData {
         userName: 'Mohamed Nazih (المدير)',
         action: 'login',
         module: 'النظام العام',
-        details: 'تم تشغيل وتهيئة منظومة النزيه ERP الاحترافية بجميع وحدات المحاسبة والربط الضريبي بنجاح.',
+        details: 'تم تشغيل وتهيئة منظومة ركيزة RAKEEZA ERP الاحترافية بجميع وحدات المحاسبة والربط الضريبي بنجاح.',
       },
     ],
     eInvoiceConfig: {
@@ -652,7 +652,7 @@ export function getDefaultData(): AppData {
         chequeNumber: 'CHK-998821',
         bankName: 'البنك الأهلي المصري',
         drawerName: 'شركة النور للتجارة',
-        beneficiaryName: 'النزيه للمحاسبة',
+        beneficiaryName: 'منظومة RAKEEZA للمحاسبة',
         amount: 25000,
         issueDate: '2026-08-15',
         dueDate: '2026-09-01',
@@ -667,7 +667,7 @@ export function getDefaultData(): AppData {
         id: 2,
         chequeNumber: 'CHK-441102',
         bankName: 'بنك مصر',
-        drawerName: 'النزيه للمحاسبة',
+        drawerName: 'منظومة RAKEEZA للمحاسبة',
         beneficiaryName: 'مصنع الخير للإلكترونيات',
         amount: 40000,
         issueDate: '2026-08-10',
@@ -752,7 +752,7 @@ export function getDefaultData(): AppData {
     companyCatalogConfigs: {
       'COMP-000001': {
         enabled: true,
-        storeName: 'شركة النزيه للمحاسبة والتجارة',
+        storeName: 'شركة ركيزة للمحاسبة والتجارة RAKEEZA',
         storeDescription: 'الكتالوج الإلكتروني لأجهزة الكمبيوتر والشاشات والشبكات مع الطلب الفوري',
         contactPhone: '01029190615',
         whatsappNumber: '01029190615',
@@ -801,6 +801,18 @@ export function loadAppData(): AppData {
       if (storedLogo && !mergedSettings.logo && !mergedSettings.logoUrl) {
         mergedSettings.logo = storedLogo;
         mergedSettings.logoUrl = storedLogo;
+      }
+      // Migrate system/company name if it contains the old name
+      if (
+        mergedSettings.companyName === 'النزيه للمحاسبة' ||
+        mergedSettings.companyName === 'النزيه' ||
+        mergedSettings.companyName === 'شركة النزيه التجارية' ||
+        mergedSettings.companyName === 'شركة النزيه للمحاسبة والتجارة'
+      ) {
+        mergedSettings.companyName = 'منظومة RAKEEZA للمحاسبة';
+      }
+      if (mergedSettings.notes && mergedSettings.notes.includes('نظام النزيه')) {
+        mergedSettings.notes = mergedSettings.notes.replace(/نظام النزيه/g, 'منظومة RAKEEZA');
       }
       // Migrate and ensure all enterprise properties exist seamlessly
       const loaded: AppData = {
@@ -855,6 +867,24 @@ export function loadAppData(): AppData {
           ...(parsed.companyCatalogConfigs || {}),
         },
       };
+
+      // Seamlessly migrate legacy company 1 names to RAKEEZA
+      if (loaded.companies) {
+        loaded.companies = loaded.companies.map((c) => {
+          if (c.id === 'COMP-000001' && (c.name.includes('النزيه') || c.tradeName?.includes('النزيه'))) {
+            return {
+              ...c,
+              name: 'شركة ركيزة للمحاسبة والتجارة العامة (RAKEEZA)',
+              tradeName: 'ركيزة للأنظمة والحلول التقنية RAKEEZA',
+              email: 'admin@rakeeza.com',
+            };
+          }
+          return c;
+        });
+      }
+      if (loaded.companyCatalogConfigs?.['COMP-000001']?.storeName?.includes('النزيه')) {
+        loaded.companyCatalogConfigs['COMP-000001'].storeName = 'شركة ركيزة للمحاسبة والتجارة RAKEEZA';
+      }
 
       // Ensure all items have a companyId, and seed company 2 items if not present
       if (loaded.items && loaded.items.length > 0) {

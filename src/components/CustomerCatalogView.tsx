@@ -62,7 +62,7 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
     return companies[0] || {
       id: 'COMP-000001',
       code: 'RKZ-001',
-      name: appData.settings.companyName || 'شركة النزيه للمحاسبة والتجارة',
+      name: appData.settings.companyName || 'شركة ركيزة للمحاسبة والتجارة RAKEEZA',
       phone: appData.settings.phone1 || '01029190615',
     };
   }, [matchedCompany, appData.companyId, companies, appData.settings]);
@@ -476,7 +476,7 @@ ${itemsSummary}
 ---------------------------------------
 💰 *الإجمالي المطلوب:* *${order.total.toFixed(2)} ${currency}*
 ---------------------------------------
-_تم الإرسال عبر الكتالوج الإلكتروني - نظام النزيه_`;
+_تم الإرسال عبر الكتالوج الإلكتروني - منظومة RAKEEZA_`;
 
     return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
   };

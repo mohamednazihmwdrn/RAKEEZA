@@ -16,6 +16,7 @@ interface SidebarProps {
   activePage: string;
   onNavigate: (page: string) => void;
   pendingWebOrdersCount?: number;
+  onClose?: () => void;
 }
 
 interface ReportGroupDef {
@@ -41,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activePage,
   onNavigate,
   pendingWebOrdersCount = 0,
+  onClose,
 }) => {
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({
     items: false,
@@ -61,11 +63,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <nav
-      className={`fixed top-[60px] right-0 bottom-0 w-[280px] sm:w-[290px] max-w-[85vw] bg-[#1a237e] text-white overflow-y-auto transition-all duration-300 z-40 py-2 shadow-2xl border-l border-white/10 no-print ${
+      className={`fixed top-0 md:top-[60px] right-0 bottom-0 w-[85vw] max-w-[320px] md:w-[280px] bg-[#1a237e] text-white overflow-y-auto transition-all duration-300 z-50 md:z-40 py-0 md:py-2 shadow-2xl border-l border-white/10 no-print ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       <div className="flex flex-col text-sm">
+        {/* Mobile Drawer Top Bar */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3.5 bg-[#0d47a1] border-b border-white/15 sticky top-0 z-10 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🏢</span>
+            <div>
+              <span className="font-black text-[#ffd54f] text-sm tracking-wide block">RAKEEZA | ركيزة</span>
+              <span className="text-[10px] text-blue-200 block">قائمة المنظومة الإدارية</span>
+            </div>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="min-w-[36px] min-h-[36px] rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 text-white flex items-center justify-center text-sm font-bold transition cursor-pointer"
+              aria-label="إغلاق القائمة"
+            >
+              ✕
+            </button>
+          )}
+        </div>
         {/* 🏠 الرئيسية */}
         <div
           onClick={() => onNavigate('home')}

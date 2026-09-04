@@ -571,7 +571,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ appData, onUpdateData, s
                           })}
                         </td>
                         <td className="p-3.5 font-bold text-slate-900">
-                          {snap.label || 'نسخة احتياطية لنظام النزيه'}
+                          {snap.label || 'نسخة احتياطية لمنظومة RAKEEZA'}
                         </td>
                         <td className="p-3.5 text-[11px] text-slate-600">
                           {snap.dataPreview ? (

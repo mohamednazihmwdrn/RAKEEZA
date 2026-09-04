@@ -140,7 +140,7 @@ export function compileCashClosingData(
 
   return {
     company: {
-      name: settings.companyName || 'النزيه للأنظمة المحاسبية المتطورة',
+      name: settings.companyName || 'منظومة RAKEEZA للأنظمة المحاسبية المتطورة',
       address: settings.address || 'المركز الرئيسي - جمهورية مصر العربية',
       logoUrl: (settings as any).logo || (settings as any).logoUrl || '',
       phones: phones.length > 0 ? phones : ['01029190615'],

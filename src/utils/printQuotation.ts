@@ -7,7 +7,7 @@ export function generateQuotationPrintHtml(
   customSettings?: Settings
 ): string {
   const settings: Settings = customSettings || appData.settings || {
-    companyName: 'شركة النزيه التجارية',
+    companyName: 'شركة ركيزة التجارية RAKEEZA',
     address: 'الفرع الرئيسي - ش المعهد الديني',
     phone1: '01029190615',
     phone2: '',
@@ -32,7 +32,7 @@ export function generateQuotationPrintHtml(
   const docDate = quotation.date || new Date().toISOString().split('T')[0];
   const validUntilDate = quotation.validUntil || 'حسب الاتفاق المبرم';
 
-  const companyName = settings.companyName || 'شركة النزيه التجارية';
+  const companyName = settings.companyName || 'شركة ركيزة التجارية RAKEEZA';
   const companyAddress = settings.address || 'الفرع الرئيسي - ش المعهد الديني';
   const logoUrl = settings.logo || (settings as any).logoUrl || '';
   const showLogo = Boolean(settings.showLogoInPrint !== false && logoUrl);

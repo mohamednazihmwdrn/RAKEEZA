@@ -127,8 +127,8 @@ export function compileShiftReportData(
     totalExpenses,
     netProfit,
     company: {
-      name: settings.companyName || 'النزيه للمحاسبة والمبيعات',
-      companyName: settings.companyName || 'النزيه للمحاسبة والمبيعات',
+      name: settings.companyName || 'منظومة RAKEEZA للمحاسبة والمبيعات',
+      companyName: settings.companyName || 'منظومة RAKEEZA للمحاسبة والمبيعات',
       address: settings.address || 'جمهورية مصر العربية',
       logoUrl: logoSrc,
       logo: logoSrc,
@@ -246,7 +246,7 @@ ${getPrintToolbarHtml('تقرير ملخص الشفت والأرباح')}
     <!-- 1. الترويسة الديناميكية -->
     <div class="header" id="invoiceHeader">
       <div class="header-right">
-        <h2 id="settingCompanyName">النزيه للمحاسبة والمبيعات</h2>
+        <h2 id="settingCompanyName">منظومة RAKEEZA للمحاسبة والمبيعات</h2>
         <p id="settingCompanyAddress">📍 المركز الرئيسي</p>
       </div>
       <div class="header-center">

@@ -488,7 +488,7 @@ export const TreasuryView: React.FC<TreasuryViewProps> = ({ appData, onUpdateDat
             {/* 1. Header */}
             <div className="header">
               <div className="header-right">
-                <h2 className="text-xl font-bold text-[#1a237e]">{matrixData.company.companyName || 'شركة النزيه التجارية'}</h2>
+                <h2 className="text-xl font-bold text-[#1a237e]">{matrixData.company.companyName || 'شركة ركيزة التجارية RAKEEZA'}</h2>
                 <p className="text-xs text-gray-600">{matrixData.company.address || 'الفرع الرئيسي - ش المعهد الديني، القاهرة'}</p>
               </div>
               <div className="header-left">

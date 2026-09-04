@@ -10,7 +10,7 @@ export function generateGoodsIssuePrintHtml(
   appData: AppData
 ): string {
   const company = appData.settings || {
-    companyName: 'النزيه للمحاسبة والمستودعات',
+    companyName: 'منظومة RAKEEZA للمحاسبة والمستودعات',
     address: 'القاهرة، جمهورية مصر العربية',
     phone1: '01029190615',
     phone2: '',

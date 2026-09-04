@@ -1229,9 +1229,9 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
             )}
 
             {/* Add Item Form */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 items-end">
+            <div className="grid grid-cols-2 sm:grid-cols-12 gap-2 sm:gap-3 items-end">
               {/* Product Autocomplete */}
-              <div className="relative sm:col-span-6">
+              <div className="relative col-span-2 sm:col-span-6">
                 <label className="block text-xs font-bold mb-1 text-slate-700">الصنف والباركود</label>
                 <input
                   type="text"
@@ -1306,7 +1306,7 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
               </div>
 
               {/* Quantity Input */}
-              <div className="sm:col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="block text-xs font-bold mb-1 text-slate-700">الكمية</label>
                 <input
                   type="number"
@@ -1319,7 +1319,7 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
               </div>
 
               {/* Price Field (Protected / Controlled) */}
-              <div className="sm:col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <div className="flex justify-between items-center mb-1">
                   <label className="block text-xs font-bold text-slate-700">
                     السعر ({salesPricingType === 'wholesale' ? 'جملة' : 'نقدي'})
@@ -1352,74 +1352,107 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
               </div>
 
               {/* Add Button */}
-              <div className="sm:col-span-2">
+              <div className="col-span-2 sm:col-span-2">
                 <button
                   type="button"
                   onClick={handleAddItem}
                   className="w-full min-h-[44px] bg-[#1a237e] hover:bg-[#0d47a1] active:bg-[#002171] text-white px-3 py-2.5 rounded-xl font-bold transition cursor-pointer flex items-center justify-center gap-1 shadow-xs"
                 >
-                  <span>➕</span> إضافة
+                  <span>➕</span> إضافة الصنف
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Items Table */}
-          <div className="border border-gray-200 rounded-xl overflow-x-auto max-h-48">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-2">#</th>
-                  <th className="p-2">الصنف</th>
-                  <th className="p-2">الكمية</th>
-                  <th className="p-2">نوع السعر</th>
-                  <th className="p-2">سعر الوحدة</th>
-                  <th className="p-2">الإجمالي</th>
-                  <th className="p-2 text-center">إزالة</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {tempItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center p-4 text-gray-400">
-                      لم يتم إضافة أصناف بعد
-                    </td>
-                  </tr>
-                ) : (
-                  tempItems.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
-                      <td className="p-2">{idx + 1}</td>
-                      <td className="p-2 font-bold text-slate-900">{item.name}</td>
-                      <td className="p-2 font-mono font-semibold">{item.qty}</td>
-                      <td className="p-2">
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                            item.priceType === 'wholesale'
-                              ? 'bg-indigo-100 text-indigo-800'
-                              : 'bg-emerald-100 text-emerald-800'
-                          }`}
-                        >
+          {/* Items Container - Dual Mobile Cards / Desktop Table */}
+          {tempItems.length === 0 ? (
+            <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center text-gray-400 text-xs">
+              لم يتم إضافة أي أصناف إلى الفاتورة بعد
+            </div>
+          ) : (
+            <div>
+              {/* Mobile Card List for Added Items */}
+              <div className="block sm:hidden space-y-2 max-h-56 overflow-y-auto pr-0.5">
+                {tempItems.map((item, idx) => (
+                  <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-slate-900 truncate">{item.name}</div>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                        <span>الكمية: <strong className="font-mono text-slate-800">{item.qty}</strong></span>
+                        <span>×</span>
+                        <span>{item.price.toFixed(2)} ج.م</span>
+                        <span className={`text-[9px] px-1 rounded font-bold ${
+                          item.priceType === 'wholesale' ? 'bg-indigo-100 text-indigo-800' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
                           {item.priceType === 'wholesale' ? 'جملة' : 'نقدي'}
                         </span>
-                      </td>
-                      <td className="p-2 font-mono">{item.price.toFixed(2)} ج.م</td>
-                      <td className="p-2 font-bold font-mono text-[#1a237e]">{item.total.toFixed(2)} ج.م</td>
-                      <td className="p-2 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(idx)}
-                          className="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs transition cursor-pointer font-bold"
-                          title="حذف الصنف"
-                        >
-                          ✕
-                        </button>
-                      </td>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-bold font-mono text-[#1a237e]">{item.total.toFixed(2)} ج.م</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(idx)}
+                        className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm transition"
+                        title="حذف الصنف"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table for Added Items */}
+              <div className="hidden sm:block border border-gray-200 rounded-xl overflow-x-auto max-h-48">
+                <table className="w-full text-right text-xs">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="p-2">#</th>
+                      <th className="p-2">الصنف</th>
+                      <th className="p-2">الكمية</th>
+                      <th className="p-2">نوع السعر</th>
+                      <th className="p-2">سعر الوحدة</th>
+                      <th className="p-2">الإجمالي</th>
+                      <th className="p-2 text-center">إزالة</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {tempItems.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="p-2">{idx + 1}</td>
+                        <td className="p-2 font-bold text-slate-900">{item.name}</td>
+                        <td className="p-2 font-mono font-semibold">{item.qty}</td>
+                        <td className="p-2">
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                              item.priceType === 'wholesale'
+                                ? 'bg-indigo-100 text-indigo-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {item.priceType === 'wholesale' ? 'جملة' : 'نقدي'}
+                          </span>
+                        </td>
+                        <td className="p-2 font-mono">{item.price.toFixed(2)} ج.م</td>
+                        <td className="p-2 font-bold font-mono text-[#1a237e]">{item.total.toFixed(2)} ج.م</td>
+                        <td className="p-2 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItem(idx)}
+                            className="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs transition cursor-pointer font-bold"
+                            title="حذف الصنف"
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Discounts & Tax */}
           <div className="grid grid-cols-3 gap-3">

@@ -74,7 +74,7 @@ export interface PrintDocumentConfig {
  * - Formal footer and copyright: "حقوق الملكية محفوظة Mohamed Nazih 01029190615"
  */
 export function generateUnifiedReportHtml(config: UnifiedReportConfig): string {
-  const companyName = config.company?.name || 'شركة النزيه التجارية';
+  const companyName = config.company?.name || 'شركة ركيزة التجارية RAKEEZA';
   const companyAddress = config.company?.address || 'الفرع الرئيسي - جمهورية مصر العربية';
   const companyLogo = config.company?.logo || '';
   const phones = config.company?.phones && config.company.phones.length > 0
@@ -594,7 +594,7 @@ export function generateUnifiedReportHtml(config: UnifiedReportConfig): string {
         ${
           companyLogo
             ? `<img id="compLogo" class="logo-img" src="${companyLogo}" alt="شعار">`
-            : `<div style="font-size:11px;border:1px dashed #999;padding:4px 8px;border-radius:4px;">النزيه ERP</div>`
+            : `<div style="font-size:11px;border:1px dashed #999;padding:4px 8px;border-radius:4px;">RAKEEZA ERP</div>`
         }
       </div>
       <div class="header-left">
@@ -740,7 +740,7 @@ export function openUnifiedPrintWindow(
     unifiedConfig = doc as UnifiedReportConfig;
   } else {
     const d = doc as PrintDocumentConfig;
-    const companyName = settings?.companyName || 'شركة النزيه التجارية';
+    const companyName = settings?.companyName || 'شركة ركيزة التجارية RAKEEZA';
     const companyAddress = settings?.address || 'جمهورية مصر العربية';
     const phones = [settings?.phone1, settings?.phone2, settings?.phone3].filter(Boolean) as string[];
 

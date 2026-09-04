@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppData } from './types';
 import { loadAppData, saveAppData } from './utils/storage';
 import { Header } from './components/Header';
@@ -49,12 +49,29 @@ import {
   downloadBackupJsonFile,
   shouldTriggerAutoBackup,
 } from './utils/autoBackup';
+import { LoginView } from './components/LoginView';
+import {
+  fetchCurrentSession,
+  fetchTenantDataCloud,
+  saveTenantDataCloud,
+  logoutFromCloud,
+  activateTenantLicenseCloud,
+  AuthSessionResponse,
+} from './services/cloudApi';
+import { AlertTriangle, KeyRound } from 'lucide-react';
 
 export default function App() {
   const [appData, setAppData] = useState<AppData>(() => loadAppData());
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isShareCatalogOpen, setIsShareCatalogOpen] = useState<boolean>(false);
+
+  // Cloud Authentication & Tenant Session State
+  const [session, setSession] = useState<AuthSessionResponse | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
+  const [licenseCodeInput, setLicenseCodeInput] = useState<string>('');
+  const [isActivatingLicense, setIsActivatingLicense] = useState<boolean>(false);
 
   // Global Transaction Inspector Modal State (Click-to-inspect, print, edit, delete, review)
   const [inspectModalItem, setInspectModalItem] = useState<InspectableItem | null>(null);
@@ -80,6 +97,114 @@ export default function App() {
   const updateData = (newData: AppData) => {
     setAppData(newData);
     saveAppData(newData);
+    if (session?.company?.id) {
+      saveTenantDataCloud(newData, session.company.id).catch((err) => {
+        console.warn('Cloud sync error:', err);
+      });
+    }
+  };
+
+  // ☁️ Initialize and Validate Cloud Authentication Session on App Launch
+  useEffect(() => {
+    let isMounted = true;
+    const initSession = async () => {
+      try {
+        const activeSession = await fetchCurrentSession();
+        if (isMounted) {
+          if (activeSession.valid && activeSession.user && activeSession.company) {
+            setSession(activeSession);
+            // Fetch isolated tenant data directly from cloud database
+            const cloudRes = await fetchTenantDataCloud(activeSession.company.id);
+            if (cloudRes.success && cloudRes.data) {
+              setAppData(cloudRes.data);
+            }
+          } else {
+            setSession(null);
+          }
+        }
+      } catch (err) {
+        console.error('Session init error:', err);
+      } finally {
+        if (isMounted) {
+          setIsAuthLoading(false);
+        }
+      }
+    };
+    initSession();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 🔐 Login Success Handler
+  const handleLoginSuccess = async (loginResult: {
+    user: any;
+    company: any;
+    subscription: any;
+  }) => {
+    setSession({
+      valid: true,
+      user: loginResult.user,
+      company: loginResult.company,
+      subscription: loginResult.subscription,
+    });
+
+    showToast(
+      `مرحباً بك ${loginResult.user.name}! تم تسجيل الدخول إلى شركة: ${loginResult.company.name}`,
+      'success'
+    );
+
+    // Fetch tenant-isolated ERP data from cloud server
+    try {
+      const cloudRes = await fetchTenantDataCloud(loginResult.company.id);
+      if (cloudRes.success && cloudRes.data) {
+        setAppData(cloudRes.data);
+      }
+    } catch (e) {
+      console.error('Failed fetching tenant cloud data on login:', e);
+    }
+
+    if (loginResult.user.role === 'owner') {
+      setCurrentPage('owner_panel');
+    } else {
+      setCurrentPage('home');
+    }
+  };
+
+  // 🚪 Logout Handler
+  const handleLogout = async () => {
+    await logoutFromCloud();
+    setSession(null);
+    showToast('تم تسجيل الخروج بنجاح من المنظومة', 'info');
+  };
+
+  // 🔑 License Activation Submission
+  const handleActivateLicenseSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!licenseCodeInput.trim()) {
+      showToast('يرجى إدخال كود التفعيل', 'warning');
+      return;
+    }
+
+    setIsActivatingLicense(true);
+    try {
+      const res = await activateTenantLicenseCloud(licenseCodeInput.trim());
+      if (res.success) {
+        showToast(res.message, 'success');
+        setIsLicenseModalOpen(false);
+        setLicenseCodeInput('');
+        const freshSession = await fetchCurrentSession();
+        if (freshSession.valid) {
+          setSession(freshSession);
+        }
+      } else {
+        showToast(res.message || 'كود التفعيل غير صالح', 'error');
+      }
+    } catch {
+      showToast('فشل تفعيل الترخيص', 'error');
+    } finally {
+      setIsActivatingLicense(false);
+    }
   };
 
   // 🌐 Real-time Synchronization across tabs/windows for incoming web orders + Auto Print
@@ -241,9 +366,16 @@ export default function App() {
     return () => window.removeEventListener('popstate', checkCatalogRoute);
   }, []);
 
-  const currentUser = appData.users.find((u) => u.id === appData.currentUser) || appData.users[0];
-  const isOwner = currentUser?.role === 'owner' || appData.isOwnerAuthenticated;
-  const userCompanyId = currentUser?.companyId || appData.companyId || 'COMP-000001';
+  const currentUser =
+    session?.user ||
+    appData.users.find((u) => u.id === appData.currentUser) ||
+    appData.users[0];
+  const isOwner =
+    session?.user?.role === 'owner' ||
+    currentUser?.role === 'owner' ||
+    appData.isOwnerAuthenticated;
+  const userCompanyId =
+    session?.company?.id || currentUser?.companyId || appData.companyId || 'COMP-000001';
 
   const pendingWebOrdersCount = (appData.quotations || []).filter((q) => {
     const isWebOrder =
@@ -487,13 +619,47 @@ export default function App() {
     );
   }
 
+  // Cloud Auth Loading State
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-sans" dir="rtl">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-amber-400 p-0.5 shadow-xl flex items-center justify-center mb-4 animate-pulse">
+          <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+            <span className="text-3xl font-black text-amber-400">R</span>
+          </div>
+        </div>
+        <div className="w-7 h-7 border-3 border-blue-400/30 border-t-blue-400 rounded-full animate-spin mb-3" />
+        <h3 className="text-lg font-bold text-white tracking-wide">RAKEEZA Cloud ERP</h3>
+        <p className="text-xs text-slate-400 mt-1">جاري التحقق من الجلسة السحابية وعزل بيانات الشركة...</p>
+      </div>
+    );
+  }
+
+  // Not Logged In Gate: Display Login Page
+  if (!session?.valid && currentPage !== 'catalog') {
+    return (
+      <>
+        <LoginView
+          onLoginSuccess={handleLoginSuccess}
+          onOpenOwnerPanelDirectly={() => {
+            setCurrentPage('owner_panel');
+          }}
+        />
+        <Toast message={toastMessage} type={toastType} />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f0f2f5] text-slate-800 flex flex-col font-sans max-w-full overflow-x-hidden" dir="rtl">
       {/* Header */}
       <Header
         currentUser={currentUser}
+        companyName={session?.company?.name || appData.settings?.companyName}
+        companyCode={session?.company?.code || userCompanyId}
+        subscriptionPlan={session?.subscription?.planName || session?.company?.planName}
         onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-        onLogout={() => showToast('تم خروج المدير بنجاح', 'info')}
+        onLogout={handleLogout}
         autoBackupActive={appData.autoBackupConfig?.enabled ?? true}
         onNavigateBackup={() => handleNavigate('backup')}
         onNavigateOwner={() => handleNavigate('owner_panel')}
@@ -518,6 +684,7 @@ export default function App() {
         activePage={currentPage}
         onNavigate={handleNavigate}
         pendingWebOrdersCount={pendingWebOrdersCount}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       {/* Main Content Area */}
@@ -526,6 +693,32 @@ export default function App() {
           isSidebarOpen ? 'md:mr-[290px]' : 'mr-0'
         }`}
       >
+        {/* Subscription Status Banner if expired or warning */}
+        {session?.subscription?.isExpired && (
+          <div className="mb-4 p-3.5 bg-amber-500/15 border-2 border-amber-500/40 rounded-2xl text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-800">
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+              </div>
+              <div className="text-xs sm:text-sm">
+                <p className="font-extrabold text-amber-950">
+                  تنبيه: انتهت صلاحية اشتراك المنظومة لشركة ({session?.company?.name || 'الشركة'})
+                </p>
+                <p className="text-amber-800 text-xs">
+                  بياناتك ومستنداتك محفوظة بأمان تام في السحابة. لتجديد الترخيص ومتابعة العمل، يرجى إدخال كود التفعيل المعتمد.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsLicenseModalOpen(true)}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition-all shadow-sm cursor-pointer whitespace-nowrap"
+            >
+              🔑 إدخال كود الترخيص
+            </button>
+          </div>
+        )}
+
         {/* Page Top Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-5 pb-3 border-b-2 border-slate-200 gap-3">
           <div className="w-full sm:w-auto">
@@ -617,12 +810,12 @@ export default function App() {
 
       {/* System Footer & Developer Copyright */}
       <footer
-        className={`no-print py-3.5 px-4 sm:px-6 bg-white border-t border-slate-200 text-xs text-slate-600 transition-all duration-300 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs ${
+        className={`no-print py-3.5 px-4 sm:px-6 bg-white border-t border-slate-200 text-xs text-slate-600 transition-all duration-300 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs mb-16 md:mb-0 ${
           isSidebarOpen ? 'md:mr-[290px]' : 'mr-0'
         }`}
       >
         <div className="flex items-center gap-2 text-center sm:text-right">
-          <span className="font-bold text-[#1a237e] text-sm">النزيه للمحاسبة السحابية</span>
+          <span className="font-bold text-[#1a237e] text-sm">منظومة ركيزة | RAKEEZA ERP</span>
           <span className="text-slate-300">|</span>
           <span>جميع الحقوق محفوظة © {new Date().getFullYear()}</span>
         </div>
@@ -663,6 +856,80 @@ export default function App() {
           onUpdateData={updateData}
           showToast={showToast}
         />
+      )}
+
+      {/* Subscription License Activation Modal */}
+      {isLicenseModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in"
+          dir="rtl"
+          onClick={() => setIsLicenseModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative border border-slate-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">
+                    تفعيل كود ترخيص واشتراك المنظومة
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    شركة: {session?.company?.name || 'الشركة'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsLicenseModalOpen(false)}
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleActivateLicenseSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  أدخل كود الترخيص السحابي (Activation Code):
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  value={licenseCodeInput}
+                  onChange={(e) => setLicenseCodeInput(e.target.value.toUpperCase())}
+                  placeholder="مثال: RKZ-2026-PRO-ANNUAL-001"
+                  dir="ltr"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl px-4 py-2.5 text-center text-sm font-mono tracking-widest text-slate-900 outline-none uppercase"
+                  disabled={isActivatingLicense}
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  يمكنك الحصول على كود الترخيص من إدارة مبيعات ركيزة
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={isActivatingLicense}
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+                >
+                  {isActivatingLicense ? 'جاري التحقق والتفعيل...' : 'تفعيل وتجديد الاشتراك'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLicenseModalOpen(false)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition cursor-pointer"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

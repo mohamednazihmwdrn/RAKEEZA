@@ -26,7 +26,7 @@ export function compileBankReconciliationData(
   targetDate?: string
 ): BankReconciliationData {
   const company = appData.settings || {
-    companyName: 'شركة النزيه التجارية',
+    companyName: 'شركة ركيزة التجارية RAKEEZA',
     address: 'الفرع الرئيسي - ش المعهد الديني، القاهرة',
     phone1: '01029190615',
     phone2: '',
@@ -135,7 +135,7 @@ export function generateBankReconciliationReportHtml(
   const data = compileBankReconciliationData(appData, bankAccountId, targetDate);
 
   const phone = data.company.phone1 || '01029190615';
-  const companyTitle = data.company.companyName || 'شركة النزيه التجارية';
+  const companyTitle = data.company.companyName || 'شركة ركيزة التجارية RAKEEZA';
   const branchAddress = data.company.address || 'الفرع الرئيسي - ش المعهد الديني';
 
   const now = new Date();
