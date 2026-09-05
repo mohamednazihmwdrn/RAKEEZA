@@ -102,7 +102,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ appData, onUpdateData, s
     if (
       !confirm(
         `⚠️ تنبيه هام!\nهل أنت متأكد من استعادة بيانات النظام إلى نقطة (${snapshot.label || 'النسخة المحددة'}) بتاريخ ${new Date(
-          snapshot.date
+          snapshot.date || Date.now()
         ).toLocaleString('ar-EG')}؟\nسيتم حفظ نقطة أمان احتياطية قبل الاستعادة تلقائياً.`
       )
     ) {
@@ -561,7 +561,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ appData, onUpdateData, s
                           </span>
                         </td>
                         <td className="p-3.5 font-medium text-slate-600 whitespace-nowrap">
-                          {new Date(snap.date).toLocaleString('ar-EG', {
+                          {new Date(snap.date || Date.now()).toLocaleString('ar-EG', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',

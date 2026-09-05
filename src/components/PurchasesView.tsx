@@ -670,7 +670,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
                 <div className="text-left shrink-0">
                   <div className="text-xs text-slate-500">القيمة الإجمالية</div>
                   <div className="font-black text-[#1a237e] text-base font-mono">
-                    {inv.total.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                    {(inv.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
                   </div>
                 </div>
               </div>

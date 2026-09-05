@@ -151,7 +151,7 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
 
       updated.journalEntries = [jv, ...updated.journalEntries];
       updated.nextJournalId = nextJournalId + 1;
-      showToast(`تم تحصيل الشيك وإيداع ${chq.amount.toLocaleString()} ${currency} في ${targetBankName}`, 'success');
+      showToast(`تم تحصيل الشيك وإيداع ${(chq.amount || 0).toLocaleString()} ${currency} في ${targetBankName}`, 'success');
     } else if (newStatus === 'bounced') {
       // Revert customer balance
       if (chq.type === 'receivable') {
@@ -281,7 +281,7 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
                 تنبيه استحقاق: يوجد {dueCheques.length} شيك مستحق الصرف أو التحصيل اليوم!
               </strong>
               <span>
-                إجمالي المبالغ المستحقة: <strong>{dueCheques.reduce((a, b) => a + b.amount, 0).toLocaleString()} {currency}</strong>
+                إجمالي المبالغ المستحقة: <strong>{dueCheques.reduce((a, b) => a + (b.amount || 0), 0).toLocaleString()} {currency}</strong>
               </span>
             </div>
           </div>
@@ -299,7 +299,7 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs text-slate-500 font-bold block">أوراق القبض تحت التحصيل (مستحقات للشركة)</span>
-            <strong className="text-xl font-black text-emerald-700">{totalReceivable.toLocaleString()} {currency}</strong>
+            <strong className="text-xl font-black text-emerald-700">{(totalReceivable || 0).toLocaleString()} {currency}</strong>
           </div>
           <span className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xl">📥</span>
         </div>
@@ -307,7 +307,7 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs text-slate-500 font-bold block">أوراق الدفع الصادرة (التزامات على الشركة)</span>
-            <strong className="text-xl font-black text-rose-700">{totalPayable.toLocaleString()} {currency}</strong>
+            <strong className="text-xl font-black text-rose-700">{(totalPayable || 0).toLocaleString()} {currency}</strong>
           </div>
           <span className="p-3 bg-rose-50 text-rose-800 rounded-xl text-xl">📤</span>
         </div>
@@ -399,7 +399,7 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
                         )}
                       </td>
                       <td className="p-3 text-left font-black text-slate-900 text-sm">
-                        {c.amount.toLocaleString()} {currency}
+                        {(c.amount || 0).toLocaleString()} {currency}
                       </td>
                       <td className="p-3 text-center font-mono text-slate-500">{c.issueDate}</td>
                       <td className="p-3 text-center font-mono font-bold">
@@ -584,7 +584,7 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
 
             <div className="bg-slate-50 p-3 rounded-xl text-xs space-y-1">
               <div>الطرف: <strong>{actionCheque.type === 'receivable' ? actionCheque.drawerName : actionCheque.beneficiaryName}</strong></div>
-              <div>المبلغ: <strong className="text-blue-900">{actionCheque.amount.toLocaleString()} {currency}</strong></div>
+              <div>المبلغ: <strong className="text-blue-900">{(actionCheque.amount || 0).toLocaleString()} {currency}</strong></div>
               <div>تاريخ الاستحقاق: <strong className="font-mono">{actionCheque.dueDate}</strong></div>
             </div>
 
@@ -627,7 +627,7 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
                     className="w-full p-2 border border-slate-300 rounded-xl bg-white text-xs"
                   >
                     {appData.suppliers.map((s) => (
-                      <option key={s.id} value={s.name}>{s.name} (رصيده: {s.balance.toLocaleString()} {currency})</option>
+                      <option key={s.id} value={s.name}>{s.name} (رصيده: {(s.balance || 0).toLocaleString()} {currency})</option>
                     ))}
                   </select>
                   <button

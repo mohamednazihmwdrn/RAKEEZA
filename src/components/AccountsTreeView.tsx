@@ -718,19 +718,19 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
             <div className="text-center">
               <span className="text-xs text-slate-500 block mb-1">إجمالي المدين (Debit)</span>
               <strong className="text-emerald-700 text-lg font-mono">
-                {accountStats.totalDebit.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                {(accountStats?.totalDebit || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
               </strong>
             </div>
             <div className="text-center">
               <span className="text-xs text-slate-500 block mb-1">إجمالي الدائن (Credit)</span>
               <strong className="text-rose-700 text-lg font-mono">
-                {accountStats.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                {(accountStats?.totalCredit || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
               </strong>
             </div>
             <div className="text-center">
               <span className="text-xs text-slate-500 block mb-1">الرصيد الصافي الحالي</span>
               <strong className="text-[#1a237e] text-xl font-mono font-black">
-                {accountStats.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                {(accountStats?.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
               </strong>
             </div>
           </div>

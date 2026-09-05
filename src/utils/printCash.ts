@@ -515,7 +515,7 @@ export function generateCashVoucherPrintHtml(
         <div class="voucher-row" style="justify-content: space-between;">
           <div>
             <strong>${isReceive ? 'المبلغ المقبوض:' : 'المبلغ المنصرف:'} </strong>
-            <span class="amount-highlight"><span>${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> ${currency}</span>
+            <span class="amount-highlight"><span>${(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> ${currency}</span>
           </div>
           <div>
             <strong>وسيلة الدفع: </strong>

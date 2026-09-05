@@ -608,19 +608,19 @@ ${getPrintToolbarHtml(reportTitle)}
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-title">أوراق قبض (تحت التحصيل)</div>
-        <div class="kpi-value status-pending">${pendingReceivableTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-value status-pending">${(pendingReceivableTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">أوراق قبض (مُحصلة)</div>
-        <div class="kpi-value status-collected">${collectedReceivableTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-value status-collected">${(collectedReceivableTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">أوراق دفع مستحقة (علينا)</div>
-        <div class="kpi-value type-pay">${pendingPayableTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-value type-pay">${(pendingPayableTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">شيكات مرتجعة / مرفوضة</div>
-        <div class="kpi-value status-rejected">${bouncedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-value status-rejected">${(bouncedTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
     </div>
 
@@ -646,7 +646,7 @@ ${getPrintToolbarHtml(reportTitle)}
           <tr>
             <td colspan="4">الإجمالـــي العام للأوراق المعروضة</td>
             <td>-</td>
-            <td style="font-weight:bold;">${displayedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+            <td style="font-weight:bold;">${(displayedTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
             <td colspan="2">صافي الأوراق النشطة</td>
           </tr>
         </tfoot>

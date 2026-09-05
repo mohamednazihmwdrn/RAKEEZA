@@ -68,9 +68,9 @@ export function printAccountsTreeWindow(
           <td style="text-align: right;">${indent}${acc.name}</td>
           <td style="text-align: center; font-size: 0.85em;">${getTypeNameAr(acc.type)}</td>
           <td style="text-align: center; font-family: monospace;">${acc.parentCode || '-'}</td>
-          <td style="text-align: right; font-family: monospace; color: #047857;">${stats.totalDebit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-          <td style="text-align: right; font-family: monospace; color: #be123c;">${stats.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-          <td style="text-align: right; font-family: monospace; font-weight: bold; color: ${stats.balance >= 0 ? '#047857' : '#be123c'};">${stats.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align: right; font-family: monospace; color: #047857;">${(stats?.totalDebit || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align: right; font-family: monospace; color: #be123c;">${(stats?.totalCredit || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align: right; font-family: monospace; font-weight: bold; color: ${(stats?.balance || 0) >= 0 ? '#047857' : '#be123c'};">${(stats?.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
         </tr>
       `;
     })
@@ -240,23 +240,23 @@ export function printAccountsTreeWindow(
     <div class="kpis-grid">
       <div class="kpi-card">
         <div class="kpi-title">إجمالي الأصول</div>
-        <div class="kpi-val">${totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-val">${(totalAssets || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">إجمالي الخصوم</div>
-        <div class="kpi-val">${totalLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-val">${(totalLiabilities || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">حقوق الملكية</div>
-        <div class="kpi-val">${totalEquities.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-val">${(totalEquities || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">إجمالي الإيرادات</div>
-        <div class="kpi-val">${totalRevenues.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-val">${(totalRevenues || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">إجمالي المصروفات</div>
-        <div class="kpi-val">${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-val">${(totalExpenses || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
     </div>
 
@@ -407,9 +407,9 @@ export function printCostCentersWindow(
           <td style="text-align: right; font-weight: bold;">${cc.name}</td>
           <td style="text-align: center;">${cc.manager || 'المدير العام'}</td>
           <td style="text-align: center; font-family: monospace;">${count} حركة</td>
-          <td style="text-align: right; font-family: monospace; color: #047857;">${totalDebits.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-          <td style="text-align: right; font-family: monospace; color: #be123c;">${totalCredits.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-          <td style="text-align: right; font-family: monospace; font-weight: bold; color: ${netBalance >= 0 ? '#047857' : '#be123c'};">${netBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align: right; font-family: monospace; color: #047857;">${(totalDebits || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align: right; font-family: monospace; color: #be123c;">${(totalCredits || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align: right; font-family: monospace; font-weight: bold; color: ${netBalance >= 0 ? '#047857' : '#be123c'};">${(netBalance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
         </tr>
       `;
     })

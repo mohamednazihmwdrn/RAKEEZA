@@ -309,8 +309,8 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
                   />
                 </div>
                 <div className="flex justify-between text-[10.5px] text-slate-400">
-                  <span>المحقق: {rep.totalSales.toLocaleString()} {currency}</span>
-                  <span>الهدف: {rep.targetSales.toLocaleString()} {currency}</span>
+                  <span>المحقق: {(rep.totalSales || 0).toLocaleString()} {currency}</span>
+                  <span>الهدف: {(rep.targetSales || 0).toLocaleString()} {currency}</span>
                 </div>
               </div>
 
@@ -322,11 +322,11 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">إجمالي العمولات المستحقة:</span>
-                  <strong className="text-emerald-700">{rep.totalCommissionEarned.toLocaleString()} {currency}</strong>
+                  <strong className="text-emerald-700">{(rep.totalCommissionEarned || 0).toLocaleString()} {currency}</strong>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">العمولات المعلقة للصرف:</span>
-                  <strong className="text-amber-700">{rep.pendingCommission.toLocaleString()} {currency}</strong>
+                  <strong className="text-amber-700">{(rep.pendingCommission || 0).toLocaleString()} {currency}</strong>
                 </div>
               </div>
 
@@ -383,7 +383,7 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
                   <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-mono">
                     <div>
                       <span className="text-[10px] text-slate-400 block font-sans">قيمة الفاتورة</span>
-                      <strong className="text-slate-800">{c.invoiceAmount.toLocaleString()} {currency}</strong>
+                      <strong className="text-slate-800">{(c.invoiceAmount || 0).toLocaleString()} {currency}</strong>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 block font-sans">نسبة العمولة</span>
@@ -392,7 +392,7 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
                     <div className="col-span-2 pt-1 border-t border-slate-200/50 flex justify-between items-center">
                       <span className="text-xs text-slate-600 font-sans">مبلغ العمولة:</span>
                       <strong className="text-emerald-800 text-sm font-black">
-                        {c.commissionAmount.toLocaleString()} {currency}
+                        {(c.commissionAmount || 0).toLocaleString()} {currency}
                       </strong>
                     </div>
                   </div>
@@ -438,10 +438,10 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
                     <tr key={c.id} className="hover:bg-slate-50">
                       <td className="p-3 font-bold text-slate-800">{c.salesRepName}</td>
                       <td className="p-3 font-mono text-blue-900 font-bold">#{c.invoiceNumber}</td>
-                      <td className="p-3 text-left font-bold">{c.invoiceAmount.toLocaleString()} {currency}</td>
+                      <td className="p-3 text-left font-bold">{(c.invoiceAmount || 0).toLocaleString()} {currency}</td>
                       <td className="p-3 text-center font-bold">{c.rate}%</td>
                       <td className="p-3 text-left font-black text-emerald-800 text-sm">
-                        {c.commissionAmount.toLocaleString()} {currency}
+                        {(c.commissionAmount || 0).toLocaleString()} {currency}
                       </td>
                       <td className="p-3 text-center">
                         <span
@@ -503,12 +503,12 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
                   <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                     <div>
                       <span className="text-[10px] text-slate-400 block">المديونية الحالية:</span>
-                      <strong className="font-mono text-rose-700 font-black">{cust.balance.toLocaleString()} {currency}</strong>
+                      <strong className="font-mono text-rose-700 font-black">{(cust.balance || 0).toLocaleString()} {currency}</strong>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 block">سقف الائتمان:</span>
                       <strong className="font-mono text-slate-800">
-                        {limit > 0 ? `${limit.toLocaleString()} ${currency}` : 'مفتوح'}
+                        {limit > 0 ? `${(limit || 0).toLocaleString()} ${currency}` : 'مفتوح'}
                       </strong>
                     </div>
                     <div className="col-span-2 text-slate-600">
@@ -553,9 +553,9 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
                     <tr key={cust.id} className="hover:bg-slate-50">
                       <td className="p-3 font-bold text-slate-900">{cust.name}</td>
                       <td className="p-3 font-mono text-slate-500" dir="ltr">{cust.phone}</td>
-                      <td className="p-3 text-left font-black text-rose-700">{cust.balance.toLocaleString()} {currency}</td>
+                      <td className="p-3 text-left font-black text-rose-700">{(cust.balance || 0).toLocaleString()} {currency}</td>
                       <td className="p-3 text-left font-bold text-slate-800">
-                        {limit > 0 ? `${limit.toLocaleString()} ${currency}` : 'غير محدد (مفتوح)'}
+                        {limit > 0 ? `${(limit || 0).toLocaleString()} ${currency}` : 'غير محدد (مفتوح)'}
                       </td>
                       <td className="p-3 text-center font-semibold">{cust.paymentGracePeriodDays || 30} يوم</td>
                       <td className="p-3 text-center">
@@ -680,7 +680,7 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
                   placeholder="0 تعني بدون حد"
                 />
                 <span className="text-[10.5px] text-slate-500 block mt-1">
-                  المديونية الحالية للعميل: <strong>{editingCustomer.balance.toLocaleString()} {currency}</strong>
+                  المديونية الحالية للعميل: <strong>{(editingCustomer?.balance || 0).toLocaleString()} {currency}</strong>
                 </span>
               </div>
 

@@ -7,10 +7,10 @@ interface HomeViewProps {
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
-  const totalSales = appData.salesInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-  const totalPurchases = appData.purchaseInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-  const stockValue = appData.items.reduce((sum, item) => sum + (item.quantity || 0) * (item.purchasePrice || 0), 0);
-  const activeBranch = appData.branches?.find((b) => b.id === appData.activeBranchId) || appData.branches?.[0];
+  const totalSales = (appData?.salesInvoices || []).reduce((sum, inv) => sum + (Number(inv?.total) || 0), 0);
+  const totalPurchases = (appData?.purchaseInvoices || []).reduce((sum, inv) => sum + (Number(inv?.total) || 0), 0);
+  const stockValue = (appData?.items || []).reduce((sum, item) => sum + (Number(item?.quantity) || 0) * (Number(item?.purchasePrice) || 0), 0);
+  const activeBranch = appData?.branches?.find((b) => b.id === appData?.activeBranchId) || appData?.branches?.[0];
 
   return (
     <div className="space-y-3 sm:space-y-5">
@@ -60,7 +60,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
           <div className="flex justify-between items-start mb-1">
             <div className="text-2xl sm:text-3xl">💰</div>
             <span className="bg-[#1a237e] text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono">
-              {appData.salesInvoices.length}
+              {(appData?.salesInvoices || []).length}
             </span>
           </div>
           <h3 className="text-[#1a237e] font-bold text-xs sm:text-base mb-0.5">المبيعات والفواتير</h3>
@@ -75,7 +75,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
           <div className="flex justify-between items-start mb-1">
             <div className="text-2xl sm:text-3xl">🛒</div>
             <span className="bg-indigo-600 text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono">
-              {appData.purchaseInvoices.length}
+              {(appData?.purchaseInvoices || []).length}
             </span>
           </div>
           <h3 className="text-[#1a237e] font-bold text-xs sm:text-base mb-0.5">المشتريات والتوريد</h3>
@@ -90,7 +90,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
           <div className="flex justify-between items-start mb-1">
             <div className="text-2xl sm:text-3xl">💵</div>
             <span className="bg-emerald-600 text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono">
-              {appData.cashTransactions.length}
+              {(appData?.cashTransactions || []).length}
             </span>
           </div>
           <h3 className="text-[#1a237e] font-bold text-xs sm:text-base mb-0.5">الخزينة والسيولة</h3>
@@ -105,7 +105,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
           <div className="flex justify-between items-start mb-1">
             <div className="text-2xl sm:text-3xl">📋</div>
             <span className="bg-purple-600 text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono">
-              {appData.customers.length + appData.suppliers.length}
+              {(appData?.customers || []).length + (appData?.suppliers || []).length}
             </span>
           </div>
           <h3 className="text-[#1a237e] font-bold text-xs sm:text-base mb-0.5">العملاء والموردين</h3>
@@ -202,27 +202,27 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
           <div className="bg-slate-50 p-2.5 sm:p-3.5 rounded-xl border border-slate-200/80">
             <span className="text-slate-500 block mb-0.5 text-[11px]">إجمالي المبيعات</span>
             <strong className="text-[#2e7d32] text-sm sm:text-base md:text-lg font-bold font-mono">
-              {totalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+              {(totalSales ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
             </strong>
           </div>
           <div className="bg-slate-50 p-2.5 sm:p-3.5 rounded-xl border border-slate-200/80">
             <span className="text-slate-500 block mb-0.5 text-[11px]">إجمالي المشتريات</span>
             <strong className="text-[#c62828] text-sm sm:text-base md:text-lg font-bold font-mono">
-              {totalPurchases.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+              {(totalPurchases ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
             </strong>
           </div>
           <div className="bg-slate-50 p-2.5 sm:p-3.5 rounded-xl border border-slate-200/80">
             <span className="text-slate-500 block mb-0.5 text-[11px]">عدد العملاء</span>
-            <strong className="text-[#1a237e] text-sm sm:text-base md:text-lg font-bold font-mono">{appData.customers.length}</strong>
+            <strong className="text-[#1a237e] text-sm sm:text-base md:text-lg font-bold font-mono">{(appData?.customers || []).length}</strong>
           </div>
           <div className="bg-slate-50 p-2.5 sm:p-3.5 rounded-xl border border-slate-200/80">
             <span className="text-slate-500 block mb-0.5 text-[11px]">عدد الموردين</span>
-            <strong className="text-[#1a237e] text-sm sm:text-base md:text-lg font-bold font-mono">{appData.suppliers.length}</strong>
+            <strong className="text-[#1a237e] text-sm sm:text-base md:text-lg font-bold font-mono">{(appData?.suppliers || []).length}</strong>
           </div>
           <div className="bg-slate-50 p-2.5 sm:p-3.5 rounded-xl border border-slate-200/80 col-span-2 sm:col-span-1">
             <span className="text-slate-500 block mb-0.5 text-[11px]">قيمة المخزون الكلي</span>
             <strong className="text-[#f57f17] text-sm sm:text-base md:text-lg font-bold font-mono">
-              {stockValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+              {(stockValue ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
             </strong>
           </div>
         </div>

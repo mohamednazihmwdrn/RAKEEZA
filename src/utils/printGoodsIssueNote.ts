@@ -52,9 +52,9 @@ export function generateGoodsIssuePrintHtml(
         <td>${item.code || `ITM-${String(idx + 1).padStart(3, '0')}`}</td>
         <td class="text-right">${item.name || 'صنف غير مسمى'}</td>
         <td>${item.unit || 'قطعة'}</td>
-        <td class="amount-cell">${Number(item.qty).toLocaleString('en-US')}</td>
-        <td class="amount-cell">${Number(item.unitCost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td class="amount-cell">${(Number(item.totalCost) || Number(item.qty) * Number(item.unitCost)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td class="amount-cell">${(Number(item.qty) || 0).toLocaleString('en-US')}</td>
+        <td class="amount-cell">${(Number(item.unitCost) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td class="amount-cell">${(Number(item.totalCost) || Number(item.qty || 0) * Number(item.unitCost || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       </tr>
     `
         )
@@ -198,11 +198,11 @@ export function generateGoodsIssuePrintHtml(
       </div>
       <div class="kpi-card">
         <div class="kpi-title">إجمالي عدد الكميات</div>
-        <div class="kpi-value amount-cell">${totalQty.toLocaleString('en-US')}</div>
+        <div class="kpi-value amount-cell">${(totalQty || 0).toLocaleString('en-US')}</div>
       </div>
       <div class="kpi-card kpi-total">
         <div class="kpi-title" style="color: #1d4ed8;">إجمالي التكلفة المصروفة</div>
-        <div class="kpi-value amount-cell">${grandTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}</div>
+        <div class="kpi-value amount-cell">${(grandTotalCost || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}</div>
       </div>
     </div>
 
@@ -226,9 +226,9 @@ export function generateGoodsIssuePrintHtml(
         <tfoot>
           <tr>
             <td colspan="4" class="text-right">الإجمالـــي العــام</td>
-            <td class="amount-cell">${totalQty.toLocaleString('en-US')}</td>
+            <td class="amount-cell">${(totalQty || 0).toLocaleString('en-US')}</td>
             <td>-</td>
-            <td class="amount-cell">${grandTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="amount-cell">${(grandTotalCost || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           </tr>
         </tfoot>
       </table>

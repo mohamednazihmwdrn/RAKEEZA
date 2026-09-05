@@ -68,8 +68,8 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
         time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
         kpis: [
           { title: 'إجمالي عدد الأصناف', value: `${filteredItems.length} صنف` },
-          { title: 'إجمالي الكميات بالمخزن', value: `${totalQty.toLocaleString('en-US')}` },
-          { title: 'القيمة الإجمالية بسعر الشراء', value: `${totalInventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م` },
+          { title: 'إجمالي الكميات بالمخزن', value: `${(totalQty || 0).toLocaleString('en-US')}` },
+          { title: 'القيمة الإجمالية بسعر الشراء', value: `${(totalInventoryValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م` },
         ],
         columns: ['#', 'اسم الصنف', 'الوصف / الفئة', 'الكمية الحالية', 'سعر الشراء', 'سعر البيع', 'إجمالي القيمة'],
         rows: filteredItems.map((item, idx) => [

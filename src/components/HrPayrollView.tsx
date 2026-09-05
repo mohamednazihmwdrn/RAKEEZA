@@ -452,24 +452,24 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                     <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-mono">
                       <div>
                         <span className="text-[10px] text-slate-400 block font-sans">الأساسي:</span>
-                        <strong className="text-slate-800">{slip.basicSalary.toLocaleString()} {currency}</strong>
+                        <strong className="text-slate-800">{(slip.basicSalary || 0).toLocaleString()} {currency}</strong>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-400 block font-sans">البدلات:</span>
-                        <strong className="text-emerald-700">+{slip.allowances.toLocaleString()} {currency}</strong>
+                        <strong className="text-emerald-700">+{(slip.allowances || 0).toLocaleString()} {currency}</strong>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-400 block font-sans">الاستقطاعات:</span>
-                        <strong className="text-rose-600">-{slip.deductions.toLocaleString()} {currency}</strong>
+                        <strong className="text-rose-600">-{(slip.deductions || 0).toLocaleString()} {currency}</strong>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-400 block font-sans">سداد السلفة:</span>
-                        <strong className="text-amber-700">-{slip.advancesDeducted.toLocaleString()} {currency}</strong>
+                        <strong className="text-amber-700">-{(slip.advancesDeducted || 0).toLocaleString()} {currency}</strong>
                       </div>
                       <div className="col-span-2 pt-1 border-t border-slate-200/50 flex justify-between items-center">
                         <span className="text-xs text-slate-600 font-sans">صافي الراتب المستحق:</span>
                         <strong className="text-blue-950 text-base font-black">
-                          {slip.netSalary.toLocaleString()} {currency}
+                          {(slip.netSalary || 0).toLocaleString()} {currency}
                         </strong>
                       </div>
                     </div>
@@ -535,11 +535,11 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                             <div className="font-black text-slate-900">{slip.employeeName}</div>
                             <span className="text-[10px] text-slate-500">{slip.department}</span>
                           </td>
-                          <td className="p-3 text-left">{slip.basicSalary.toLocaleString()} {currency}</td>
-                          <td className="p-3 text-left text-emerald-700">+{slip.allowances.toLocaleString()} {currency}</td>
-                          <td className="p-3 text-left text-rose-600">-{slip.deductions.toLocaleString()} {currency}</td>
-                          <td className="p-3 text-left text-amber-700">-{slip.advancesDeducted.toLocaleString()} {currency}</td>
-                          <td className="p-3 text-left font-black text-blue-950 text-sm">{slip.netSalary.toLocaleString()} {currency}</td>
+                          <td className="p-3 text-left">{(slip.basicSalary || 0).toLocaleString()} {currency}</td>
+                          <td className="p-3 text-left text-emerald-700">+{(slip.allowances || 0).toLocaleString()} {currency}</td>
+                          <td className="p-3 text-left text-rose-600">-{(slip.deductions || 0).toLocaleString()} {currency}</td>
+                          <td className="p-3 text-left text-amber-700">-{(slip.advancesDeducted || 0).toLocaleString()} {currency}</td>
+                          <td className="p-3 text-left font-black text-blue-950 text-sm">{(slip.netSalary || 0).toLocaleString()} {currency}</td>
                           <td className="p-3 text-center">
                             <span
                               className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
@@ -687,18 +687,18 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                 <div className="bg-slate-50 p-2.5 rounded-xl text-xs space-y-1">
                   <div className="flex justify-between">
                     <span className="text-slate-500">الراتب الأساسي:</span>
-                    <strong className="text-slate-800">{emp.basicSalary.toLocaleString()} {currency}</strong>
+                    <strong className="text-slate-800">{(emp.basicSalary || 0).toLocaleString()} {currency}</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">إجمالي البدلات:</span>
                     <strong className="text-emerald-700">
-                      +{(emp.housingAllowance + emp.transportAllowance + emp.otherAllowances).toLocaleString()} {currency}
+                      +{((emp.housingAllowance || 0) + (emp.transportAllowance || 0) + (emp.otherAllowances || 0)).toLocaleString()} {currency}
                     </strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">الاستقطاعات والتأمينات:</span>
                     <strong className="text-rose-600">
-                      -{(emp.insuranceDeduction + emp.taxDeduction).toLocaleString()} {currency}
+                      -{((emp.insuranceDeduction || 0) + (emp.taxDeduction || 0)).toLocaleString()} {currency}
                     </strong>
                   </div>
                 </div>
@@ -779,7 +779,7 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                     <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-mono">
                       <div>
                         <span className="text-[10px] text-slate-400 block font-sans">قيمة السلفة:</span>
-                        <strong className="text-slate-800">{adv.totalAmount.toLocaleString()} {currency}</strong>
+                        <strong className="text-slate-800">{(adv.totalAmount || 0).toLocaleString()} {currency}</strong>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-400 block font-sans">عدد الأقساط:</span>
@@ -787,16 +787,16 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-400 block font-sans">الاستقطاع الشهري:</span>
-                        <strong className="text-amber-700">{adv.monthlyDeduction.toLocaleString()} {currency}</strong>
+                        <strong className="text-amber-700">{(adv.monthlyDeduction || 0).toLocaleString()} {currency}</strong>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-400 block font-sans">المسدد:</span>
-                        <strong className="text-emerald-700">{adv.paidAmount.toLocaleString()} {currency}</strong>
+                        <strong className="text-emerald-700">{(adv.paidAmount || 0).toLocaleString()} {currency}</strong>
                       </div>
                       <div className="col-span-2 pt-1 border-t border-slate-200/50 flex justify-between items-center">
                         <span className="text-xs text-slate-600 font-sans">المتبقي من السلفة:</span>
                         <strong className="text-rose-700 font-black text-sm">
-                          {adv.remainingAmount.toLocaleString()} {currency}
+                          {(adv.remainingAmount || 0).toLocaleString()} {currency}
                         </strong>
                       </div>
                     </div>
@@ -832,11 +832,11 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                       <tr key={adv.id} className="hover:bg-slate-50">
                         <td className="p-3 font-bold text-slate-800">{adv.employeeName}</td>
                         <td className="p-3 text-slate-500 font-mono">{adv.date}</td>
-                        <td className="p-3 text-left font-bold">{adv.totalAmount.toLocaleString()} {currency}</td>
+                        <td className="p-3 text-left font-bold">{(adv.totalAmount || 0).toLocaleString()} {currency}</td>
                         <td className="p-3 text-center">{adv.installmentsCount} شهر</td>
-                        <td className="p-3 text-left text-amber-700 font-bold">{adv.monthlyDeduction.toLocaleString()} {currency}</td>
-                        <td className="p-3 text-left text-emerald-700">{adv.paidAmount.toLocaleString()} {currency}</td>
-                        <td className="p-3 text-left font-black text-rose-700">{adv.remainingAmount.toLocaleString()} {currency}</td>
+                        <td className="p-3 text-left text-amber-700 font-bold">{(adv.monthlyDeduction || 0).toLocaleString()} {currency}</td>
+                        <td className="p-3 text-left text-emerald-700">{(adv.paidAmount || 0).toLocaleString()} {currency}</td>
+                        <td className="p-3 text-left font-black text-rose-700">{(adv.remainingAmount || 0).toLocaleString()} {currency}</td>
                         <td className="p-3 text-center">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${

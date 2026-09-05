@@ -142,7 +142,7 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
     );
 
     onUpdateData(updated);
-    showToast(`تم احتساب الإهلاك بقيمة ${totalDepreciationAmount.toLocaleString()} ${currency} وتوليد القيد المحاسبي بنجاح`, 'success');
+    showToast(`تم احتساب الإهلاك بقيمة ${(totalDepreciationAmount || 0).toLocaleString()} ${currency} وتوليد القيد المحاسبي بنجاح`, 'success');
   };
 
   // Save Asset
@@ -299,7 +299,7 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs text-slate-500 font-bold block">إجمالي تكلفة شراء الأصول</span>
-            <strong className="text-xl font-black text-slate-900">{totalAssetCost.toLocaleString()} {currency}</strong>
+            <strong className="text-xl font-black text-slate-900">{(totalAssetCost || 0).toLocaleString()} {currency}</strong>
           </div>
           <span className="p-3 bg-blue-50 text-blue-800 rounded-xl text-xl">🏛️</span>
         </div>
@@ -307,7 +307,7 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs text-slate-500 font-bold block">مجمع الإهلاك المتراكم</span>
-            <strong className="text-xl font-black text-rose-700">-{totalAccumulated.toLocaleString()} {currency}</strong>
+            <strong className="text-xl font-black text-rose-700">-{(totalAccumulated || 0).toLocaleString()} {currency}</strong>
           </div>
           <span className="p-3 bg-rose-50 text-rose-800 rounded-xl text-xl">📉</span>
         </div>
@@ -315,7 +315,7 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs text-slate-500 font-bold block">صافي القيمة الدفترية الحالية (Book Value)</span>
-            <strong className="text-xl font-black text-emerald-700">{totalNetBookValue.toLocaleString()} {currency}</strong>
+            <strong className="text-xl font-black text-emerald-700">{(totalNetBookValue || 0).toLocaleString()} {currency}</strong>
           </div>
           <span className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xl">💎</span>
         </div>
@@ -372,7 +372,7 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-mono">
                   <div>
                     <span className="text-[10px] text-slate-400 block font-sans">تكلفة الشراء:</span>
-                    <strong className="text-slate-800">{asset.purchasePrice.toLocaleString()} {currency}</strong>
+                    <strong className="text-slate-800">{(asset.purchasePrice || 0).toLocaleString()} {currency}</strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-sans">معدل الإهلاك:</span>
@@ -380,7 +380,7 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-sans">مجمع الإهلاك:</span>
-                    <strong className="text-rose-600">-{asset.accumulatedDepreciation.toLocaleString()} {currency}</strong>
+                    <strong className="text-rose-600">-{(asset.accumulatedDepreciation || 0).toLocaleString()} {currency}</strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-sans">العمر الإنتاجي:</span>
@@ -389,7 +389,7 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
                   <div className="col-span-2 pt-1 border-t border-slate-200/50 flex justify-between items-center">
                     <span className="text-xs text-slate-600 font-sans">صافي القيمة الدفترية:</span>
                     <strong className="text-emerald-800 text-sm font-black">
-                      {asset.netBookValue.toLocaleString()} {currency}
+                      {(asset.netBookValue || 0).toLocaleString()} {currency}
                     </strong>
                   </div>
                 </div>
@@ -447,15 +447,15 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
                           📍 {asset.location || 'المقر'} | تاريخ الشراء: {asset.purchaseDate}
                         </span>
                       </td>
-                      <td className="p-3 text-left font-bold">{asset.purchasePrice.toLocaleString()} {currency}</td>
+                      <td className="p-3 text-left font-bold">{(asset.purchasePrice || 0).toLocaleString()} {currency}</td>
                       <td className="p-3 text-center font-semibold">
                         {asset.usefulLifeYears} سنوات ({asset.annualDepreciationRate}% سنوي)
                       </td>
                       <td className="p-3 text-left font-bold text-rose-600">
-                        -{asset.accumulatedDepreciation.toLocaleString()} {currency}
+                        -{(asset.accumulatedDepreciation || 0).toLocaleString()} {currency}
                       </td>
                       <td className="p-3 text-left font-black text-emerald-800 text-sm">
-                        {asset.netBookValue.toLocaleString()} {currency}
+                        {(asset.netBookValue || 0).toLocaleString()} {currency}
                       </td>
                       <td className="p-3 text-center">
                         <span
@@ -520,16 +520,16 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
                   <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-mono">
                     <div>
                       <span className="text-[10px] text-slate-400 block font-sans">قسط الإهلاك:</span>
-                      <strong className="text-rose-700 font-black">-{log.amount.toLocaleString()} {currency}</strong>
+                      <strong className="text-rose-700 font-black">-{(log.amount || 0).toLocaleString()} {currency}</strong>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 block font-sans">مجمع الإهلاك الجديد:</span>
-                      <strong className="text-slate-800">{log.accumulatedAfter.toLocaleString()} {currency}</strong>
+                      <strong className="text-slate-800">{(log.accumulatedAfter || 0).toLocaleString()} {currency}</strong>
                     </div>
                     <div className="col-span-2 pt-1 border-t border-slate-200/50 flex justify-between items-center">
                       <span className="text-xs text-slate-600 font-sans">القيمة الدفترية الجديدة:</span>
                       <strong className="text-emerald-700 text-sm font-black">
-                        {log.bookValueAfter.toLocaleString()} {currency}
+                        {(log.bookValueAfter || 0).toLocaleString()} {currency}
                       </strong>
                     </div>
                   </div>
@@ -569,9 +569,9 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
                       <td className="p-3 font-mono text-slate-500">{log.date}</td>
                       <td className="p-3 font-bold text-blue-900">{log.period}</td>
                       <td className="p-3 font-bold text-slate-800">{log.assetName}</td>
-                      <td className="p-3 text-left font-black text-rose-700">{log.amount.toLocaleString()} {currency}</td>
-                      <td className="p-3 text-left font-bold">{log.accumulatedAfter.toLocaleString()} {currency}</td>
-                      <td className="p-3 text-left font-black text-emerald-700">{log.bookValueAfter.toLocaleString()} {currency}</td>
+                      <td className="p-3 text-left font-black text-rose-700">-{(log.amount || 0).toLocaleString()} {currency}</td>
+                      <td className="p-3 text-left font-bold">{(log.accumulatedAfter || 0).toLocaleString()} {currency}</td>
+                      <td className="p-3 text-left font-black text-emerald-700">{(log.bookValueAfter || 0).toLocaleString()} {currency}</td>
                       <td className="p-3 text-center text-slate-500">{log.createdBy}</td>
                     </tr>
                   ))

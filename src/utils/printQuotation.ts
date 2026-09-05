@@ -111,7 +111,7 @@ export function generateQuotationPrintHtml(
   }
 
   const formatNumber = (num: number) =>
-    num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    (Number(num) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">

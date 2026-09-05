@@ -270,11 +270,11 @@ ${getPrintToolbarHtml('محضر الجرد الفعلي #' + (session.sessionNum
       </div>
       <div class="kpi-card">
         <div class="kpi-title">قيمة العجز الإجمالي</div>
-        <div class="kpi-value deficit">- ${totalShortageValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-value deficit">- ${(totalShortageValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-title">قيمة الزيادة الإجمالية</div>
-        <div class="kpi-value surplus">+ ${totalSurplusValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
+        <div class="kpi-value surplus">+ ${(totalSurplusValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م</div>
       </div>
     </div>
 

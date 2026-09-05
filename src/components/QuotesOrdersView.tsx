@@ -903,7 +903,7 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
                 {activeStats.totalCount}
               </span>
               <span className="text-xs font-bold text-slate-500 font-mono">
-                {activeStats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} {currencySymbol}
+                {(activeStats?.totalValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} {currencySymbol}
               </span>
             </div>
           </div>

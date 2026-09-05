@@ -80,7 +80,7 @@ export const BiAnalyticsView: React.FC<BiAnalyticsViewProps> = ({ appData, onNav
         <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-center border border-white/20">
           <span className="text-[11px] text-indigo-200 block">متوسط الفاتورة</span>
           <strong className="text-lg font-mono font-bold text-white">
-            {avgInvoiceValue.toLocaleString('en-US', { minimumFractionDigits: 1 })} ج.م
+            {(avgInvoiceValue || 0).toLocaleString('en-US', { minimumFractionDigits: 1 })} ج.م
           </strong>
         </div>
       </div>
@@ -90,7 +90,7 @@ export const BiAnalyticsView: React.FC<BiAnalyticsViewProps> = ({ appData, onNav
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-1">
           <span className="text-xs text-slate-500 font-bold">💰 إجمالي المبيعات المحققة</span>
           <strong className="text-xl font-black text-[#1a237e] block font-mono">
-            {totalSalesVal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+            {(totalSalesVal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
           </strong>
           <span className="text-[11px] text-emerald-700 font-bold block">
             عدد الفواتير: {appData.salesInvoices.length} فاتورة
@@ -100,7 +100,7 @@ export const BiAnalyticsView: React.FC<BiAnalyticsViewProps> = ({ appData, onNav
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-1">
           <span className="text-xs text-slate-500 font-bold">🧮 مجمل الأرباح التجارية</span>
           <strong className="text-xl font-black text-emerald-700 block font-mono">
-            {grossProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+            {(grossProfit || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
           </strong>
           <span className="text-[11px] text-slate-500 block">بعد خصم تكلفة البضاعة المباعة</span>
         </div>
@@ -193,7 +193,7 @@ export const BiAnalyticsView: React.FC<BiAnalyticsViewProps> = ({ appData, onNav
                   <div className="text-left font-mono">
                     <span className="text-indigo-900 font-bold">{it.qty} قطعة</span>
                     <span className="text-slate-500 text-[11px] block">
-                      {it.revenue.toLocaleString('en-US')} ج.م
+                      {(it.revenue || 0).toLocaleString('en-US')} ج.م
                     </span>
                   </div>
                 </div>
@@ -228,7 +228,7 @@ export const BiAnalyticsView: React.FC<BiAnalyticsViewProps> = ({ appData, onNav
                     <span className="font-bold text-slate-900">{c.name}</span>
                   </div>
                   <span className="font-mono font-bold text-emerald-800 text-sm">
-                    {c.total.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                    {(c.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
                   </span>
                 </div>
               ))

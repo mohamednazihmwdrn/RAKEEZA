@@ -483,7 +483,7 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                     <div className="col-span-2 pt-1 border-t border-slate-200/50 flex justify-between items-center">
                       <span className="text-xs text-slate-600 font-sans">التكلفة التقديرية:</span>
                       <strong className="text-blue-950 text-sm font-black">
-                        {order.estimatedCost.toLocaleString()} {currency}
+                        {(order.estimatedCost || 0).toLocaleString()} {currency}
                       </strong>
                     </div>
                   </div>
@@ -566,7 +566,7 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                       <td className="p-3 font-mono font-bold text-blue-900">{order.orderNumber}</td>
                       <td className="p-3 font-bold text-slate-900">{order.finishedProductName}</td>
                       <td className="p-3 text-center font-black text-slate-800 text-sm">{order.targetQuantity}</td>
-                      <td className="p-3 text-left font-bold">{order.estimatedCost.toLocaleString()} {currency}</td>
+                      <td className="p-3 text-left font-bold">{(order.estimatedCost || 0).toLocaleString()} {currency}</td>
                       <td className="p-3 text-center font-mono text-slate-500">{order.startDate}</td>
                       <td className="p-3 text-center">
                         <span
@@ -648,7 +648,7 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                   </span>
                 </div>
                 <span className="bg-blue-50 text-blue-900 text-xs px-2.5 py-1 rounded-xl font-black">
-                  تكلفة الوحدة: {bom.unitCost.toLocaleString()} {currency}
+                  تكلفة الوحدة: {(bom.unitCost || 0).toLocaleString()} {currency}
                 </span>
               </div>
 
@@ -659,7 +659,7 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                   {bom.rawMaterials.map((rm, idx) => (
                     <div key={idx} className="flex justify-between text-[11.5px] border-b border-slate-200/60 pb-1">
                       <span>• {rm.itemName} ({rm.quantity} {rm.unit})</span>
-                      <strong className="text-slate-700 font-mono">{(rm.quantity * rm.estimatedCost).toLocaleString()} {currency}</strong>
+                      <strong className="text-slate-700 font-mono">{((rm.quantity || 0) * (rm.estimatedCost || 0)).toLocaleString()} {currency}</strong>
                     </div>
                   ))}
                 </div>
@@ -792,7 +792,7 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                             />
                           </td>
                           <td className="p-2 text-left">{b.unitCost} {currency}</td>
-                          <td className="p-2 text-left font-bold">{(b.qty * b.unitCost).toLocaleString()} {currency}</td>
+                          <td className="p-2 text-left font-bold">{((b.qty || 0) * (b.unitCost || 0)).toLocaleString()} {currency}</td>
                           <td className="p-2 text-center">
                             <button
                               onClick={() => setBomItems(bomItems.filter((_, i) => i !== idx))}
@@ -810,8 +810,8 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
 
               {/* Total Calculated Preview */}
               <div className="bg-blue-50 p-3 rounded-xl flex justify-between items-center text-xs font-bold text-blue-950">
-                <span>إجمالي تكلفة التشغيلة: {calculateBomTotalCost(bomItems, laborCost, overheadCost, outputQty).total.toLocaleString()} {currency}</span>
-                <span>تكلفة القطعة الواحدة التامة: {calculateBomTotalCost(bomItems, laborCost, overheadCost, outputQty).unitCost.toLocaleString()} {currency}</span>
+                <span>إجمالي تكلفة التشغيلة: {(calculateBomTotalCost(bomItems, laborCost, overheadCost, outputQty)?.total || 0).toLocaleString()} {currency}</span>
+                <span>تكلفة القطعة الواحدة التامة: {(calculateBomTotalCost(bomItems, laborCost, overheadCost, outputQty)?.unitCost || 0).toLocaleString()} {currency}</span>
               </div>
             </div>
 

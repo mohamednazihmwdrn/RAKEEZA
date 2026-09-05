@@ -520,7 +520,7 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
         <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <span className="text-xs text-slate-500 font-semibold">إجمالي المنتجات</span>
           <div className="flex items-baseline justify-between mt-2">
-            <span className="text-xl font-black text-[#1a237e]">{metrics.total.toLocaleString('ar-EG')}</span>
+            <span className="text-xl font-black text-[#1a237e]">{(metrics?.total || 0).toLocaleString('ar-EG')}</span>
             <span className="text-xs text-slate-400">صنف</span>
           </div>
         </div>
@@ -530,7 +530,7 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span> أسعار نقدية مكتملة
           </span>
           <div className="flex items-baseline justify-between mt-2">
-            <span className="text-xl font-black text-emerald-700">{metrics.withCash.toLocaleString('ar-EG')}</span>
+            <span className="text-xl font-black text-emerald-700">{(metrics?.withCash || 0).toLocaleString('ar-EG')}</span>
             <span className="text-[11px] font-bold text-emerald-600">
               {metrics.total > 0 ? Math.round((metrics.withCash / metrics.total) * 100) : 0}%
             </span>
@@ -542,7 +542,7 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
             <span className="w-2 h-2 rounded-full bg-blue-500"></span> أسعار جملة مكتملة
           </span>
           <div className="flex items-baseline justify-between mt-2">
-            <span className="text-xl font-black text-blue-700">{metrics.withWholesale.toLocaleString('ar-EG')}</span>
+            <span className="text-xl font-black text-blue-700">{(metrics?.withWholesale || 0).toLocaleString('ar-EG')}</span>
             <span className="text-[11px] font-bold text-blue-600">
               {metrics.total > 0 ? Math.round((metrics.withWholesale / metrics.total) * 100) : 0}%
             </span>
@@ -554,7 +554,7 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
             <span className="w-2 h-2 rounded-full bg-rose-500"></span> منتجات تحتاج تسعير
           </span>
           <div className="flex items-baseline justify-between mt-2">
-            <span className="text-xl font-black text-rose-700">{metrics.noPrices.toLocaleString('ar-EG')}</span>
+            <span className="text-xl font-black text-rose-700">{(metrics?.noPrices || 0).toLocaleString('ar-EG')}</span>
             <span className="text-xs text-rose-600 font-semibold">تحتاج تحديد</span>
           </div>
         </div>
