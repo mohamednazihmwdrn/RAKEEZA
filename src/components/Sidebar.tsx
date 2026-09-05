@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { LogOut } from 'lucide-react';
+import { User } from '../types';
 import {
   vendorReports,
   purchaseReports,
@@ -17,6 +19,9 @@ interface SidebarProps {
   onNavigate: (page: string) => void;
   pendingWebOrdersCount?: number;
   onClose?: () => void;
+  onLogout?: () => void;
+  currentUser?: User;
+  companyName?: string;
 }
 
 interface ReportGroupDef {
@@ -43,6 +48,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   pendingWebOrdersCount = 0,
   onClose,
+  onLogout,
+  currentUser,
+  companyName,
 }) => {
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({
     items: false,
@@ -520,6 +528,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <span>💾 النسخ الاحتياطي والاستعادة</span>
         </div>
+      </div>
+
+      {/* Pinned Bottom User & Logout Section */}
+      <div className="sticky bottom-0 mt-auto bg-[#0d47a1] border-t border-white/15 p-3.5 shadow-2xl z-20">
+        <div className="flex items-center gap-2.5 mb-2.5 px-0.5">
+          <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+            {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : '👤'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-white truncate leading-tight">
+              {currentUser?.name || 'مدير المنظومة'}
+            </p>
+            <p className="text-[10px] text-blue-200 truncate leading-tight mt-0.5">
+              {companyName || 'الفرع الرئيسي'}
+            </p>
+          </div>
+        </div>
+
+        {onLogout && (
+          <button
+            type="button"
+            onClick={() => {
+              if (onClose) onClose();
+              onLogout();
+            }}
+            className="w-full min-h-[40px] flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white py-2 px-3 rounded-xl text-xs font-black transition-all shadow-md shadow-rose-950/40 cursor-pointer border border-rose-400/40"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>تسجيل الخروج من الحساب</span>
+          </button>
+        )}
       </div>
     </nav>
   );

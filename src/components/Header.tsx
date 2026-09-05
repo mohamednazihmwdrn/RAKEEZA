@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { LogOut, AlertTriangle } from 'lucide-react';
 import { User } from '../types';
 
 interface HeaderProps {
@@ -33,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateWebOrders,
 }) => {
   const [clickCount, setClickCount] = useState(0);
+  const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
   const [showOwnerModal, setShowOwnerModal] = useState(false);
   const [ownerPin, setOwnerPin] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -242,14 +244,68 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
 
           <button
-            onClick={onLogout}
-            className="min-h-[40px] min-w-[44px] flex items-center justify-center bg-white/15 hover:bg-red-600 active:bg-red-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
-            title="تسجيل الخروج"
+            onClick={() => setShowLogoutConfirmModal(true)}
+            className="min-h-[38px] flex items-center gap-1.5 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm shadow-rose-950/30 cursor-pointer border border-rose-400/40 shrink-0"
+            title="تسجيل الخروج من المنظومة"
           >
-            خروج
+            <LogOut className="w-3.5 h-3.5" />
+            <span>تسجيل خروج</span>
           </button>
         </div>
       </header>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirmModal && (
+        <div
+          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in"
+          dir="rtl"
+          onClick={() => setShowLogoutConfirmModal(false)}
+        >
+          <div
+            className="bg-slate-900 border border-rose-500/40 rounded-2xl p-6 w-full max-w-md shadow-2xl relative text-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-700/60 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 text-lg">
+                <LogOut className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-white">
+                  تأكيد تسجيل الخروج
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {companyName ? `المنشأة: ${companyName}` : 'منظومة ركيزة المحاسبية'}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed">
+              هل أنت متأكد من رغبتك في تسجيل الخروج؟ تم حفظ جميع عملياتك ومستنداتك بأمان في السحابة، ويمكنك العودة وتسجيل الدخول في أي وقت.
+            </p>
+
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLogoutConfirmModal(false);
+                  onLogout();
+                }}
+                className="flex-1 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-red-900/30 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>نعم، تسجيل الخروج</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirmModal(false)}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition cursor-pointer"
+              >
+                إلغاء وتراجع
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Secret Owner Login Modal */}
       {showOwnerModal && (

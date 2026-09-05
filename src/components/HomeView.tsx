@@ -50,38 +50,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
         </div>
       </div>
 
-      {/* Mobile-First Fast Action Buttons (1-Tap ERP Quick Shortcuts) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <button
-          onClick={() => onNavigate('sales')}
-          className="min-h-[44px] bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 text-emerald-900 rounded-xl p-2.5 flex items-center justify-center gap-2 text-xs font-bold transition shadow-2xs"
-        >
-          <span className="text-base">➕</span>
-          <span>فاتورة بيع جديدة</span>
-        </button>
-        <button
-          onClick={() => onNavigate('purchases')}
-          className="min-h-[44px] bg-blue-50 hover:bg-blue-100 active:bg-blue-200 border border-blue-200 text-blue-900 rounded-xl p-2.5 flex items-center justify-center gap-2 text-xs font-bold transition shadow-2xs"
-        >
-          <span className="text-base">🛒</span>
-          <span>فاتورة شراء جديدة</span>
-        </button>
-        <button
-          onClick={() => onNavigate('cash')}
-          className="min-h-[44px] bg-amber-50 hover:bg-amber-100 active:bg-amber-200 border border-amber-200 text-amber-900 rounded-xl p-2.5 flex items-center justify-center gap-2 text-xs font-bold transition shadow-2xs"
-        >
-          <span className="text-base">💵</span>
-          <span>سند قبض / صرف</span>
-        </button>
-        <button
-          onClick={() => onNavigate('items')}
-          className="min-h-[44px] bg-purple-50 hover:bg-purple-100 active:bg-purple-200 border border-purple-200 text-purple-900 rounded-xl p-2.5 flex items-center justify-center gap-2 text-xs font-bold transition shadow-2xs"
-        >
-          <span className="text-base">📦</span>
-          <span>المخزون والأصناف</span>
-        </button>
-      </div>
-
       {/* Main Core Cards Grid - 2 columns on mobile for instant visibility */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Sales Card */}

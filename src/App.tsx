@@ -174,8 +174,13 @@ export default function App() {
 
   // 🚪 Logout Handler
   const handleLogout = async () => {
-    await logoutFromCloud();
+    try {
+      await logoutFromCloud();
+    } catch (e) {
+      console.warn('Logout error:', e);
+    }
     setSession(null);
+    setCurrentPage('home');
     showToast('تم تسجيل الخروج بنجاح من المنظومة', 'info');
   };
 
@@ -574,6 +579,7 @@ export default function App() {
               handleNavigate('home');
             }}
             onClose={() => handleNavigate('home')}
+            onLogout={handleLogout}
           />
         );
       default:
@@ -697,6 +703,9 @@ export default function App() {
         onNavigate={handleNavigate}
         pendingWebOrdersCount={pendingWebOrdersCount}
         onClose={() => setIsSidebarOpen(false)}
+        onLogout={handleLogout}
+        currentUser={currentUser}
+        companyName={session?.company?.name || appData.settings?.companyName}
       />
 
       {/* Main Content Area */}

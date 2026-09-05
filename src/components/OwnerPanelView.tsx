@@ -28,6 +28,7 @@ interface OwnerPanelViewProps {
   onUpdateAppData: (data: Partial<AppData>) => void;
   onEnterCompany: (company: TenantCompany, asSupportSession?: boolean, supportReason?: string) => void;
   onClose: () => void;
+  onLogout?: () => void;
 }
 
 export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
@@ -35,6 +36,7 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
   onUpdateAppData,
   onEnterCompany,
   onClose,
+  onLogout,
 }) => {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
@@ -131,6 +133,9 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
   const handleLogout = () => {
     setIsAuthenticated(false);
     updateOwnerState({ isOwnerAuthenticated: false });
+    if (onLogout) {
+      onLogout();
+    }
   };
 
   // Handle Create Company
