@@ -16,11 +16,24 @@ import {
   activateLicenseCloud,
   authenticateOrRegisterWithGmail,
   verifyOwnerSecret,
+  requestEmailVerification,
+  verifyEmailOtpAndRegister,
 } from './server/cloudDb';
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  // CORS Middleware: Allow all cross-origin requests and handle preflight OPTIONS
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+    next();
+  });
 
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -89,7 +102,30 @@ async function startServer() {
     const result = authenticateOrRegisterWithGmail(email, companyName, phone, adminName);
 
     if (!result.success) {
-      return res.status(400).json(result);
+      return res.status(200).json(result); // Return 200 with result payload so client can read needsRegistration or error cleanly
+    }
+
+    res.json(result);
+  });
+
+  // Request 6-digit OTP verification code sent to Gmail
+  app.post('/api/auth/request-otp', async (req, res) => {
+    const { email, companyName, phone, adminName } = req.body;
+    try {
+      const result = await requestEmailVerification(email, companyName, phone, adminName);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message || 'حدث خطأ أثناء إرسال كود التحقق' });
+    }
+  });
+
+  // Verify OTP code and complete company registration
+  app.post('/api/auth/verify-otp', (req, res) => {
+    const { email, code, companyName, phone, adminName } = req.body;
+    const result = verifyEmailOtpAndRegister(email, code, companyName, phone, adminName);
+
+    if (!result.success) {
+      return res.status(200).json(result);
     }
 
     res.json(result);

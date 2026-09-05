@@ -10,8 +10,17 @@ import {
   AlertCircle,
   Mail,
   Shield,
+  KeyRound,
+  RotateCcw,
+  ArrowRight,
 } from 'lucide-react';
-import { loginToCloud, loginWithGoogle, verifyOwnerSecretApi } from '../services/cloudApi';
+import {
+  loginToCloud,
+  loginWithGoogle,
+  verifyOwnerSecretApi,
+  requestOtpVerificationApi,
+  verifyEmailOtpApi,
+} from '../services/cloudApi';
 import { TenantCompany, User as AppUser } from '../types';
 
 interface LoginViewProps {
@@ -36,6 +45,21 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [gmailAdminName, setGmailAdminName] = useState<string>('');
   const [gmailPhone, setGmailPhone] = useState<string>('');
   const [isRegisterNewWithGmail, setIsRegisterNewWithGmail] = useState<boolean>(false);
+
+  // OTP Verification States (Anti-fake Gmail verification)
+  const [isOtpStep, setIsOtpStep] = useState<boolean>(false);
+  const [otpCode, setOtpCode] = useState<string>('');
+  const [resendCooldown, setResendCooldown] = useState<number>(0);
+  const [previewOtpCode, setPreviewOtpCode] = useState<string | null>(null);
+
+  // Countdown timer for OTP resend
+  React.useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // Standard Company Login Form States
   const [companyId, setCompanyId] = useState<string>('');
@@ -132,26 +156,45 @@ export const LoginView: React.FC<LoginViewProps> = ({
       return;
     }
 
-    if (isRegisterNewWithGmail && !gmailCompanyName.trim()) {
-      setErrorMessage('يرجى إدخال اسم المنشأة أو الشركة للتسجيل');
+    // If new registration mode is active, trigger OTP verification flow
+    if (isRegisterNewWithGmail) {
+      if (!gmailCompanyName.trim()) {
+        setErrorMessage('يرجى إدخال اسم المنشأة أو الشركة لتسجيل الحساب');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const otpRes = await requestOtpVerificationApi(
+          email,
+          gmailCompanyName.trim(),
+          gmailPhone.trim() || undefined,
+          gmailAdminName.trim() || undefined
+        );
+
+        if (otpRes.success) {
+          setIsOtpStep(true);
+          setResendCooldown(60);
+          setPreviewOtpCode(otpRes.previewCode || null);
+          setSuccessMessage(otpRes.message || 'تم إرسال رمز التحقق إلى بريدك الإلكتروني.');
+        } else {
+          setErrorMessage(otpRes.error || 'فشل إرسال رمز التحقق. يرجى المحاولة مرة أخرى.');
+        }
+      } catch {
+        setErrorMessage('حدث خطأ أثناء الاتصال بالخادم.');
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
+    // Otherwise: Try direct login for existing accounts
     setIsLoading(true);
     try {
-      const res = await loginWithGoogle(
-        email,
-        isRegisterNewWithGmail ? gmailCompanyName.trim() : undefined,
-        gmailPhone.trim() || undefined,
-        gmailAdminName.trim() || undefined
-      );
+      const res = await loginWithGoogle(email);
 
       if (res.success && res.user && res.company) {
-        setSuccessMessage(
-          res.isNewCompany
-            ? 'تم إنشاء حساب شركتك بنجاح! جاري الدخول للمنظومة...'
-            : 'تم التحقق من حسابك بنجاح! جاري الدخول...'
-        );
+        setSuccessMessage('تم التحقق من حسابك بنجاح! جاري الدخول...');
         setTimeout(() => {
           onLoginSuccess({
             user: res.user!,
@@ -159,14 +202,85 @@ export const LoginView: React.FC<LoginViewProps> = ({
             subscription: res.subscription,
           });
         }, 600);
-      } else if (res.needsRegistration) {
+      } else if (res.needsRegistration || (res as any).needsOtp) {
+        // Not registered yet -> switch to registration mode and prompt to verify email
         setIsRegisterNewWithGmail(true);
-        setErrorMessage(res.error || 'هذا البريد غير مسجل مسبقاً. يرجى إدخال اسم شركتك لتسجيلها فوراً مجاناً.');
+        setSuccessMessage('هذا البريد غير مسجل مسبقاً. يرجى إدخال اسم المنشأة لتأكيد ملكية البريد وتفعيل الحساب فوراً.');
       } else {
         setErrorMessage(res.error || 'تعذر تسجيل الدخول بواسطة Gmail.');
       }
     } catch {
       setErrorMessage('حدث خطأ أثناء الاتصال بالخادم السحابي.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // OTP Verification Submit Handler
+  const handleVerifyOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const cleanCode = otpCode.trim();
+    if (!cleanCode) {
+      setErrorMessage('يرجى إدخال رمز التحقق المكون من 6 أرقام');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await verifyEmailOtpApi(
+        gmailEmail.trim().toLowerCase(),
+        cleanCode,
+        gmailCompanyName.trim(),
+        gmailPhone.trim() || undefined,
+        gmailAdminName.trim() || undefined
+      );
+
+      if (res.success && res.user && res.company) {
+        setSuccessMessage('تهانينا! تم تأكيد البريد الإلكتروني وتفعيل حساب المنشأة بنجاح! جاري الدخول...');
+        setTimeout(() => {
+          onLoginSuccess({
+            user: res.user!,
+            company: res.company!,
+            subscription: res.subscription,
+          });
+        }, 800);
+      } else {
+        setErrorMessage(res.error || 'رمز التحقق غير صحيح. يرجى مراجعة بريدك الإلكتروني.');
+      }
+    } catch {
+      setErrorMessage('حدث خطأ أثناء التحقق من الرمز.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Resend OTP Code Handler
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || isLoading) return;
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
+
+    try {
+      const res = await requestOtpVerificationApi(
+        gmailEmail.trim().toLowerCase(),
+        gmailCompanyName.trim(),
+        gmailPhone.trim() || undefined,
+        gmailAdminName.trim() || undefined
+      );
+
+      if (res.success) {
+        setResendCooldown(60);
+        setPreviewOtpCode(res.previewCode || null);
+        setSuccessMessage(res.message || 'تم إرسال رمز تحقق جديد بنجاح.');
+      } else {
+        setErrorMessage(res.error || 'فشل إعادة الإرسال.');
+      }
+    } catch {
+      setErrorMessage('تعذر إعادة إرسال الرمز حالياً.');
     } finally {
       setIsLoading(false);
     }
@@ -335,141 +449,253 @@ export const LoginView: React.FC<LoginViewProps> = ({
             )}
 
             {loginMode === 'gmail' ? (
-              /* GMAIL LOGIN & REGISTRATION FORM */
-              <form onSubmit={handleGmailLogin} className="space-y-4">
-                <div className="text-center mb-4">
-                  <div className="inline-flex p-3 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 mb-2">
-                    <Mail className="w-7 h-7" />
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-bold text-white">
-                    {isRegisterNewWithGmail ? 'تسجيل منشأة جديدة بحساب Gmail' : 'الدخول السريع عبر Google (Gmail)'}
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {isRegisterNewWithGmail
-                      ? 'أدخل اسم منشأتك لتفعيل الحساب السحابي فوراً'
-                      : 'أدخل بريدك للدخول إلى حساب شركتك السحابي فوراً'}
-                  </p>
-                </div>
-
-                {/* Gmail Input Field */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-right">
-                    بريد Gmail الخاص بك <span className="text-rose-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Mail className="w-5 h-5 text-red-400" />
+              isOtpStep ? (
+                /* OTP VERIFICATION FORM (Anti-Fake Gmail) */
+                <form onSubmit={handleVerifyOtpSubmit} className="space-y-4 animate-in fade-in">
+                  <div className="text-center mb-3">
+                    <div className="inline-flex p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 mb-2">
+                      <KeyRound className="w-7 h-7" />
                     </div>
+                    <h2 className="text-lg sm:text-xl font-bold text-white">
+                      تأكيد ملكية بريد Gmail
+                    </h2>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      أدخل رمز التحقق المكون من 6 أرقام المرسل إلى:
+                      <br />
+                      <span className="text-amber-400 font-mono text-sm font-bold dir-ltr inline-block mt-0.5">
+                        {gmailEmail}
+                      </span>
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      (هذا الإجراء يمنع الحسابات الوهمية ويضمن ملكيتك للبريد)
+                    </p>
+                  </div>
+
+                  {/* Preview code badge if in preview/development mode */}
+                  {previewOtpCode && (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-center flex items-center justify-between">
+                      <div className="text-right">
+                        <span className="text-[10px] text-amber-300 block">كود التحقق المباشر:</span>
+                        <span className="text-sm font-mono font-black text-amber-400 tracking-widest">
+                          {previewOtpCode}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setOtpCode(previewOtpCode)}
+                        className="text-xs px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg cursor-pointer transition"
+                      >
+                        نسخ الرمز
+                      </button>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-center">
+                      رمز التحقق (OTP) المكون من 6 أرقام <span className="text-rose-400">*</span>
+                    </label>
                     <input
-                      type="email"
+                      type="text"
                       autoFocus
-                      value={gmailEmail}
-                      onChange={(e) => setGmailEmail(e.target.value)}
-                      placeholder="yourname@gmail.com"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="• • • • • •"
                       dir="ltr"
-                      className="w-full pl-3 pr-11 py-2.5 sm:py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all text-left font-sans"
+                      className="w-full py-3 bg-slate-900 border-2 border-amber-500/40 rounded-xl text-center text-2xl font-mono tracking-[0.4em] text-amber-300 placeholder-slate-600 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-black transition"
                       disabled={isLoading}
                       required
                     />
                   </div>
-                </div>
 
-                {/* If new company registration is activated */}
-                {isRegisterNewWithGmail && (
-                  <div className="space-y-3 pt-1 border-t border-slate-700/60 animate-in fade-in">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-200 mb-1 text-right">
-                        اسم الشركة أو المنشأة <span className="text-rose-400">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
-                          <Building2 className="w-4 h-4 text-amber-400" />
-                        </div>
-                        <input
-                          type="text"
-                          value={gmailCompanyName}
-                          onChange={(e) => setGmailCompanyName(e.target.value)}
-                          placeholder="مثال: شركة النور للتجارة"
-                          className="w-full pl-3 pr-10 py-2.5 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500"
-                          disabled={isLoading}
-                          required
-                        />
-                      </div>
+                  {/* Submit OTP */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isLoading || otpCode.trim().length < 4}
+                      className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base cursor-pointer"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>جاري التحقق وتفعيل المنشأة...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-5 h-5" />
+                          <span>تأكيد الرمز وتفعيل منشأة "{gmailCompanyName || 'الجديدة'}"</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Resend & Edit Email */}
+                  <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-700/60">
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendCooldown > 0 || isLoading}
+                      className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold disabled:opacity-40 cursor-pointer"
+                    >
+                      <RotateCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                      <span>
+                        {resendCooldown > 0 ? `إعادة الإرسال (${resendCooldown} ثانية)` : 'إعادة إرسال الرمز'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOtpStep(false);
+                        setOtpCode('');
+                        setErrorMessage(null);
+                        setSuccessMessage(null);
+                      }}
+                      className="flex items-center gap-1 text-slate-400 hover:text-slate-200 cursor-pointer"
+                    >
+                      <span>تعديل البيانات</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* GMAIL LOGIN & REGISTRATION FORM */
+                <form onSubmit={handleGmailLogin} className="space-y-4">
+                  <div className="text-center mb-4">
+                    <div className="inline-flex p-3 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 mb-2">
+                      <Mail className="w-7 h-7" />
                     </div>
+                    <h2 className="text-lg sm:text-xl font-bold text-white">
+                      {isRegisterNewWithGmail ? 'تسجيل منشأة جديدة بحساب Gmail' : 'الدخول السريع عبر Google (Gmail)'}
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {isRegisterNewWithGmail
+                        ? 'أدخل اسم منشأتك وسنرسل كود تحقق لمنع الحسابات الوهمية'
+                        : 'أدخل بريدك للدخول إلى حساب شركتك السحابي فوراً'}
+                    </p>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-300 mb-1 text-right">
-                          اسم المدير / المسؤول
-                        </label>
-                        <input
-                          type="text"
-                          value={gmailAdminName}
-                          onChange={(e) => setGmailAdminName(e.target.value)}
-                          placeholder="الاسم الشخصي"
-                          className="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500"
-                          disabled={isLoading}
-                        />
+                  {/* Gmail Input Field */}
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-right">
+                      بريد Gmail الخاص بك <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Mail className="w-5 h-5 text-red-400" />
                       </div>
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-300 mb-1 text-right">
-                          رقم الهاتف للتواصل
-                        </label>
-                        <input
-                          type="tel"
-                          value={gmailPhone}
-                          onChange={(e) => setGmailPhone(e.target.value)}
-                          placeholder="010XXXXXXXX"
-                          dir="ltr"
-                          className="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500 text-left"
-                          disabled={isLoading}
-                        />
-                      </div>
+                      <input
+                        type="email"
+                        autoFocus
+                        value={gmailEmail}
+                        onChange={(e) => setGmailEmail(e.target.value)}
+                        placeholder="yourname@gmail.com"
+                        dir="ltr"
+                        className="w-full pl-3 pr-11 py-2.5 sm:py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all text-left font-sans"
+                        disabled={isLoading}
+                        required
+                      />
                     </div>
                   </div>
-                )}
 
-                {/* Mode Toggle between login and registration */}
-                <div className="text-center pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsRegisterNewWithGmail(!isRegisterNewWithGmail);
-                      setErrorMessage(null);
-                    }}
-                    className="text-xs text-amber-400 hover:text-amber-300 hover:underline font-semibold cursor-pointer"
-                  >
-                    {isRegisterNewWithGmail
-                      ? '← لديك حساب بالفعل؟ تسجيل الدخول بالجيميل'
-                      : '+ شركة جديدة؟ انقر هنا لتسجيل منشأتك عبر Gmail مجاناً'}
-                  </button>
-                </div>
+                  {/* If new company registration is activated */}
+                  {isRegisterNewWithGmail && (
+                    <div className="space-y-3 pt-1 border-t border-slate-700/60 animate-in fade-in">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-200 mb-1 text-right">
+                          اسم الشركة أو المنشأة <span className="text-rose-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                            <Building2 className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <input
+                            type="text"
+                            value={gmailCompanyName}
+                            onChange={(e) => setGmailCompanyName(e.target.value)}
+                            placeholder="مثال: شركة النور للتجارة"
+                            className="w-full pl-3 pr-10 py-2.5 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500"
+                            disabled={isLoading}
+                            required
+                          />
+                        </div>
+                      </div>
 
-                {/* Submit Button */}
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-xl shadow-lg shadow-red-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base cursor-pointer"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>جاري التحقق والمصادقة السحابية...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-                        </svg>
-                        <span>
-                          {isRegisterNewWithGmail ? 'تأكيد تسجيل المنشأة والدخول' : 'متابعة الدخول عبر Gmail'}
-                        </span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-300 mb-1 text-right">
+                            اسم المدير / المسؤول
+                          </label>
+                          <input
+                            type="text"
+                            value={gmailAdminName}
+                            onChange={(e) => setGmailAdminName(e.target.value)}
+                            placeholder="الاسم الشخصي"
+                            className="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500"
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-300 mb-1 text-right">
+                            رقم الهاتف للتواصل
+                          </label>
+                          <input
+                            type="tel"
+                            value={gmailPhone}
+                            onChange={(e) => setGmailPhone(e.target.value)}
+                            placeholder="010XXXXXXXX"
+                            dir="ltr"
+                            className="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500 text-left"
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mode Toggle between login and registration */}
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRegisterNewWithGmail(!isRegisterNewWithGmail);
+                        setErrorMessage(null);
+                        setSuccessMessage(null);
+                      }}
+                      className="text-xs text-amber-400 hover:text-amber-300 hover:underline font-semibold cursor-pointer"
+                    >
+                      {isRegisterNewWithGmail
+                        ? '← لديك حساب بالفعل؟ تسجيل الدخول بالجيميل'
+                        : '+ شركة جديدة؟ انقر هنا لتسجيل منشأتك عبر Gmail مجاناً'}
+                    </button>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-xl shadow-lg shadow-red-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base cursor-pointer"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>جاري المعالجة وإرسال الرمز...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
+                          </svg>
+                          <span>
+                            {isRegisterNewWithGmail ? 'إرسال كود التحقق إلى بريد Gmail' : 'متابعة الدخول عبر Gmail'}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )
             ) : (
               /* COMPANY ID + USERNAME LOGIN FORM */
               <form onSubmit={handleCompanyLogin} className="space-y-4">

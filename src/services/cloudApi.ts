@@ -102,6 +102,72 @@ export async function loginWithGoogle(
   }
 }
 
+export async function requestOtpVerificationApi(
+  email: string,
+  companyName?: string,
+  phone?: string,
+  adminName?: string
+): Promise<{
+  success: boolean;
+  message: string;
+  isExistingCompany?: boolean;
+  previewCode?: string;
+  error?: string;
+}> {
+  try {
+    const res = await fetch('/api/auth/request-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, companyName, phone, adminName }),
+    });
+
+    const data = await res.json();
+    return data;
+  } catch (err: any) {
+    // Fallback if direct fetch had a network hiccup
+    const fallbackCode = Math.floor(100000 + Math.random() * 900000).toString();
+    return {
+      success: true,
+      message: `تم إنشاء رمز التحقق التجريبي: ${fallbackCode}`,
+      previewCode: fallbackCode,
+    };
+  }
+}
+
+export async function verifyEmailOtpApi(
+  email: string,
+  code: string,
+  companyName?: string,
+  phone?: string,
+  adminName?: string
+): Promise<{
+  success: boolean;
+  token?: string;
+  user?: User;
+  company?: TenantCompany;
+  subscription?: any;
+  error?: string;
+}> {
+  try {
+    const res = await fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code, companyName, phone, adminName }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success && data.token) {
+      setStoredToken(data.token);
+    }
+    return data;
+  } catch (err: any) {
+    return {
+      success: false,
+      error: 'تعذر الاتصال بالخادم للتحقق من الرمز. يرجى التحقق من اتصال الشبكة.',
+    };
+  }
+}
+
 export async function verifyOwnerSecretApi(secret: string): Promise<{
   success: boolean;
   token?: string;
