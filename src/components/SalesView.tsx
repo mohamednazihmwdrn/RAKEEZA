@@ -730,7 +730,7 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
                 </div>
 
                 {/* Action Buttons with 44px min-height */}
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 pt-1">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
                   <button
                     onClick={() => {
                       setSelectedInvoice(inv);
@@ -741,32 +741,29 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
                     📋 عرض
                   </button>
                   <button
+                    onClick={() => openEditModal(inv)}
+                    className="min-h-[44px] bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+                  >
+                    ✏️ تعديل
+                  </button>
+                  <button
                     onClick={() => handlePrintInvoice(inv)}
                     className="min-h-[44px] bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
                   >
                     🖨️ طباعة
                   </button>
-                  {inv.type === 'ajel' && !isPaidFull ? (
-                    <button
-                      onClick={() => handleOpenPayModal(inv)}
-                      className="min-h-[44px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-xs"
-                    >
-                      💰 تسديد
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleDeleteInvoice(inv.id)}
-                      className="min-h-[44px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
-                    >
-                      🗑️ حذف
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleDeleteInvoice(inv.id)}
+                    className="min-h-[44px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+                  >
+                    🗑️ حذف
+                  </button>
                   {inv.type === 'ajel' && !isPaidFull && (
                     <button
-                      onClick={() => handleDeleteInvoice(inv.id)}
-                      className="min-h-[44px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 col-span-3 sm:col-span-1"
+                      onClick={() => handleOpenPayModal(inv)}
+                      className="min-h-[44px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-xs col-span-2 sm:col-span-4"
                     >
-                      🗑️ حذف
+                      💰 تسديد دفعة من الفاتورة الآجلة
                     </button>
                   )}
                 </div>
@@ -874,6 +871,13 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
                           title="طباعة"
                         >
                           🖨️
+                        </button>
+                        <button
+                          onClick={() => openEditModal(inv)}
+                          className="bg-blue-600 text-white p-2 rounded-lg text-xs hover:bg-blue-700 transition cursor-pointer"
+                          title="تعديل الفاتورة"
+                        >
+                          ✏️
                         </button>
                         {inv.type === 'ajel' && !isPaidFull && (
                           <button

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppData, SaleInvoice, PurchaseInvoice } from '../types';
+import { AppData, SaleInvoice, PurchaseInvoice, CashTransaction } from '../types';
 import { Modal } from './Modal';
 import { printCashVoucherWindow } from '../utils/printCash';
 import { printCashClosingWindow, compileCashClosingData, formatNumber } from '../utils/printCashClosing';
@@ -28,6 +28,7 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
   );
 
   // Modal State
+  const [editingTransId, setEditingTransId] = useState<number | null>(null);
   const [transType, setTransType] = useState<'receive' | 'pay'>('receive');
   const [partyMode, setPartyMode] = useState<'customer' | 'supplier' | 'general'>('customer');
   const [selectedPartyName, setSelectedPartyName] = useState('');
@@ -53,6 +54,7 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
   });
 
   const handleOpenAdd = (type: 'receive' | 'pay') => {
+    setEditingTransId(null);
     setTransType(type);
     setPartyMode(type === 'receive' ? 'customer' : 'supplier');
     setSelectedPartyName('');
@@ -60,6 +62,18 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
     setAmount('');
     setNote('');
     setMethod('drawer');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (t: CashTransaction) => {
+    setEditingTransId(t.id);
+    setTransType(t.type === 'receive' || t.type === 'deposit' ? 'receive' : 'pay');
+    setPartyMode(t.customerName ? 'customer' : t.supplierName ? 'supplier' : 'general');
+    setSelectedPartyName(t.customerName || t.supplierName || '');
+    setSelectedInvoiceIds(t.invoiceId ? [t.invoiceId] : []);
+    setAmount(t.amount.toString());
+    setNote(t.note || '');
+    setMethod(t.method as any || 'drawer');
     setIsModalOpen(true);
   };
 
@@ -265,6 +279,42 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
         updatedData.cashBox[method] = (updatedData.cashBox[method] || 0) + val;
       } else {
         updatedData.cashBox[method] = (updatedData.cashBox[method] || 0) - val;
+      }
+    }
+
+    if (editingTransId !== null) {
+      const existingIdx = updatedData.cashTransactions.findIndex((t) => t.id === editingTransId);
+      if (existingIdx !== -1) {
+        const oldTrans = updatedData.cashTransactions[existingIdx];
+        // Revert old cashbox
+        if (oldTrans.type === 'receive' || oldTrans.type === 'deposit') {
+          updatedData.cashBox[oldTrans.method] = (updatedData.cashBox[oldTrans.method] || 0) - oldTrans.amount;
+        } else {
+          updatedData.cashBox[oldTrans.method] = (updatedData.cashBox[oldTrans.method] || 0) + oldTrans.amount;
+        }
+        // Apply new cashbox
+        if (transType === 'receive') {
+          updatedData.cashBox[method] = (updatedData.cashBox[method] || 0) + val;
+        } else {
+          updatedData.cashBox[method] = (updatedData.cashBox[method] || 0) - val;
+        }
+
+        updatedData.cashTransactions[existingIdx] = {
+          ...oldTrans,
+          type: transType,
+          method: method,
+          amount: val,
+          note: transactionNote || oldTrans.note,
+          customerName: partyMode === 'customer' ? selectedPartyName.trim() : undefined,
+          supplierName: partyMode === 'supplier' ? selectedPartyName.trim() : undefined,
+          invoiceId: linkedInvoiceId || oldTrans.invoiceId,
+        };
+
+        onUpdateData(updatedData);
+        setIsModalOpen(false);
+        setEditingTransId(null);
+        showToast(`تم تعديل السند #${editingTransId} وتحديث رصيد الخزينة بنجاح`, 'success');
+        return;
       }
     }
 
@@ -527,12 +577,18 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
                 </div>
 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="grid grid-cols-3 gap-1.5 pt-1">
                   <button
                     onClick={() => printCashVoucherWindow(t, appData, showToast)}
                     className="min-h-[44px] bg-[#1a237e] hover:bg-[#0d47a1] active:bg-[#082a61] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-xs"
                   >
-                    🖨️ طباعة سند
+                    🖨️ طباعة
+                  </button>
+                  <button
+                    onClick={() => handleOpenEdit(t)}
+                    className="min-h-[44px] bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+                  >
+                    ✏️ تعديل
                   </button>
                   <button
                     onClick={() => handleDelete(t.id)}
@@ -620,6 +676,13 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
                           🖨️ طباعة
                         </button>
                         <button
+                          onClick={() => handleOpenEdit(t)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-xs transition cursor-pointer shadow-xs"
+                          title="تعديل السند"
+                        >
+                          ✏️
+                        </button>
+                        <button
                           onClick={() => handleDelete(t.id)}
                           className="bg-[#c62828] text-white p-2 rounded-lg text-xs hover:bg-[#b71c1c] transition cursor-pointer shadow-xs"
                           title="حذف"
@@ -639,18 +702,30 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
       {/* Advanced Receipt & Payment Voucher Modal */}
       <Modal
         isOpen={isModalOpen}
-        title={transType === 'receive' ? '💰 سند قبض نقدي جديد (تحصيل وإيراد)' : '💸 سند صرف نقدي جديد (سداد ومصروف)'}
-        onClose={() => setIsModalOpen(false)}
+        title={
+          editingTransId
+            ? `✏️ تعديل بيانات سند رقم #${editingTransId}`
+            : transType === 'receive'
+            ? '💰 سند قبض نقدي جديد (تحصيل وإيراد)'
+            : '💸 سند صرف نقدي جديد (سداد ومصروف)'
+        }
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingTransId(null);
+        }}
         footer={
           <div className="flex flex-col sm:flex-row gap-2 w-full">
             <button
               onClick={handleSaveTransaction}
               className="min-h-[44px] bg-[#2e7d32] hover:bg-[#1b5e20] active:bg-[#124116] text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition shadow-xs flex-1 sm:flex-initial text-center"
             >
-              💾 حفظ السند وتحديث الأرصدة
+              {editingTransId ? '💾 تحديث السند وحفظ التعديلات' : '💾 حفظ السند وتحديث الأرصدة'}
             </button>
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                setIsModalOpen(false);
+                setEditingTransId(null);
+              }}
               className="min-h-[44px] bg-gray-400 hover:bg-gray-500 active:bg-gray-600 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition flex-1 sm:flex-initial text-center"
             >
               إلغاء

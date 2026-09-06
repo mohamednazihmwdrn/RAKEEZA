@@ -30,6 +30,7 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
 
   // Modal State for Adding Account
   const [isAddAccountModalOpen, setIsAddAccountModalOpen] = useState(false);
+  const [editingAccountCode, setEditingAccountCode] = useState<string | null>(null);
   const [newAccCode, setNewAccCode] = useState('');
   const [newAccName, setNewAccName] = useState('');
   const [newAccType, setNewAccType] = useState<AccountType>('asset');
@@ -38,6 +39,7 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
 
   // Modal State for Cost Centers
   const [isAddCostCenterModalOpen, setIsAddCostCenterModalOpen] = useState(false);
+  const [editingCostCenterId, setEditingCostCenterId] = useState<string | null>(null);
   const [ccCode, setCcCode] = useState('');
   const [ccName, setCcName] = useState('');
   const [ccManager, setCcManager] = useState('');
@@ -335,9 +337,75 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
     return { totalDebit, totalCredit, balance };
   };
 
+  const handleOpenEditAccount = (acc: AccountNode) => {
+    setEditingAccountCode(acc.code);
+    setNewAccCode(acc.code);
+    setNewAccName(acc.name);
+    setNewAccType(acc.type);
+    setNewAccParent(acc.parentCode || '');
+    setNewAccDesc(acc.description || '');
+    setIsAddAccountModalOpen(true);
+  };
+
+  const handleDeleteAccount = (code: string) => {
+    const target = appData.accounts.find((a) => a.code === code);
+    if (!target) return;
+
+    const hasChildren = appData.accounts.some((a) => a.parentCode === code);
+    if (hasChildren) {
+      showToast('لا يمكن حذف هذا الحساب لأنه حساب رئيسي يحتوي على حسابات فرعية تحته. يرجى حذف أو نقل الحسابات التابعة له أولاً.', 'error');
+      return;
+    }
+
+    if (!confirm(`هل أنت متأكد من رغبتك في حذف الحساب: [${target.code}] ${target.name}؟`)) return;
+
+    let updatedAccounts = appData.accounts.filter((a) => a.code !== code);
+    let updatedData = { ...appData, accounts: updatedAccounts };
+    updatedData = addAuditLog(
+      updatedData,
+      'delete',
+      'دليل الحسابات',
+      `تم حذف الحساب: ${target.code} - ${target.name}`
+    );
+
+    onUpdateData(updatedData);
+    showToast(`تم حذف الحساب [${target.code}] بنجاح`, 'success');
+  };
+
   const handleAddAccount = () => {
     if (!newAccCode.trim() || !newAccName.trim()) {
       showToast('يرجى كتابة كود الحساب واسم الحساب', 'warning');
+      return;
+    }
+
+    if (editingAccountCode) {
+      let updatedAccounts = appData.accounts.map((a) =>
+        a.code === editingAccountCode
+          ? {
+              ...a,
+              name: newAccName.trim(),
+              type: newAccType,
+              parentCode: newAccParent || undefined,
+              description: newAccDesc.trim() || undefined,
+            }
+          : a
+      );
+
+      let updatedData = { ...appData, accounts: updatedAccounts };
+      updatedData = addAuditLog(
+        updatedData,
+        'update',
+        'دليل الحسابات',
+        `تم تعديل بيانات الحساب: ${editingAccountCode} - ${newAccName.trim()}`
+      );
+
+      onUpdateData(updatedData);
+      showToast('تم تعديل بيانات الحساب بنجاح', 'success');
+      setIsAddAccountModalOpen(false);
+      setEditingAccountCode(null);
+      setNewAccCode('');
+      setNewAccName('');
+      setNewAccDesc('');
       return;
     }
 
@@ -382,9 +450,66 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
     setNewAccDesc('');
   };
 
+  const handleOpenEditCostCenter = (cc: CostCenter) => {
+    setEditingCostCenterId(cc.id);
+    setCcCode(cc.code);
+    setCcName(cc.name);
+    setCcManager(cc.manager || '');
+    setIsAddCostCenterModalOpen(true);
+  };
+
+  const handleDeleteCostCenter = (id: string) => {
+    const target = (appData.costCenters || []).find((c) => c.id === id);
+    if (!target) return;
+
+    if (!confirm(`هل أنت متأكد من حذف مركز التكلفة: [${target.code}] ${target.name}؟`)) return;
+
+    const updatedCCs = (appData.costCenters || []).filter((c) => c.id !== id);
+    let updatedData = { ...appData, costCenters: updatedCCs };
+    updatedData = addAuditLog(
+      updatedData,
+      'delete',
+      'مراكز التكلفة',
+      `تم حذف مركز التكلفة: ${target.code} - ${target.name}`
+    );
+
+    onUpdateData(updatedData);
+    showToast(`تم حذف مركز التكلفة [${target.code}] بنجاح`, 'success');
+  };
+
   const handleAddCostCenter = () => {
     if (!ccCode.trim() || !ccName.trim()) {
       showToast('يرجى إدخال كود واسم مركز التكلفة', 'warning');
+      return;
+    }
+
+    if (editingCostCenterId) {
+      const updatedCCs = (appData.costCenters || []).map((c) =>
+        c.id === editingCostCenterId
+          ? {
+              ...c,
+              code: ccCode.trim(),
+              name: ccName.trim(),
+              manager: ccManager.trim() || undefined,
+            }
+          : c
+      );
+
+      let updatedData = { ...appData, costCenters: updatedCCs };
+      updatedData = addAuditLog(
+        updatedData,
+        'update',
+        'مراكز التكلفة',
+        `تم تعديل بيانات مركز التكلفة: ${ccCode.trim()} - ${ccName.trim()}`
+      );
+
+      onUpdateData(updatedData);
+      showToast('تم تعديل مركز التكلفة بنجاح', 'success');
+      setIsAddCostCenterModalOpen(false);
+      setEditingCostCenterId(null);
+      setCcCode('');
+      setCcName('');
+      setCcManager('');
       return;
     }
 
@@ -490,6 +615,22 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
             >
               📊 كشف حساب
             </button>
+
+            <button
+              onClick={() => handleOpenEditAccount(node)}
+              className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded-lg text-xs font-semibold transition cursor-pointer"
+              title="تعديل بيانات الحساب"
+            >
+              ✏️
+            </button>
+
+            <button
+              onClick={() => handleDeleteAccount(node.code)}
+              className="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2 py-1 rounded-lg text-xs font-semibold transition cursor-pointer"
+              title="حذف الحساب"
+            >
+              🗑️
+            </button>
           </div>
         </div>
 
@@ -546,7 +687,13 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
         <div className="flex gap-2">
           {activeTab === 'tree' && (
             <button
-              onClick={() => setIsAddAccountModalOpen(true)}
+              onClick={() => {
+                setEditingAccountCode(null);
+                setNewAccCode('');
+                setNewAccName('');
+                setNewAccDesc('');
+                setIsAddAccountModalOpen(true);
+              }}
               className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center gap-1 shadow-sm"
             >
               ➕ إضافة حساب شجري جديد
@@ -554,7 +701,13 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
           )}
           {activeTab === 'costCenters' && (
             <button
-              onClick={() => setIsAddCostCenterModalOpen(true)}
+              onClick={() => {
+                setEditingCostCenterId(null);
+                setCcCode('');
+                setCcName('');
+                setCcManager('');
+                setIsAddCostCenterModalOpen(true);
+              }}
               className="bg-[#0288d1] hover:bg-[#0277bd] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center gap-1 shadow-sm"
             >
               ➕ إضافة مركز تكلفة
@@ -663,6 +816,20 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
                 <p className="text-xs text-slate-600">
                   المسؤول / المشرف: <strong>{cc.manager || 'المدير العام'}</strong>
                 </p>
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
+                  <button
+                    onClick={() => handleOpenEditCostCenter(cc)}
+                    className="flex-1 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    ✏️ تعديل
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCostCenter(cc.id)}
+                    className="flex-1 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    🗑️ حذف
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -773,15 +940,21 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
         </div>
       )}
 
-      {/* Modal: Add Account */}
+      {/* Modal: Add/Edit Account */}
       <Modal
         isOpen={isAddAccountModalOpen}
-        onClose={() => setIsAddAccountModalOpen(false)}
-        title="➕ إضافة حساب جديد إلى شجرة الحسابات"
+        onClose={() => {
+          setIsAddAccountModalOpen(false);
+          setEditingAccountCode(null);
+        }}
+        title={editingAccountCode ? `✏️ تعديل بيانات الحساب [${editingAccountCode}]` : "➕ إضافة حساب جديد إلى شجرة الحسابات"}
         footer={
           <div className="flex justify-end gap-2">
             <button
-              onClick={() => setIsAddAccountModalOpen(false)}
+              onClick={() => {
+                setIsAddAccountModalOpen(false);
+                setEditingAccountCode(null);
+              }}
               className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
             >
               إلغاء
@@ -790,7 +963,7 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
               onClick={handleAddAccount}
               className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
             >
-              حفظ الحساب
+              {editingAccountCode ? "تحديث الحساب" : "حفظ الحساب"}
             </button>
           </div>
         }
@@ -803,8 +976,11 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
                 type="text"
                 value={newAccCode}
                 onChange={(e) => setNewAccCode(e.target.value)}
+                disabled={!!editingAccountCode}
                 placeholder="مثال: 1107"
-                className="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono"
+                className={`w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono ${
+                  editingAccountCode ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''
+                }`}
               />
             </div>
             <div>
@@ -864,15 +1040,21 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
         </div>
       </Modal>
 
-      {/* Modal: Add Cost Center */}
+      {/* Modal: Add/Edit Cost Center */}
       <Modal
         isOpen={isAddCostCenterModalOpen}
-        onClose={() => setIsAddCostCenterModalOpen(false)}
-        title="➕ إضافة مركز تكلفة جديد"
+        onClose={() => {
+          setIsAddCostCenterModalOpen(false);
+          setEditingCostCenterId(null);
+        }}
+        title={editingCostCenterId ? "✏️ تعديل بيانات مركز التكلفة" : "➕ إضافة مركز تكلفة جديد"}
         footer={
           <div className="flex justify-end gap-2">
             <button
-              onClick={() => setIsAddCostCenterModalOpen(false)}
+              onClick={() => {
+                setIsAddCostCenterModalOpen(false);
+                setEditingCostCenterId(null);
+              }}
               className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
             >
               إلغاء
@@ -881,7 +1063,7 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
               onClick={handleAddCostCenter}
               className="bg-[#0288d1] hover:bg-[#0277bd] text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
             >
-              حفظ المركز
+              {editingCostCenterId ? "تحديث المركز" : "حفظ المركز"}
             </button>
           </div>
         }

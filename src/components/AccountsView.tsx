@@ -14,6 +14,7 @@ interface AccountsViewProps {
 
 export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateData, showToast }) => {
   const [modalType, setModalType] = useState<'customer' | 'supplier' | null>(null);
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [taxNumber, setTaxNumber] = useState('');
@@ -21,6 +22,18 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
   const [address, setAddress] = useState('');
   const [initialRepName, setInitialRepName] = useState('');
   const [initialRepPhone, setInitialRepPhone] = useState('');
+
+  const handleOpenEdit = (type: 'customer' | 'supplier', acc: any) => {
+    setEditingAccountId(acc.id);
+    setName(acc.name || '');
+    setPhone(acc.phone || '');
+    setTaxNumber(acc.taxNumber || '');
+    setCommercialReg(acc.commercialReg || '');
+    setAddress(acc.address || '');
+    setInitialRepName('');
+    setInitialRepPhone('');
+    setModalType(type);
+  };
 
   // Representatives Modal State
   const [managingRepsParty, setManagingRepsParty] = useState<{
@@ -166,6 +179,51 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
     }
 
     const updatedData = { ...appData };
+
+    if (editingAccountId) {
+      if (modalType === 'customer') {
+        updatedData.customers = updatedData.customers.map((c) =>
+          c.id === editingAccountId
+            ? {
+                ...c,
+                name: name.trim(),
+                phone: phone.trim(),
+                taxNumber: taxNumber.trim() || undefined,
+                commercialReg: commercialReg.trim() || undefined,
+                address: address.trim() || undefined,
+              }
+            : c
+        );
+        showToast('تم تعديل بيانات العميل بنجاح', 'success');
+      } else {
+        updatedData.suppliers = updatedData.suppliers.map((s) =>
+          s.id === editingAccountId
+            ? {
+                ...s,
+                name: name.trim(),
+                phone: phone.trim(),
+                taxNumber: taxNumber.trim() || undefined,
+                commercialReg: commercialReg.trim() || undefined,
+                address: address.trim() || undefined,
+              }
+            : s
+        );
+        showToast('تم تعديل بيانات المورد بنجاح', 'success');
+      }
+
+      onUpdateData(updatedData);
+      setModalType(null);
+      setEditingAccountId(null);
+      setName('');
+      setPhone('');
+      setTaxNumber('');
+      setCommercialReg('');
+      setAddress('');
+      setInitialRepName('');
+      setInitialRepPhone('');
+      return;
+    }
+
     const initialReps: CustomerRepresentative[] = [];
     if (initialRepName.trim()) {
       initialReps.push({
@@ -419,7 +477,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  <div className="grid grid-cols-4 gap-1.5 pt-1">
                     <button
                       onClick={() =>
                         setManagingRepsParty({
@@ -430,19 +488,25 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                           representatives: c.representatives || [],
                         })
                       }
-                      className="min-h-[38px] bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 border border-indigo-200"
+                      className="min-h-[38px] bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 border border-indigo-200"
                     >
                       👥 المناديب ({c.representatives?.length || 0})
                     </button>
                     <button
                       onClick={() => openStatementModal(c.name, 'customer')}
-                      className="min-h-[38px] bg-[#3b0764] hover:bg-[#2a0845] text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"
+                      className="min-h-[38px] bg-[#3b0764] hover:bg-[#2a0845] text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"
                     >
                       📄 كشف حساب
                     </button>
                     <button
+                      onClick={() => handleOpenEdit('customer', c)}
+                      className="min-h-[38px] bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"
+                    >
+                      ✏️ تعديل
+                    </button>
+                    <button
                       onClick={() => handleDeleteCustomer(c.id)}
-                      className="min-h-[38px] bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"
+                      className="min-h-[38px] bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"
                     >
                       🗑️ حذف
                     </button>
@@ -462,13 +526,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                   <th className="p-2.5">المناديب وجهات الاتصال</th>
                   <th className="p-2.5">الرصيد (ج.م)</th>
                   <th className="p-2.5">كشف الحساب</th>
+                  <th className="p-2.5">تعديل</th>
                   <th className="p-2.5 rounded-l-lg">حذف</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {appData.customers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center p-4 text-gray-400">
+                    <td colSpan={7} className="text-center p-4 text-gray-400">
                       لا يوجد عملاء
                     </td>
                   </tr>
@@ -523,8 +588,18 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                       </td>
                       <td className="p-2.5">
                         <button
+                          onClick={() => handleOpenEdit('customer', c)}
+                          className="bg-blue-600 text-white p-1.5 rounded-lg text-xs hover:bg-blue-700 cursor-pointer transition flex items-center justify-center"
+                          title="تعديل بيانات العميل"
+                        >
+                          ✏️
+                        </button>
+                      </td>
+                      <td className="p-2.5">
+                        <button
                           onClick={() => handleDeleteCustomer(c.id)}
-                          className="bg-red-500 text-white p-1.5 rounded-lg text-xs hover:bg-red-600 cursor-pointer"
+                          className="bg-red-500 text-white p-1.5 rounded-lg text-xs hover:bg-red-600 cursor-pointer transition flex items-center justify-center"
+                          title="حذف العميل"
                         >
                           🗑️
                         </button>
@@ -595,7 +670,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  <div className="grid grid-cols-4 gap-1.5 pt-1">
                     <button
                       onClick={() =>
                         setManagingRepsParty({
@@ -606,19 +681,25 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                           representatives: s.representatives || [],
                         })
                       }
-                      className="min-h-[38px] bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 border border-indigo-200"
+                      className="min-h-[38px] bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 border border-indigo-200"
                     >
                       👥 المناديب ({s.representatives?.length || 0})
                     </button>
                     <button
                       onClick={() => openStatementModal(s.name, 'supplier')}
-                      className="min-h-[38px] bg-[#3b0764] hover:bg-[#2a0845] text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"
+                      className="min-h-[38px] bg-[#3b0764] hover:bg-[#2a0845] text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"
                     >
                       📄 كشف حساب
                     </button>
                     <button
+                      onClick={() => handleOpenEdit('supplier', s)}
+                      className="min-h-[38px] bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"
+                    >
+                      ✏️ تعديل
+                    </button>
+                    <button
                       onClick={() => handleDeleteSupplier(s.id)}
-                      className="min-h-[38px] bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"
+                      className="min-h-[38px] bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"
                     >
                       🗑️ حذف
                     </button>
@@ -638,13 +719,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                   <th className="p-2.5">المناديب وجهات الاتصال</th>
                   <th className="p-2.5">الرصيد (ج.م)</th>
                   <th className="p-2.5">كشف الحساب</th>
+                  <th className="p-2.5">تعديل</th>
                   <th className="p-2.5 rounded-l-lg">حذف</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {appData.suppliers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center p-4 text-gray-400">
+                    <td colSpan={7} className="text-center p-4 text-gray-400">
                       لا يوجد موردين
                     </td>
                   </tr>
@@ -699,8 +781,18 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                       </td>
                       <td className="p-2.5">
                         <button
+                          onClick={() => handleOpenEdit('supplier', s)}
+                          className="bg-blue-600 text-white p-1.5 rounded-lg text-xs hover:bg-blue-700 cursor-pointer transition flex items-center justify-center"
+                          title="تعديل بيانات المورد"
+                        >
+                          ✏️
+                        </button>
+                      </td>
+                      <td className="p-2.5">
+                        <button
                           onClick={() => handleDeleteSupplier(s.id)}
-                          className="bg-red-500 text-white p-1.5 rounded-lg text-xs hover:bg-red-600 cursor-pointer"
+                          className="bg-red-500 text-white p-1.5 rounded-lg text-xs hover:bg-red-600 cursor-pointer transition flex items-center justify-center"
+                          title="حذف المورد"
                         >
                           🗑️
                         </button>

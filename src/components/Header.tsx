@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { LogOut, AlertTriangle } from 'lucide-react';
 import { User } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   currentUser: User | undefined;
@@ -233,6 +234,9 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">{autoBackupActive ? '🛡️ النسخ التلقائي نشط' : '⚠️ النسخ متوقف'}</span>
             <span className="sm:hidden text-[11px]">{autoBackupActive ? 'محمي' : 'تنبيه'}</span>
           </button>
+
+          {/* PWA Mobile App Install Button */}
+          <PWAInstallButton variant="header" />
 
           <span className="hidden md:inline-flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-full text-white font-medium text-xs">
             <span>👤 {currentUser?.name || 'مدير النظام'}</span>

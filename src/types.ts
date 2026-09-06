@@ -82,8 +82,9 @@ export interface User {
   phone?: string;
   email?: string;
   role: UserRole;
+  avatar?: string;
   status?: 'active' | 'disabled';
-  permissions: Record<string, boolean | Partial<ActionPermissions>>;
+  permissions?: Record<string, boolean | Partial<ActionPermissions>>;
   allowedBranches?: string[];
   allowedWarehouses?: string[];
   lastLogin?: string;
@@ -980,8 +981,8 @@ export interface SubscriptionPlan {
 
 export interface TenantCompany {
   id: string; // e.g. COMP-000001
-  tenantId: string; // e.g. TENANT-8829-AF1
-  code: string; // e.g. RKZ-001
+  tenantId?: string; // e.g. TENANT-8829-AF1
+  code?: string; // e.g. RKZ-001
   name: string;
   tradeName?: string;
   activity?: string;
@@ -997,18 +998,22 @@ export interface TenantCompany {
   adminUsername?: string;
   adminPassword?: string;
   status: CompanyStatus;
-  planId: string;
-  planName: string;
+  planId?: string;
+  planName?: string;
+  plan?: any;
   subscriptionId?: string;
   licenseId?: string;
   createdAt?: string;
   trialStartedAt?: string;
   trialExpiresAt?: string;
+  trialEndsAt?: string;
   subscriptionStartedAt?: string;
   subscriptionExpiresAt?: string;
-  limits: SubscriptionLimits;
-  features: string[];
+  limits?: SubscriptionLimits;
+  features?: string[];
   usersCount?: number;
+  maxUsers?: number;
+  activeUsersCount?: number;
   branchesCount?: number;
   warehousesCount?: number;
   operationsCount?: number;

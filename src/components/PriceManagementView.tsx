@@ -261,6 +261,16 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
     showToast(`تم تحديث وتعديل أسعار (${count}) صنف بنجاح`, 'success');
   };
 
+  const handleDeleteHistory = (id: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا السجل من تاريخ تعديلات الأسعار؟')) return;
+    const updatedData = {
+      ...syncedData,
+      priceHistories: (syncedData.priceHistories || []).filter((h) => h.id !== id),
+    };
+    onUpdateData(updatedData);
+    showToast('تم حذف سجل تعديل السعر بنجاح', 'success');
+  };
+
   // Filtered History
   const filteredHistories = useMemo(() => {
     const list = syncedData.priceHistories || [];
@@ -1043,12 +1053,13 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
                   <th className="p-3">سعر الجملة (السابق ← الجديد)</th>
                   <th className="p-3">المستخدم المسؤول</th>
                   <th className="p-3">سبب التعديل</th>
+                  <th className="p-3 text-center">الإجراء</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredHistories.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center p-8 text-slate-400">
+                    <td colSpan={9} className="text-center p-8 text-slate-400">
                       لا توجد سجلات تعديل أسعار مسجلة حتى الآن
                     </td>
                   </tr>
@@ -1085,6 +1096,15 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
                       </td>
                       <td className="p-3 text-xs font-semibold text-slate-700">👤 {h.changedBy}</td>
                       <td className="p-3 text-xs text-slate-600 italic">{h.reason || '-'}</td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => handleDeleteHistory(h.id)}
+                          className="bg-rose-50 hover:bg-rose-100 text-rose-700 p-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                          title="حذف هذا السجل"
+                        >
+                          🗑️
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}

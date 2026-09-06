@@ -22,6 +22,7 @@ import {
   verifyEmailOtpApi,
 } from '../services/cloudApi';
 import { TenantCompany, User as AppUser } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface LoginViewProps {
   onLoginSuccess: (session: {
@@ -319,6 +320,25 @@ export const LoginView: React.FC<LoginViewProps> = ({
       }
     } catch {
       setErrorMessage('حدث خطأ أثناء الاتصال بالخادم السحابي.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDirectDemoLogin = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await loginToCloud('COMP-000001', 'admin', '123456');
+      if (res.success && res.user && res.company) {
+        onLoginSuccess({
+          user: res.user,
+          company: res.company,
+          subscription: res.subscription,
+        });
+      }
+    } catch {
+      setErrorMessage('حدث خطأ أثناء الدخول التجريبي.');
     } finally {
       setIsLoading(false);
     }
@@ -830,6 +850,21 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 </div>
               </form>
             )}
+
+            {/* Quick Demo Access & Mobile App Install */}
+            <div className="mt-5 pt-4 border-t border-slate-700/60 space-y-3">
+              <button
+                type="button"
+                onClick={handleDirectDemoLogin}
+                disabled={isLoading}
+                className="w-full py-2.5 px-4 bg-emerald-600/20 hover:bg-emerald-600/30 active:bg-emerald-600/40 border border-emerald-500/40 text-emerald-300 font-bold rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              >
+                <span>⚡</span>
+                <span>دخول تجريبي فوري للزوار والعملاء (بدون كتابة بيانات)</span>
+              </button>
+
+              <PWAInstallButton variant="login" />
+            </div>
 
             {/* Footer Status */}
             <div className="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400">

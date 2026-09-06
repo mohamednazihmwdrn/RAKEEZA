@@ -47,6 +47,7 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
 
   // Manual Journal Entry Modal State
   const [isNewJournalOpen, setIsNewJournalOpen] = useState(false);
+  const [editingJournalId, setEditingJournalId] = useState<number | null>(null);
   const [journalDate, setJournalDate] = useState(today);
   const [journalDesc, setJournalDesc] = useState('');
   const [journalRef, setJournalRef] = useState('');
@@ -57,6 +58,47 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
 
   // Selected Journal for Details modal
   const [selectedJournal, setSelectedJournal] = useState<JournalEntry | null>(null);
+
+  const handleOpenNewJournal = () => {
+    setEditingJournalId(null);
+    setJournalDate(today);
+    setJournalDesc('');
+    setJournalRef('');
+    setJournalLines([
+      { accountCode: '1101', accountName: 'الصندوق والخزينة الرئيسية (Cash)', debit: 0, credit: 0, note: '' },
+      { accountCode: '4101', accountName: 'إيراد مبيعات بضاعة تجارية (Sales Revenue)', debit: 0, credit: 0, note: '' },
+    ]);
+    setIsNewJournalOpen(true);
+  };
+
+  const handleOpenEditJournal = (entry: JournalEntry) => {
+    setEditingJournalId(entry.id);
+    setJournalDate(entry.date);
+    setJournalRef(entry.reference || '');
+    setJournalDesc(entry.description || '');
+    setJournalLines(entry.lines.map((l) => ({ ...l })));
+    setIsNewJournalOpen(true);
+    if (selectedJournal) setSelectedJournal(null);
+  };
+
+  const handleDeleteJournal = (id: number) => {
+    if (!confirm('هل أنت متأكد من حذف هذا القيد المحاسبي؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+    if (!onUpdateData) return;
+    const entry = appData.journalEntries?.find((e) => e.id === id);
+    let updatedData = {
+      ...appData,
+      journalEntries: (appData.journalEntries || []).filter((e) => e.id !== id),
+    };
+    updatedData = addAuditLog(
+      updatedData,
+      'delete',
+      'القيود اليومية',
+      `تم حذف سند القيد اليومي رقم: ${entry?.entryNumber || id}`
+    );
+    onUpdateData(updatedData);
+    if (selectedJournal?.id === id) setSelectedJournal(null);
+    showToast?.('تم حذف القيد اليومي بنجاح', 'success');
+  };
 
   const handleAddLine = () => {
     setJournalLines((prev) => [
@@ -106,6 +148,43 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
     }
 
     if (!onUpdateData) return;
+
+    if (editingJournalId !== null) {
+      let updatedData = {
+        ...appData,
+        journalEntries: (appData.journalEntries || []).map((entry) => {
+          if (entry.id === editingJournalId) {
+            return {
+              ...entry,
+              date: journalDate,
+              reference: journalRef.trim() || undefined,
+              description: journalDesc.trim(),
+              lines: journalLines.map((l) => ({
+                ...l,
+                debit: Number(l.debit) || 0,
+                credit: Number(l.credit) || 0,
+              })),
+            };
+          }
+          return entry;
+        }),
+      };
+
+      updatedData = addAuditLog(
+        updatedData,
+        'update',
+        'القيود اليومية',
+        `تم تعديل سند القيد اليومي رقم: ${editingJournalId} بمبلغ ${totalDebitSum.toFixed(2)} ج.م`
+      );
+
+      onUpdateData(updatedData);
+      showToast?.('تم تعديل وحفظ القيد اليومي بنجاح', 'success');
+      setIsNewJournalOpen(false);
+      setEditingJournalId(null);
+      setJournalDesc('');
+      setJournalRef('');
+      return;
+    }
 
     const nextId = appData.nextJournalId || (appData.journalEntries?.length || 0) + 1;
     const currentUserObj = appData.users.find((u) => u.id === appData.currentUser) || appData.users[0];
@@ -276,7 +355,7 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
 
           {activeTab === 'journals' && (
             <button
-              onClick={() => setIsNewJournalOpen(true)}
+              onClick={handleOpenNewJournal}
               className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center gap-1 shadow-sm"
             >
               ➕ تسجيل قيد يومي مزدوج جديد
@@ -466,12 +545,29 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                         </td>
                         <td className="p-3 text-slate-600">{entry.createdBy}</td>
                         <td className="p-3">
-                          <button
-                            onClick={() => setSelectedJournal(entry)}
-                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg text-xs font-bold transition"
-                          >
-                            👁️ عرض القيد
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedJournal(entry)}
+                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer"
+                              title="عرض التفاصيل"
+                            >
+                              👁️ عرض
+                            </button>
+                            <button
+                              onClick={() => handleOpenEditJournal(entry)}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer"
+                              title="تعديل القيد"
+                            >
+                              ✏️ تعديل
+                            </button>
+                            <button
+                              onClick={() => handleDeleteJournal(entry.id)}
+                              className="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer"
+                              title="حذف القيد"
+                            >
+                              🗑️ حذف
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -719,8 +815,11 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
       {/* Modal: New Manual Journal Entry */}
       <Modal
         isOpen={isNewJournalOpen}
-        onClose={() => setIsNewJournalOpen(false)}
-        title="➕ تسجيل سند قيد محاسبي مزدوج (Journal Entry)"
+        onClose={() => {
+          setIsNewJournalOpen(false);
+          setEditingJournalId(null);
+        }}
+        title={editingJournalId ? `✏️ تعديل سند القيد اليومي رقم #${editingJournalId}` : "➕ تسجيل سند قيد محاسبي مزدوج (Journal Entry)"}
         footer={
           <div className="flex justify-between items-center w-full">
             <div className="font-mono text-xs font-bold">
@@ -732,7 +831,10 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setIsNewJournalOpen(false)}
+                onClick={() => {
+                  setIsNewJournalOpen(false);
+                  setEditingJournalId(null);
+                }}
                 className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
               >
                 إلغاء
@@ -746,7 +848,7 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                     : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                 }`}
               >
-                ترحيل وحفظ القيد
+                {editingJournalId ? 'تحديث وحفظ التعديلات' : 'ترحيل وحفظ القيد'}
               </button>
             </div>
           </div>
@@ -854,10 +956,24 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
         onClose={() => setSelectedJournal(null)}
         title={`📄 تفاصيل سند القيد ${selectedJournal?.entryNumber || ''}`}
         footer={
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-between items-center w-full">
+            <div className="flex gap-2">
+              <button
+                onClick={() => selectedJournal && handleOpenEditJournal(selectedJournal)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
+              >
+                ✏️ تعديل القيد
+              </button>
+              <button
+                onClick={() => selectedJournal && handleDeleteJournal(selectedJournal.id)}
+                className="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
+              >
+                🗑️ حذف القيد
+              </button>
+            </div>
             <button
               onClick={() => setSelectedJournal(null)}
-              className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl text-xs font-bold transition"
+              className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
             >
               إغلاق
             </button>
