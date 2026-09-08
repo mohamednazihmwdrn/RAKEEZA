@@ -82,26 +82,60 @@ export function generateInvoicePrintHtml(
     remainingAmount = Math.max(0, grandTotal - (paidAmount || 0));
   }
 
-  const discountAmount = typeof discountVal === 'number' ? (subtotal * discountVal) / 100 : 0;
-  const taxAmount = typeof taxVal === 'number' ? ((subtotal - discountAmount) * taxVal) / 100 : 0;
+  // Calculate item-level and invoice-level aggregated financial values
+  let itemsBaseSubtotal = 0;
+  let totalItemDiscounts = 0;
+  let totalItemTaxes = 0;
 
+  items.forEach((item) => {
+    const base = (item.qty || 0) * (item.price || 0);
+    itemsBaseSubtotal += base;
+
+    let itemDisc = 0;
+    if ((item as any).discountType === 'percent') {
+      const p = (item as any).discountValue !== undefined ? (item as any).discountValue : item.discount || 0;
+      itemDisc = (base * p) / 100;
+    } else if ((item as any).discountType === 'fixed') {
+      itemDisc = (item as any).discountValue !== undefined ? (item as any).discountValue : item.discount || 0;
+    } else if (typeof item.discount === 'number' && item.discount > 0) {
+      itemDisc = item.discount;
+    }
+    totalItemDiscounts += itemDisc;
+
+    let itemTax = 0;
+    const afterDisc = Math.max(0, base - itemDisc);
+    if ((item as any).taxType === 'percent') {
+      const tp = (item as any).taxValue !== undefined ? (item as any).taxValue : item.tax || 0;
+      itemTax = (afterDisc * tp) / 100;
+    } else if ((item as any).taxType === 'fixed') {
+      itemTax = (item as any).taxValue !== undefined ? (item as any).taxValue : item.tax || 0;
+    } else if (typeof item.tax === 'number' && item.tax > 0) {
+      itemTax = item.tax;
+    }
+    totalItemTaxes += itemTax;
+  });
+
+  const invoiceDiscountAmount = typeof discountVal === 'number' && discountVal > 0 ? (itemsBaseSubtotal * discountVal) / 100 : 0;
+  const totalDiscount = totalItemDiscounts + invoiceDiscountAmount;
+
+  const invoiceTaxAmount = typeof taxVal === 'number' && taxVal > 0 ? (Math.max(0, itemsBaseSubtotal - totalDiscount) * taxVal) / 100 : 0;
+  const totalTax = totalItemTaxes + invoiceTaxAmount;
+
+  // Render Table Rows (Exact 5 columns: اسم الصنف, البيان, العدد, السعر, الإجمالي)
   const itemsRowsHtml =
     items.length === 0
-      ? `<tr><td colspan="7" style="color: #888; padding: 4px;">لا توجد أصناف في هذه الفاتورة</td></tr>`
+      ? `<tr><td colspan="5" style="color: #888; padding: 6px; text-align: center;">لا توجد أصناف في هذه الفاتورة</td></tr>`
       : items
           .map((item) => {
-            const itemDisc = (item as any).discount !== undefined ? (item as any).discount : 0;
-            const itemTax = (item as any).tax !== undefined ? (item as any).tax : 0;
-            const itemDesc = item.notes || '-';
+            const itemDesc = item.notes || (item as any).statement || '-';
+            const itemLineTotal = item.total !== undefined ? item.total : (item.qty * item.price);
             return `
           <tr>
-            <td style="text-align: right; padding-right: 4px; font-weight: 600;">${item.name || ''}</td>
-            <td>${itemDesc}</td>
-            <td style="font-weight: 600;">${item.qty}</td>
-            <td>${parseFloat(item.price.toString()).toFixed(2)}</td>
-            <td>${typeof itemDisc === 'number' ? itemDisc : 0}%</td>
-            <td>${typeof itemTax === 'number' ? itemTax : 0}%</td>
-            <td style="font-weight: bold;">${parseFloat(item.total.toString()).toFixed(2)}</td>
+            <td style="text-align: right; padding-right: 6px; font-weight: 600;">${item.name || ''}</td>
+            <td style="text-align: right; padding-right: 6px; color: #333;">${itemDesc}</td>
+            <td style="font-weight: 600; text-align: center;">${item.qty}</td>
+            <td style="text-align: center;">${parseFloat(item.price.toString()).toFixed(2)}</td>
+            <td style="font-weight: bold; text-align: center;">${parseFloat(itemLineTotal.toString()).toFixed(2)}</td>
           </tr>
         `;
           })
@@ -697,18 +731,16 @@ export function generateInvoicePrintHtml(
 
       ${inv.notes ? `<div style="font-size: 0.72rem; background: #eef2f5; border: 1px solid #ccc; padding: 2px 5px; margin-bottom: 4px; border-radius: 2px;"><strong>📝 ملاحظات:</strong> ${inv.notes}</div>` : ''}
 
-      <!-- جدول الأصناف -->
+      <!-- جدول الأصناف (5 أعمدة محددة: اسم الصنف، البيان، العدد، السعر، الإجمالي) -->
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th style="width: 30%;">اسم الصنف</th>
-              <th style="width: 22%;">الوصف</th>
-              <th style="width: 8%;">العدد</th>
-              <th style="width: 12%;">السعر</th>
-              <th style="width: 8%;">خصم %</th>
-              <th style="width: 8%;">ضريبة %</th>
-              <th style="width: 12%;">الإجمالي</th>
+              <th style="width: 32%; text-align: right; padding-right: 6px;">اسم الصنف</th>
+              <th style="width: 28%; text-align: right; padding-right: 6px;">البيان</th>
+              <th style="width: 12%; text-align: center;">العدد</th>
+              <th style="width: 13%; text-align: center;">السعر</th>
+              <th style="width: 15%; text-align: center;">الإجمالي</th>
             </tr>
           </thead>
           <tbody id="invoiceTable">
@@ -717,23 +749,27 @@ export function generateInvoicePrintHtml(
         </table>
       </div>
 
-      <!-- الحسابات -->
+      <!-- الحسابات والملخص (تسمع الخصومات والضرائب المضافة على الأصناف هنا تحت البيانات) -->
       <div class="bottom-section">
         <div class="summary-vertical-list">
-          ${discountVal > 0 ? `
-          <div class="summary-line" id="row-discount">
-            <span id="lbl-discount">خصم الفاتورة (${discountVal}%):</span>
-            <span id="val-discount">${discountAmount.toFixed(2)}</span>
+          <div class="summary-line">
+            <span>إجمالي قيمة الأصناف:</span>
+            <span>${itemsBaseSubtotal.toFixed(2)} ج.م</span>
+          </div>
+          ${totalDiscount > 0 ? `
+          <div class="summary-line" id="row-discount" style="color: #2e7d32;">
+            <span id="lbl-discount">إجمالي الخصم:</span>
+            <span id="val-discount">-${totalDiscount.toFixed(2)} ج.م</span>
           </div>` : ''}
-          ${taxVal > 0 ? `
-          <div class="summary-line" id="row-tax">
-            <span id="lbl-tax">المصروفات/الضريبة (${taxVal}%):</span>
-            <span id="val-tax">${taxAmount.toFixed(2)}</span>
+          ${totalTax > 0 ? `
+          <div class="summary-line" id="row-tax" style="color: #312e81;">
+            <span id="lbl-tax">إجمالي الضريبة:</span>
+            <span id="val-tax">+${totalTax.toFixed(2)} ج.م</span>
           </div>` : ''}
           ${feesVal > 0 ? `
           <div class="summary-line" id="row-fees">
             <span id="lbl-fees">${feesName}:</span>
-            <span id="val-fees">${feesVal.toFixed(2)}</span>
+            <span id="val-fees">+${feesVal.toFixed(2)} ج.م</span>
           </div>` : ''}
           <div class="summary-line total-line" id="row-total">
             <span>صافي القيمة / الإجمالي:</span>

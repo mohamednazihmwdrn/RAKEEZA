@@ -354,12 +354,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
             onTouchCancel={handleHoldEnd}
             title="منظومة ركيزة RAKEEZA Cloud ERP"
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-amber-400 p-0.5 shadow-lg shadow-blue-500/20 flex items-center justify-center">
-              <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-                <span className="text-xl sm:text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-blue-400">
-                  R
-                </span>
-              </div>
+            <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-amber-400 p-0.5 shadow-xl shadow-blue-500/30 flex items-center justify-center shrink-0">
+              <img
+                src="/pwa-192x192.png"
+                alt="شعار ركيزة ERP"
+                className="w-full h-full rounded-[14px] bg-[#000e28] object-contain p-1"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">

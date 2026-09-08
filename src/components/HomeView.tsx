@@ -25,8 +25,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
               </h3>
               <div className="flex flex-wrap items-center gap-1.5 text-[11px] sm:text-xs text-blue-100 opacity-90 mt-0.5">
                 <span>الفرع: <strong className="text-amber-300 font-bold">{activeBranch?.name || 'الفرع الرئيسي'}</strong></span>
-                <span className="text-blue-300">•</span>
-                <span>ضريبي: <strong className="font-mono">{appData.settings.taxNumber || '123-456-789'}</strong></span>
+                {appData.settings?.taxNumber?.trim() ? (
+                  <>
+                    <span className="text-blue-300">•</span>
+                    <span>ضريبي: <strong className="font-mono">{appData.settings.taxNumber.trim()}</strong></span>
+                  </>
+                ) : null}
               </div>
             </div>
           </div>

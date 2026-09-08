@@ -75,6 +75,7 @@ export type SystemModuleKey =
 
 export interface User {
   id: string;
+  code?: string | number; // كود المستخدم داخل الشركة (كود 1 للمدير، كود 2، 3...)
   companyId?: string;
   name: string;
   username: string;
@@ -182,9 +183,14 @@ export interface InvoiceItem {
   price: number;
   costPrice?: number;
   total: number;
-  notes?: string;
-  discount?: number;
-  tax?: number;
+  notes?: string; // البيان أو الملاحظة الخاصة بالصنف
+  statement?: string; // بيان بديل
+  discount?: number; // قيمة الخصم المحسوبة
+  discountType?: 'percent' | 'fixed'; // نسبة مئوية % أو مبلغ ثابت
+  discountValue?: number; // القيمة المدخلة للخصم
+  tax?: number; // قيمة الضريبة المحسوبة
+  taxType?: 'percent' | 'fixed'; // نسبة مئوية % أو مبلغ ثابت
+  taxValue?: number; // القيمة المدخلة للضريبة
   batchNumber?: string;
   serialNumber?: string;
   priceType?: 'cash' | 'wholesale' | 'custom';
@@ -220,6 +226,7 @@ export interface SaleInvoice {
   createdAt: string;
   createdBy: string;
   createdByUserId?: string;
+  createdByUserCode?: string | number;
   updatedAt?: string;
   updatedBy?: string;
   cancelledAt?: string;
@@ -260,6 +267,7 @@ export interface PurchaseInvoice {
   createdAt: string;
   createdBy: string;
   createdByUserId?: string;
+  createdByUserCode?: string | number;
   updatedAt?: string;
   updatedBy?: string;
   cancelledAt?: string;
@@ -473,6 +481,8 @@ export interface AuditLog {
   timestamp: string;
   userName: string;
   userId?: string;
+  userCode?: string | number; // كود المستخدم (كود 1 للمدير، كود 2، 3...)
+  userRole?: string;
   companyId?: string;
   action: 'create' | 'update' | 'delete' | 'print' | 'approval' | 'login' | 'transfer' | string;
   module: string;
@@ -948,6 +958,38 @@ export interface AppData {
   exportAuditLogs?: ExportAuditLog[];
   supportSessions?: SupportAccessSession[];
   currentSupportSession?: SupportAccessSession;
+
+  // 18. Dashboard Customization & User Preferences
+  userDashboardWidgets?: Record<string, DashboardWidgetConfig[]>;
+}
+
+export type DashboardWidgetId =
+  | 'banner'
+  | 'quick_actions'
+  | 'reorder_alerts'
+  | 'core_metrics_grid'
+  | 'financial_kpis'
+  | 'enterprise_shortcuts'
+  | 'recent_sales'
+  | 'cash_liquidity';
+
+export interface DashboardWidgetConfig {
+  id: DashboardWidgetId;
+  label: string;
+  description: string;
+  icon: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface ReorderAlertItem {
+  item: Item;
+  currentStock: number;
+  minStockAlert: number;
+  deficit: number;
+  suggestedOrderQty: number;
+  estimatedCost: number;
+  status: 'critical' | 'warning';
 }
 
 export type CompanyStatus = 'active' | 'trial' | 'suspended' | 'expired' | 'archived';

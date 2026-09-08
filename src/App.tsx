@@ -59,6 +59,7 @@ import {
   verifyOwnerSecretApi,
   AuthSessionResponse,
 } from './services/cloudApi';
+import { realtimeSync } from './services/realtimeSync';
 import { AlertTriangle, KeyRound } from 'lucide-react';
 
 export default function App() {
@@ -95,15 +96,47 @@ export default function App() {
     }, 3500);
   };
 
-  const updateData = (newData: AppData) => {
+  const updateData = (newData: AppData, actionInfo?: { action?: string; module?: string; details?: string }) => {
     setAppData(newData);
     saveAppData(newData);
     if (session?.company?.id) {
-      saveTenantDataCloud(newData, session.company.id).catch((err) => {
+      saveTenantDataCloud(newData, session.company.id, actionInfo).catch((err) => {
         console.warn('Cloud sync error:', err);
       });
     }
   };
+
+  // 🔄 Real-time Instant Synchronization between Manager (Code 1) and Users (Code 2+)
+  useEffect(() => {
+    if (!session?.company?.id) {
+      realtimeSync.stop();
+      return;
+    }
+
+    const currentCode = session.user?.code || 1;
+    const currentName = session.user?.name || 'مستخدم';
+
+    realtimeSync.init({
+      companyId: session.company.id,
+      currentUserCode: currentCode,
+      currentUserName: currentName,
+      onDataUpdated: (incomingData, meta) => {
+        setAppData(incomingData);
+        saveAppData(incomingData);
+        if (meta?.actorCode && meta.actorCode !== currentCode) {
+          const actionMsg = meta.actionInfo?.details || 'تعديل وتحديث بيانات المنظومة';
+          showToast(
+            `⚡ مزامنة فورية: [كود ${meta.actorCode} - ${meta.actorName || 'مستخدم'} (${meta.actorRole === 'admin' ? 'المدير' : 'موظف'})] قام بـ: ${actionMsg}`,
+            'info'
+          );
+        }
+      },
+    });
+
+    return () => {
+      realtimeSync.stop();
+    };
+  }, [session?.company?.id, session?.user?.code, session?.user?.name]);
 
   // ☁️ Initialize and Validate Cloud Authentication Session on App Launch
   useEffect(() => {

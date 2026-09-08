@@ -700,20 +700,6 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
               />
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 pt-1">
-            <button
-              onClick={handleSaveItem}
-              className="min-h-[44px] bg-[#2e7d32] hover:bg-[#1b5e20] active:bg-[#124116] text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition shadow-xs flex-1 sm:flex-initial text-center"
-            >
-              💾 حفظ الصنف
-            </button>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="min-h-[44px] bg-gray-400 hover:bg-gray-500 active:bg-gray-600 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition flex-1 sm:flex-initial text-center"
-            >
-              إلغاء
-            </button>
-          </div>
         </div>
       </Modal>
     </div>

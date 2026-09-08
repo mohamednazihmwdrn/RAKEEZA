@@ -27,6 +27,7 @@ export interface SessionRecord {
   userId: string;
   companyId: string;
   userName: string;
+  userCode?: string | number;
   role: string;
   createdAt: string;
   expiresAt: string;
@@ -94,13 +95,14 @@ export function initCloudDatabase(): CloudDatabaseSchema {
       ...baseDefaultData.settings,
       companyName: 'شركة ركيزة للمحاسبة والتجارة العامة (RAKEEZA)',
       phone1: '01029190615',
-      taxNumber: '123-456-789',
+      taxNumber: '',
       commercialReg: 'CR-98765',
       activityCode: '4651 - تجارة أجهزة وإلكترونيات',
     },
     users: [
       {
         id: 'u-admin-1',
+        code: 1,
         companyId: 'COMP-000001',
         name: 'Mohamed Nazih (المدير العام)',
         username: 'admin',
@@ -112,6 +114,7 @@ export function initCloudDatabase(): CloudDatabaseSchema {
       },
       {
         id: 'u-cashier-1',
+        code: 2,
         companyId: 'COMP-000001',
         name: 'أحمد محمود (كاشير الفرع الرئيسي)',
         username: 'cashier',
@@ -122,6 +125,7 @@ export function initCloudDatabase(): CloudDatabaseSchema {
       },
       {
         id: 'u-warehouse-1',
+        code: 3,
         companyId: 'COMP-000001',
         name: 'سامح إبراهيم (أمين المخزن المركزي)',
         username: 'warehouse',
@@ -523,6 +527,7 @@ export function authenticateUser(
     userId: matchedUser.id,
     companyId: company.id,
     userName: matchedUser.name,
+    userCode: matchedUser.code || (matchedUser.role === 'company_admin' || matchedUser.role === 'admin' ? 1 : 2),
     role: matchedUser.role,
     createdAt: new Date().toISOString(),
     expiresAt,
@@ -1273,7 +1278,8 @@ export function getTenantDataStrict(companyId: string): AppData | null {
 export function saveTenantDataStrict(
   companyId: string,
   updatedData: Partial<AppData>,
-  actorUser?: { id: string; name: string }
+  actorUser?: { id: string; name: string; code?: string | number; role?: string },
+  actionInfo?: { action?: string; module?: string; details?: string }
 ): AppData {
   const db = getCloudDatabase();
   const current = getTenantDataStrict(companyId) || getDefaultData();
@@ -1281,15 +1287,18 @@ export function saveTenantDataStrict(
   // Audit operation stamp
   let auditLogs = updatedData.auditLogs || current.auditLogs || [];
   if (actorUser) {
+    const userCode = actorUser.code || (actorUser.role === 'company_admin' || actorUser.role === 'admin' ? 1 : undefined);
     const newLog = {
       id: `log-op-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
       userName: actorUser.name,
       userId: actorUser.id,
+      userCode: userCode,
+      userRole: actorUser.role,
       companyId,
-      action: 'update',
-      module: 'تحديث بيانات سحابية',
-      details: `تم حفظ وتحديث بيانات الشركة بنجاح بواسطة ${actorUser.name}`,
+      action: actionInfo?.action || 'update',
+      module: actionInfo?.module || 'مزامنة سحابية لحظية',
+      details: actionInfo?.details || `قام المستخدم "${actorUser.name}" (كود ${userCode || 'غير محدد'}) بتحديث بيانات المنظومة`,
     };
     auditLogs = [newLog, ...auditLogs].slice(0, 500);
   }

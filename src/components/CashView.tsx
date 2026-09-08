@@ -1017,21 +1017,6 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
               className="w-full p-2.5 border-2 border-gray-200 rounded-xl focus:border-[#1a237e] focus:outline-none bg-white text-xs md:text-sm"
             />
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-2 pt-2">
-            <button
-              onClick={handleSaveTransaction}
-              className="min-h-[44px] bg-[#2e7d32] hover:bg-[#1b5e20] active:bg-[#124116] text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition shadow-xs flex-1 sm:flex-initial text-center"
-            >
-              💾 حفظ السند وتحديث الأرصدة
-            </button>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="min-h-[44px] bg-gray-400 hover:bg-gray-500 active:bg-gray-600 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer transition flex-1 sm:flex-initial text-center"
-            >
-              إلغاء
-            </button>
-          </div>
         </div>
       </Modal>
 
@@ -1215,38 +1200,6 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
               </div>
             );
           })()}
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 pt-2">
-            <button
-              onClick={() => {
-                const openBal = parseFloat(closingOpenBalance) || 0;
-                const actCash = parseFloat(closingActualCash) || 0;
-                printCashClosingWindow(appData, closingDate, actCash, openBal, showToast);
-                setIsClosingModalOpen(false);
-              }}
-              className="min-h-[44px] bg-[#1a237e] hover:bg-[#0d47a1] active:bg-[#002171] text-white px-4 py-2.5 rounded-xl font-bold cursor-pointer transition shadow-xs flex-1 text-center flex items-center justify-center gap-2"
-            >
-              <span>🖨️</span>
-              <span>طباعة تقفيل اليومية</span>
-            </button>
-            <button
-              onClick={() => {
-                printShiftReportWindow(appData, closingDate, undefined, showToast);
-                setIsClosingModalOpen(false);
-              }}
-              className="min-h-[44px] bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-900 px-4 py-2.5 rounded-xl font-black cursor-pointer transition shadow-xs flex-1 text-center flex items-center justify-center gap-2"
-            >
-              <span>📈</span>
-              <span>طباعة ملخص الشفت والأرباح</span>
-            </button>
-            <button
-              onClick={() => setIsClosingModalOpen(false)}
-              className="min-h-[44px] bg-gray-400 hover:bg-gray-500 active:bg-gray-600 text-white px-5 py-2.5 rounded-xl font-bold cursor-pointer transition flex-1 sm:flex-initial text-center"
-            >
-              إلغاء
-            </button>
-          </div>
         </div>
       </Modal>
     </div>

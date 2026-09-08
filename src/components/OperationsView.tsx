@@ -4,6 +4,11 @@ import { Modal } from './Modal';
 import { addAuditLog } from '../utils/storage';
 import { YearEndClosingView } from './YearEndClosingView';
 import { printDailyTransactionsReportWindow } from '../utils/printDailyTransactionsReport';
+import {
+  exportTrialBalanceToExcel,
+  exportIncomeStatementToExcel,
+  exportBalanceSheetToExcel,
+} from '../utils/excelExport';
 
 interface OperationsViewProps {
   appData: AppData;
@@ -591,12 +596,28 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                 التحقق المحاسبي الشامل من توازن كافة حسابات الأصول، الخصوم، حقوق الملكية، الإيرادات والمصروفات.
               </p>
             </div>
-            <button
-              onClick={() => window.print()}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1"
-            >
-              🖨️ طباعة الميزان
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  exportTrialBalanceToExcel({
+                    accounts: appData.accounts,
+                    companyName: appData.settings?.companyName || 'منظومة ركيزة RAKEEZA ERP',
+                    appData,
+                  });
+                  if (showToast) showToast('تم تصدير ميزان المراجعة إلى ملف Excel بنجاح', 'success');
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <span>📊</span>
+                <span>تصدير إلى Excel</span>
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+              >
+                🖨️ طباعة الميزان
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -660,13 +681,42 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
       {/* 4. Income Statement Tab (P&L) */}
       {activeTab === 'incomeStatement' && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-          <div className="pb-3 border-b border-slate-100">
-            <h3 className="text-base md:text-lg font-bold text-[#1a237e]">
-              قائمة الدخل والأرباح والخسائر الشاملة (Income Statement / P&L)
-            </h3>
-            <p className="text-xs text-slate-500">
-              تقرير الإيرادات، تكلفة البضاعة المباعة، المصروفات التشغيلية، وصافي أرباح الفترة.
-            </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="text-base md:text-lg font-bold text-[#1a237e]">
+                قائمة الدخل والأرباح والخسائر الشاملة (Income Statement / P&L)
+              </h3>
+              <p className="text-xs text-slate-500">
+                تقرير الإيرادات، تكلفة البضاعة المباعة، المصروفات التشغيلية، وصافي أرباح الفترة.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  exportIncomeStatementToExcel({
+                    companyName: appData.settings?.companyName || 'منظومة ركيزة RAKEEZA ERP',
+                    allSales,
+                    allSalesReturns,
+                    netSalesRevenue,
+                    totalCOGS,
+                    grossProfit,
+                    operatingExpenses,
+                    netIncome,
+                  });
+                  if (showToast) showToast('تم تصدير قائمة الدخل إلى ملف Excel بنجاح', 'success');
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <span>📊</span>
+                <span>تصدير إلى Excel</span>
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+              >
+                🖨️ طباعة
+              </button>
+            </div>
           </div>
 
           <div className="max-w-2xl mx-auto space-y-3 font-mono text-sm">
@@ -722,13 +772,45 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
       {/* 5. Balance Sheet Tab */}
       {activeTab === 'balanceSheet' && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-          <div className="pb-3 border-b border-slate-100">
-            <h3 className="text-base md:text-lg font-bold text-[#1a237e]">
-              الميزانية العمومية والمركز المالي (Balance Sheet)
-            </h3>
-            <p className="text-xs text-slate-500">
-              معادلة الميزانية: الأصول (Assets) = الخصوم (Liabilities) + حقوق الملكية (Equity).
-            </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="text-base md:text-lg font-bold text-[#1a237e]">
+                الميزانية العمومية والمركز المالي (Balance Sheet)
+              </h3>
+              <p className="text-xs text-slate-500">
+                معادلة الميزانية: الأصول (Assets) = الخصوم (Liabilities) + حقوق الملكية (Equity).
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  exportBalanceSheetToExcel({
+                    companyName: appData.settings?.companyName || 'منظومة ركيزة RAKEEZA ERP',
+                    totalCurrentAssets,
+                    totalCashBank,
+                    totalReceivables,
+                    totalInventoryVal,
+                    totalFixedAssets,
+                    totalAssets,
+                    totalLiabilities,
+                    totalPayables,
+                    totalEquity,
+                    netIncome,
+                  });
+                  if (showToast) showToast('تم تصدير الميزانية العمومية والمركز المالي إلى ملف Excel بنجاح', 'success');
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <span>📊</span>
+                <span>تصدير إلى Excel</span>
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+              >
+                🖨️ طباعة
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-sm">

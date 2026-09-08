@@ -11,15 +11,16 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
+        includeAssets: ['favicon.ico', 'favicon-32x32.png', 'apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png', 'rakeeza-logo.png'],
         manifest: {
           id: '/',
           name: 'منظومة ركيزة | RAKEEZA Cloud ERP',
           short_name: 'ركيزة ERP',
           description: 'منصة ERP سحابية متكاملة لإدارة المبيعات، المشتريات، المخازن، الحسابات والشيكات',
-          theme_color: '#1a237e',
-          background_color: '#ffffff',
+          theme_color: '#000e28',
+          background_color: '#000e28',
           display: 'standalone',
+          orientation: 'portrait-primary',
           start_url: '/',
           scope: '/',
           icons: [
@@ -40,6 +41,12 @@ export default defineConfig(() => {
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',
+            },
+            {
+              src: '/apple-touch-icon.png',
+              sizes: '180x180',
+              type: 'image/png',
+              purpose: 'any',
             },
           ],
         },

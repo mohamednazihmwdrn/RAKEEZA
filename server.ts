@@ -61,6 +61,27 @@ async function startServer() {
     next();
   };
 
+  // ----------------------------------------------------
+  // Real-Time Synchronization State (SSE & Polling)
+  // ----------------------------------------------------
+  const sseCompanyClients = new Map<string, Set<express.Response>>();
+  const companyDataVersions = new Map<string, number>();
+  const companyLastActions = new Map<string, any>();
+
+  const broadcastSyncUpdate = (companyId: string, payload: any) => {
+    const clients = sseCompanyClients.get(companyId);
+    if (clients && clients.size > 0) {
+      const msg = `data: ${JSON.stringify(payload)}\n\n`;
+      clients.forEach((client) => {
+        try {
+          client.write(msg);
+        } catch {
+          clients.delete(client);
+        }
+      });
+    }
+  };
+
   const requireOwner = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     requireAuth(req, res, () => {
       const auth = (req as any).auth;
@@ -210,10 +231,112 @@ async function startServer() {
     const actorUser = {
       id: auth.session.userId,
       name: auth.session.userName,
+      code: auth.session.userCode || (auth.session.role === 'company_admin' || auth.session.role === 'admin' ? 1 : 2),
+      role: auth.session.role,
     };
 
-    const saved = saveTenantDataStrict(targetCompanyId, req.body.data, actorUser);
-    res.json({ success: true, companyId: targetCompanyId, data: saved });
+    const saved = saveTenantDataStrict(targetCompanyId, req.body.data, actorUser, req.body.actionInfo);
+    
+    // Increment version & record last action for instant synchronization
+    const nextVer = (companyDataVersions.get(targetCompanyId) || 1) + 1;
+    companyDataVersions.set(targetCompanyId, nextVer);
+    
+    const lastAction = {
+      version: nextVer,
+      timestamp: new Date().toISOString(),
+      actorUser,
+      actionInfo: req.body.actionInfo || {
+        action: 'update',
+        module: 'مزامنة سحابية لحظية',
+        details: `قام ${actorUser.name} (كود ${actorUser.code}) بتحديث بيانات المنظومة`,
+      },
+    };
+    companyLastActions.set(targetCompanyId, lastAction);
+
+    // Broadcast instant sync to all other users/codes of this company
+    broadcastSyncUpdate(targetCompanyId, {
+      type: 'REALTIME_SYNC',
+      companyId: targetCompanyId,
+      version: nextVer,
+      actorUser,
+      actionInfo: lastAction.actionInfo,
+      data: saved,
+      timestamp: lastAction.timestamp,
+    });
+
+    res.json({ success: true, companyId: targetCompanyId, version: nextVer, data: saved });
+  });
+
+  // ----------------------------------------------------
+  // Instant Real-time Synchronization Stream (SSE)
+  // ----------------------------------------------------
+  app.get('/api/tenant/sync-stream', (req, res) => {
+    const token = (req.query.token as string) || (req.headers.authorization || '').replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).end();
+    }
+    const verification = validateSession(token);
+    if (!verification.valid || !verification.session) {
+      return res.status(401).end();
+    }
+
+    const companyId = verification.session.companyId === 'OWNER' ? 'COMP-000001' : verification.session.companyId;
+
+    // Setup SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders?.();
+
+    if (!sseCompanyClients.has(companyId)) {
+      sseCompanyClients.set(companyId, new Set());
+    }
+    const clientSet = sseCompanyClients.get(companyId)!;
+    clientSet.add(res);
+
+    const currentVersion = companyDataVersions.get(companyId) || 1;
+    res.write(`data: ${JSON.stringify({ type: 'CONNECTED', version: currentVersion, companyId })}\n\n`);
+
+    // Keep-alive ping interval
+    const keepAlive = setInterval(() => {
+      try {
+        res.write(': ping\n\n');
+      } catch {
+        clearInterval(keepAlive);
+      }
+    }, 20000);
+
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      clientSet.delete(res);
+    });
+  });
+
+  // ----------------------------------------------------
+  // Lightweight Polling Fallback for Real-time Synchronization
+  // ----------------------------------------------------
+  app.get('/api/tenant/sync-check', requireAuth, (req, res) => {
+    const auth = (req as any).auth;
+    const companyId = auth.session.companyId === 'OWNER' ? 'COMP-000001' : auth.session.companyId;
+    const clientVersion = parseInt((req.query.version as string) || '0', 10);
+    const serverVersion = companyDataVersions.get(companyId) || 1;
+    const lastAction = companyLastActions.get(companyId);
+
+    if (serverVersion > clientVersion) {
+      const data = getTenantDataStrict(companyId);
+      return res.json({
+        hasUpdate: true,
+        version: serverVersion,
+        data,
+        lastAction,
+      });
+    }
+
+    res.json({
+      hasUpdate: false,
+      version: serverVersion,
+    });
   });
 
   // ----------------------------------------------------

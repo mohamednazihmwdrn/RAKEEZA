@@ -815,11 +815,11 @@
         "phone1": "01029190615",
         "phone2": "01100000000",
         "phone3": "01200000000",
-        "taxNumber": "123-456-789",
+        "taxNumber": "",
         "commercialReg": "CR-98765",
         "activityCode": "4651 - تجارة أجهزة وإلكترونيات",
         "notes": "شكراً لتعاملكم مع منظومة RAKEEZA للمحاسبة",
-        "defaultTaxRate": 14,
+        "defaultTaxRate": 0,
         "withholdingTaxRate": 1,
         "currencySymbol": "ج.م",
         "fiscalYear": "2026"
@@ -836,7 +836,8 @@
           "status": "active",
           "permissions": {
             "all": true
-          }
+          },
+          "code": 1
         },
         {
           "id": "u-cashier-1",
@@ -850,7 +851,8 @@
             "sales": true,
             "pos": true,
             "quotes_orders": true
-          }
+          },
+          "code": 2
         },
         {
           "id": "u-warehouse-1",
@@ -863,7 +865,8 @@
           "permissions": {
             "inventory": true,
             "purchases": true
-          }
+          },
+          "code": 3
         }
       ],
       "currentUser": "user1",
@@ -2127,7 +2130,8 @@
           "phone": "01011223344",
           "permissions": {
             "all": true
-          }
+          },
+          "code": 1
         },
         {
           "id": "u-amal-cashier",
@@ -2140,7 +2144,8 @@
           "permissions": {
             "sales": true,
             "pos": true
-          }
+          },
+          "code": 2
         }
       ],
       "currentUser": "user1",
@@ -3327,7 +3332,8 @@
           "phone": "01299887766",
           "permissions": {
             "all": true
-          }
+          },
+          "code": 1
         }
       ],
       "currentUser": "user1",
@@ -4472,7 +4478,8 @@
           "permissions": {
             "all": true
           },
-          "email": "mohamednazih188@gmail.com"
+          "email": "mohamednazih188@gmail.com",
+          "code": 1
         }
       ],
       "currentUser": "user1",
@@ -5558,7 +5565,8 @@
           "permissions": {
             "all": true
           },
-          "email": "nazihm338@gmail.com"
+          "email": "nazihm338@gmail.com",
+          "code": 1
         }
       ],
       "currentUser": "user1",
@@ -6644,7 +6652,8 @@
           "permissions": {
             "all": true
           },
-          "email": "safaglc95@gmail.com"
+          "email": "safaglc95@gmail.com",
+          "code": 1
         }
       ],
       "currentUser": "user1",

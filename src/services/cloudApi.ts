@@ -619,8 +619,9 @@ export async function fetchTenantDataCloud(companyId?: string): Promise<{
 
 export async function saveTenantDataCloud(
   data: Partial<AppData>,
-  companyId?: string
-): Promise<{ success: boolean; data?: AppData; error?: string }> {
+  companyId?: string,
+  actionInfo?: { action?: string; module?: string; details?: string; userCode?: string | number }
+): Promise<{ success: boolean; data?: AppData; error?: string; version?: number }> {
   const cleanId = companyId || 'COMP-000001';
 
   // 1. Always save to localStorage immediately to prevent any data loss
@@ -637,7 +638,7 @@ export async function saveTenantDataCloud(
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ data, companyId }),
+        body: JSON.stringify({ data, companyId, actionInfo }),
       });
 
       const contentType = res.headers.get('content-type') || '';

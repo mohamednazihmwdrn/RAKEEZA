@@ -79,7 +79,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Mobile Drawer Top Bar */}
         <div className="md:hidden flex items-center justify-between px-4 py-3.5 bg-[#0d47a1] border-b border-white/15 sticky top-0 z-10 shadow-xs">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🏢</span>
+            <img
+              src="/pwa-192x192.png"
+              alt="شعار ركيزة"
+              className="w-8 h-8 rounded-lg object-contain bg-[#000e28] p-0.5 border border-amber-300/30 shadow-xs"
+            />
             <div>
               <span className="font-black text-[#ffd54f] text-sm tracking-wide block">RAKEEZA | ركيزة</span>
               <span className="text-[10px] text-blue-200 block">قائمة المنظومة الإدارية</span>

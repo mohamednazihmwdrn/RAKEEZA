@@ -158,7 +158,11 @@ export const Header: React.FC<HeaderProps> = ({
             onTouchCancel={handleHoldEnd}
             title="منظومة ركيزة RAKEEZA للمحاسبة السحابية"
           >
-            <span>📊</span>
+            <img
+              src="/pwa-192x192.png"
+              alt="شعار ركيزة"
+              className="w-7 h-7 rounded-lg object-contain bg-[#000e28] p-0.5 border border-amber-300/40 shadow-xs"
+            />
             <span className="text-[#ffd54f] tracking-wider">RAKEEZA</span>
             <span className="hidden xs:inline text-xs sm:text-base font-bold text-white/90">ERP</span>
             {isHoldingLogo && (

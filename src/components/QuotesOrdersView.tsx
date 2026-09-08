@@ -1904,56 +1904,6 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
               />
             </div>
           </div>
-
-          {/* Direct Actions Bar at the bottom of the form */}
-          <div className="bg-white p-4 rounded-2xl border-2 border-indigo-100 shadow-sm flex flex-wrap justify-between items-center gap-3">
-            <div>
-              <span className="text-xs text-slate-500 block">الإجمالي النهائي للمستند:</span>
-              <strong className="text-lg font-black text-emerald-700 font-mono">
-                {grandTotal.toFixed(2)} {currencySymbol}
-              </strong>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleSaveQuotation(false, true)}
-                className="bg-slate-600 hover:bg-slate-700 active:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer shadow-xs"
-              >
-                💾 حفظ كمسودة
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSaveQuotation(false, false)}
-                className="bg-[#1a237e] hover:bg-[#0d1642] active:bg-black text-white px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer shadow-md flex items-center gap-1.5"
-              >
-                <span>✅</span>
-                <span>حفظ واعتماد المستند</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSaveQuotation(true, false)}
-                className="bg-[#2e7d32] hover:bg-[#1b5e20] active:bg-[#0f3813] text-white px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer shadow-md flex items-center gap-1.5"
-              >
-                <span>🖨️</span>
-                <span>حفظ وطباعة فورية</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveModal(null);
-                  setSelectedQuote(null);
-                  setEditingQuoteId(null);
-                }}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer"
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
         </div>
       </Modal>
 
