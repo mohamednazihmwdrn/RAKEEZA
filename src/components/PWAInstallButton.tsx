@@ -3,11 +3,12 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 import { Smartphone, Download, Share2, CheckCircle2, X } from 'lucide-react';
 
 interface Props {
-  variant?: 'header' | 'login' | 'banner';
+  variant?: 'header' | 'login' | 'banner' | 'menu-item';
   className?: string;
+  onAfterClick?: () => void;
 }
 
-export const PWAInstallButton: React.FC<Props> = ({ variant = 'header', className = '' }) => {
+export const PWAInstallButton: React.FC<Props> = ({ variant = 'header', className = '', onAfterClick }) => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
@@ -18,6 +19,7 @@ export const PWAInstallButton: React.FC<Props> = ({ variant = 'header', classNam
   }
 
   const handleInstallClick = async () => {
+    if (onAfterClick) onAfterClick();
     if (isInstallable) {
       setIsInstalling(true);
       try {
@@ -143,6 +145,113 @@ export const PWAInstallButton: React.FC<Props> = ({ variant = 'header', classNam
                 className="w-full rounded-xl bg-[#1a237e] py-2.5 text-xs font-bold text-white hover:bg-[#0d47a1] transition cursor-pointer"
               >
                 فهمت ذلك، إغلاق
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (variant === 'menu-item') {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={handleInstallClick}
+          disabled={isInstalling}
+          className={`w-full flex items-center justify-between p-2.5 rounded-xl text-right transition cursor-pointer hover:bg-slate-100 group ${className}`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-base shrink-0 group-hover:scale-105 transition-transform">
+              📲
+            </div>
+            <div className="flex flex-col text-right">
+              <span className="text-xs font-black text-slate-900 group-hover:text-indigo-900">
+                تثبيت التطبيق على الجهاز
+              </span>
+              <span className="text-[10px] text-slate-500 font-medium">
+                تنزيل PWA بالشعار الرسمي على الهاتف أو الحاسوب
+              </span>
+            </div>
+          </div>
+          <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-md shadow-2xs">
+            تثبيت
+          </span>
+        </button>
+
+        {/* Instructions Modal */}
+        {showIOSGuide && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 text-right space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src="/pwa-192x192.png"
+                    alt="أيقونة ركيزة"
+                    className="w-10 h-10 rounded-xl bg-[#000e28] p-0.5 shadow-sm object-contain"
+                  />
+                  <div>
+                    <h3 className="text-base font-black text-[#1a237e]">
+                      تثبيت تطبيق ركيزة على هاتفك
+                    </h3>
+                    <p className="text-[10px] text-slate-500">ينزل بشعار وأيقونة ركيزة على الشاشة الرئيسية كأي تطبيق</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowIOSGuide(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs sm:text-sm text-slate-700">
+                <div className="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 flex items-center gap-3">
+                  <img
+                    src="/pwa-192x192.png"
+                    alt="أيقونة التطبيق على الهاتف"
+                    className="w-12 h-12 rounded-2xl bg-[#000e28] p-1 shadow-md shrink-0 object-contain ring-2 ring-indigo-300"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold text-[#1a237e] block">هكذا يظهر التطبيق على شاشتك:</span>
+                    <span className="text-slate-600 block text-[11px] mt-0.5">
+                      شعار ركيزة ERP الرسمي في قائمة وتطبيقات هاتفك، يعمل بملء الشاشة مع سرعة فائقة.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="font-bold text-[#1a237e]">
+                    📱 هواتف أندرويد (Google Chrome):
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    اضغط على خيارات المتصفح (<strong>⋮</strong>) ثم اختر <strong>«تثبيت التطبيق»</strong> أو <strong>«إضافة إلى الشاشة الرئيسية»</strong>.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50/70 p-3.5 rounded-xl border border-blue-200 space-y-2">
+                  <div className="font-bold text-blue-900">
+                    🍏 هواتف آيفون (Safari):
+                  </div>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    اضغط زر <strong>مشاركة (Share ⬆️)</strong> في سفاري ثم اضغط <strong>«إضافة إلى الشاشة الرئيسية»</strong>.
+                  </p>
+                </div>
+
+                <div className="p-2.5 bg-emerald-50 text-emerald-900 rounded-xl border border-emerald-200 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>أي تحديث في المنظومة يظهر تلقائياً على هاتفك دون الحاجة لإعادة التثبيت!</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowIOSGuide(false)}
+                className="w-full rounded-xl bg-[#1a237e] py-2.5 text-xs font-bold text-white hover:bg-[#0d47a1] transition cursor-pointer"
+              >
+                تم
               </button>
             </div>
           </div>

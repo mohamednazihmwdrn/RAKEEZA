@@ -743,69 +743,71 @@ export default function App() {
 
       {/* Main Content Area */}
       <main
-        className={`mt-[60px] p-3 sm:p-4 md:p-6 pb-24 md:pb-6 transition-all duration-300 flex-1 max-w-full overflow-x-hidden ${
+        className={`mt-[60px] p-2.5 sm:p-4 md:p-6 pb-24 md:pb-6 transition-all duration-300 flex-1 max-w-full overflow-x-hidden ${
           isSidebarOpen ? 'md:mr-[290px]' : 'mr-0'
         }`}
       >
-        {/* Subscription Status Banner if expired or warning */}
-        {session?.subscription?.isExpired && (
-          <div className="mb-4 p-3.5 bg-amber-500/15 border-2 border-amber-500/40 rounded-2xl text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-fade-in">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-800">
-                <AlertTriangle className="w-5 h-5 shrink-0" />
+        <div className="w-full max-w-[1720px] mx-auto">
+          {/* Subscription Status Banner if expired or warning */}
+          {session?.subscription?.isExpired && (
+            <div className="mb-4 p-3.5 bg-amber-500/15 border-2 border-amber-500/40 rounded-2xl text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-fade-in">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-800">
+                  <AlertTriangle className="w-5 h-5 shrink-0" />
+                </div>
+                <div className="text-xs sm:text-sm">
+                  <p className="font-extrabold text-amber-950">
+                    تنبيه: انتهت صلاحية اشتراك المنظومة لشركة ({session?.company?.name || 'الشركة'})
+                  </p>
+                  <p className="text-amber-800 text-xs">
+                    بياناتك ومستنداتك محفوظة بأمان تام في السحابة. لتجديد الترخيص ومتابعة العمل، يرجى إدخال كود التفعيل المعتمد.
+                  </p>
+                </div>
               </div>
-              <div className="text-xs sm:text-sm">
-                <p className="font-extrabold text-amber-950">
-                  تنبيه: انتهت صلاحية اشتراك المنظومة لشركة ({session?.company?.name || 'الشركة'})
-                </p>
-                <p className="text-amber-800 text-xs">
-                  بياناتك ومستنداتك محفوظة بأمان تام في السحابة. لتجديد الترخيص ومتابعة العمل، يرجى إدخال كود التفعيل المعتمد.
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsLicenseModalOpen(true)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition-all shadow-sm cursor-pointer whitespace-nowrap"
+              >
+                🔑 إدخال كود الترخيص
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsLicenseModalOpen(true)}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition-all shadow-sm cursor-pointer whitespace-nowrap"
-            >
-              🔑 إدخال كود الترخيص
-            </button>
-          </div>
-        )}
+          )}
 
-        {/* Page Top Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-5 pb-3 border-b-2 border-slate-200 gap-3">
-          <div className="w-full sm:w-auto">
-            <h2 className="text-base sm:text-lg md:text-xl font-black text-[#1a237e] flex items-center gap-2 flex-wrap">
-              {getPageTitle(currentPage)}
-            </h2>
-            <span className="hidden sm:inline-block text-[11px] text-slate-500 mt-0.5">
-              💡 تلميح اختصارات لوحة المفاتيح: (Ctrl+0 الرئيسية | Ctrl+1 المبيعات | Ctrl+2 المشتريات | Ctrl+3 نقطة البيع | Ctrl+4 المخزون | Ctrl+5 الحسابات)
-            </span>
+          {/* Page Top Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-5 pb-3 border-b-2 border-slate-200 gap-3">
+            <div className="w-full sm:w-auto">
+              <h2 className="text-base sm:text-lg md:text-xl font-black text-[#1a237e] flex items-center gap-2 flex-wrap">
+                {getPageTitle(currentPage)}
+              </h2>
+              <span className="hidden sm:inline-block text-[11px] text-slate-500 mt-0.5">
+                💡 تلميح اختصارات لوحة المفاتيح: (Ctrl+0 الرئيسية | Ctrl+1 المبيعات | Ctrl+2 المشتريات | Ctrl+3 نقطة البيع | Ctrl+4 المخزون | Ctrl+5 الحسابات)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              {currentPage !== 'pos' && (
+                <button
+                  onClick={() => handleNavigate('pos')}
+                  className="min-h-[40px] bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow-xs flex-1 sm:flex-initial"
+                >
+                  ⚡ POS سريع
+                </button>
+              )}
+              {currentPage !== 'home' && (
+                <button
+                  onClick={() => handleNavigate('home')}
+                  className="min-h-[40px] bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 flex-1 sm:flex-initial"
+                >
+                  🏠 الرئيسية
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            {currentPage !== 'pos' && (
-              <button
-                onClick={() => handleNavigate('pos')}
-                className="min-h-[40px] bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow-xs flex-1 sm:flex-initial"
-              >
-                ⚡ POS سريع
-              </button>
-            )}
-            {currentPage !== 'home' && (
-              <button
-                onClick={() => handleNavigate('home')}
-                className="min-h-[40px] bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 flex-1 sm:flex-initial"
-              >
-                🏠 الرئيسية
-              </button>
-            )}
-          </div>
+          {/* Dynamic Page View */}
+          {renderContent()}
         </div>
-
-        {/* Dynamic Page View */}
-        {renderContent()}
       </main>
 
       {/* Mobile Sticky Quick Navigation Bar */}

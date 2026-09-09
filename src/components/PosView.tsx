@@ -33,6 +33,7 @@ export const PosView: React.FC<PosViewProps> = ({ appData, onUpdateData, showToa
   const [taxRate, setTaxRate] = useState<number>(appData.settings.defaultTaxRate || 14);
   const [heldOrders, setHeldOrders] = useState<Array<{ id: number; customer: string; time: string; items: InvoiceItem[] }>>([]);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [posMobileTab, setPosMobileTab] = useState<'products' | 'cart'>('products');
 
   // Categories list
   const categories = ['all', ...Array.from(new Set(appData.items.map((i) => i.category || 'عام')))];
@@ -493,9 +494,52 @@ export const PosView: React.FC<PosViewProps> = ({ appData, onUpdateData, showToa
         </div>
       </div>
 
+      {/* Mobile Adaptive Tab Switcher (< lg) */}
+      <div className="flex lg:hidden bg-white p-1 rounded-2xl border border-slate-200 shadow-xs mb-3">
+        <button
+          type="button"
+          onClick={() => setPosMobileTab('products')}
+          className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            posMobileTab === 'products'
+              ? 'bg-[#1a237e] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <span>🛍️ معروضات الأصناف</span>
+          <span className="bg-white/20 text-current px-1.5 py-0.2 rounded-full text-[10px]">
+            {filteredItems.length}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPosMobileTab('cart')}
+          className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            posMobileTab === 'cart'
+              ? 'bg-[#1a237e] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <span>🛒 السلة والمحاسبة</span>
+          {cart.length > 0 && (
+            <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full text-[10px]">
+              {cart.length}
+            </span>
+          )}
+          {finalTotal > 0 && (
+            <span className="font-mono font-bold text-[11px] text-emerald-400">
+              ({finalTotal.toFixed(0)} ج.م)
+            </span>
+          )}
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Side: Items Catalog & Quick Touch Grid (7 Cols) */}
-        <div className="lg:col-span-7 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div
+          className={`${
+            posMobileTab === 'products' ? 'block' : 'hidden'
+          } lg:block lg:col-span-7 bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 space-y-4`}
+        >
           {/* Price Management Master Pricing Tier Selector Bar */}
           <div className="bg-gradient-to-r from-amber-50 to-indigo-50 border border-amber-200/80 rounded-xl p-2.5 flex flex-wrap justify-between items-center gap-2">
             <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
@@ -607,7 +651,23 @@ export const PosView: React.FC<PosViewProps> = ({ appData, onUpdateData, showToa
         </div>
 
         {/* Right Side: Active Cart & Checkout Panel (5 Cols) */}
-        <div className="lg:col-span-5 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between space-y-3">
+        <div
+          className={`${
+            posMobileTab === 'cart' ? 'block' : 'hidden'
+          } lg:block lg:col-span-5 bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between space-y-3`}
+        >
+          {/* Mobile Back to Products Banner */}
+          <div className="lg:hidden flex justify-between items-center bg-indigo-50 border border-indigo-200 p-2.5 rounded-xl">
+            <span className="font-bold text-xs text-indigo-950">🛒 سلة البيع والمحاسبة</span>
+            <button
+              type="button"
+              onClick={() => setPosMobileTab('products')}
+              className="bg-white text-indigo-800 hover:bg-indigo-100 font-bold px-3 py-1 rounded-lg border border-indigo-200 cursor-pointer text-xs flex items-center gap-1 shadow-2xs"
+            >
+              <span>➕ إضافة أصناف أخرى</span>
+            </button>
+          </div>
+
           {/* Customer & Header with Credit Limit Badge */}
           <div className="space-y-2 pb-2 border-b border-slate-100 relative">
             <div className="grid grid-cols-2 gap-2">
@@ -961,6 +1021,30 @@ export const PosView: React.FC<PosViewProps> = ({ appData, onUpdateData, showToa
           </div>
         </div>
       </div>
+
+      {/* Mobile Floating Cart Summary Button when on Products view */}
+      {cart.length > 0 && posMobileTab === 'products' && (
+        <div className="lg:hidden fixed bottom-20 left-4 right-4 z-20 animate-fade-in">
+          <button
+            type="button"
+            onClick={() => setPosMobileTab('cart')}
+            className="w-full bg-[#1a237e] hover:bg-[#0d47a1] active:bg-[#002171] text-white p-3 rounded-2xl shadow-2xl flex items-center justify-between font-bold text-xs sm:text-sm border-2 border-amber-400/80 cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <span className="bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-full text-xs">
+                {cart.length} أصناف
+              </span>
+              <span>في سلة البيع</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-amber-300 font-black text-sm sm:text-base">
+                {finalTotal.toFixed(2)} ج.م
+              </span>
+              <span className="bg-white/20 px-2 py-1 rounded-lg text-xs">إتمام البيع ⬅</span>
+            </div>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

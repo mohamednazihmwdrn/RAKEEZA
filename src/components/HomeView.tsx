@@ -59,11 +59,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
         {/* Sales Card */}
         <div
           onClick={() => onNavigate('sales')}
-          className="bg-white rounded-2xl p-3 sm:p-5 shadow-xs border-r-4 border-[#1a237e] hover:-translate-y-0.5 active:scale-[0.98] transition cursor-pointer relative overflow-hidden"
+          className="bg-white rounded-2xl p-3 sm:p-5 shadow-xs border border-slate-200 hover:border-indigo-400 hover:-translate-y-0.5 active:scale-[0.98] transition cursor-pointer relative overflow-hidden group"
         >
           <div className="flex justify-between items-start mb-1">
-            <div className="text-2xl sm:text-3xl">💰</div>
-            <span className="bg-[#1a237e] text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-800 flex items-center justify-center text-xl sm:text-2xl group-hover:scale-105 transition-transform">
+              💰
+            </div>
+            <span className="bg-[#1a237e] text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono shadow-2xs">
               {(appData?.salesInvoices || []).length}
             </span>
           </div>
@@ -74,11 +76,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
         {/* Purchases Card */}
         <div
           onClick={() => onNavigate('purchases')}
-          className="bg-white rounded-2xl p-3 sm:p-5 shadow-xs border-r-4 border-indigo-600 hover:-translate-y-0.5 active:scale-[0.98] transition cursor-pointer relative overflow-hidden"
+          className="bg-white rounded-2xl p-3 sm:p-5 shadow-xs border border-slate-200 hover:border-indigo-400 hover:-translate-y-0.5 active:scale-[0.98] transition cursor-pointer relative overflow-hidden group"
         >
           <div className="flex justify-between items-start mb-1">
-            <div className="text-2xl sm:text-3xl">🛒</div>
-            <span className="bg-indigo-600 text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-800 flex items-center justify-center text-xl sm:text-2xl group-hover:scale-105 transition-transform">
+              🛒
+            </div>
+            <span className="bg-indigo-600 text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono shadow-2xs">
               {(appData?.purchaseInvoices || []).length}
             </span>
           </div>
@@ -89,11 +93,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
         {/* Cash Card */}
         <div
           onClick={() => onNavigate('cash')}
-          className="bg-white rounded-2xl p-3 sm:p-5 shadow-xs border-r-4 border-emerald-600 hover:-translate-y-0.5 active:scale-[0.98] transition cursor-pointer relative overflow-hidden"
+          className="bg-white rounded-2xl p-3 sm:p-5 shadow-xs border border-slate-200 hover:border-emerald-400 hover:-translate-y-0.5 active:scale-[0.98] transition cursor-pointer relative overflow-hidden group"
         >
           <div className="flex justify-between items-start mb-1">
-            <div className="text-2xl sm:text-3xl">💵</div>
-            <span className="bg-emerald-600 text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center text-xl sm:text-2xl group-hover:scale-105 transition-transform">
+              💵
+            </div>
+            <span className="bg-emerald-600 text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono shadow-2xs">
               {(appData?.cashTransactions || []).length}
             </span>
           </div>
@@ -104,11 +110,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
         {/* Accounts Card */}
         <div
           onClick={() => onNavigate('accounts')}
-          className="bg-white rounded-2xl p-3 sm:p-5 shadow-xs border-r-4 border-purple-600 hover:-translate-y-0.5 active:scale-[0.98] transition cursor-pointer relative overflow-hidden"
+          className="bg-white rounded-2xl p-3 sm:p-5 shadow-xs border border-slate-200 hover:border-purple-400 hover:-translate-y-0.5 active:scale-[0.98] transition cursor-pointer relative overflow-hidden group"
         >
           <div className="flex justify-between items-start mb-1">
-            <div className="text-2xl sm:text-3xl">📋</div>
-            <span className="bg-purple-600 text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-800 flex items-center justify-center text-xl sm:text-2xl group-hover:scale-105 transition-transform">
+              📋
+            </div>
+            <span className="bg-purple-600 text-white rounded-full min-w-[24px] h-6 px-1.5 flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono shadow-2xs">
               {(appData?.customers || []).length + (appData?.suppliers || []).length}
             </span>
           </div>
@@ -118,7 +126,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appData, onNavigate }) => {
       </div>
 
       {/* Enterprise Modules Quick Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
         <button
           onClick={() => onNavigate('price_management')}
           className="min-h-[64px] sm:min-h-[72px] bg-white hover:bg-amber-50/50 active:bg-amber-100 p-2.5 sm:p-3 rounded-2xl border border-amber-200 text-center transition cursor-pointer flex flex-col items-center justify-center space-y-0.5 shadow-2xs"

@@ -277,7 +277,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
     const totalDiscount = totalItemDiscounts + invoiceLevelDiscount;
     const totalTax = totalItemTaxes + invoiceLevelTax;
     const extraRev = typeof extraRevenueAmount === 'number' && extraRevenueAmount > 0 ? extraRevenueAmount : 0;
-    const grandTotal = Math.max(0, itemsBaseSubtotal - totalDiscount + totalTax + (fees || 0) + extraRev);
+    const grandTotal = Math.max(0, itemsBaseSubtotal - totalDiscount + totalTax + extraRev);
 
     let effectivePaid = 0;
     let effectiveRemaining = 0;
@@ -1506,7 +1506,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
               <span className="text-[11px] text-slate-500 font-normal">الخصم والضريبة اختياري (نسبة مئوية % أو مبلغ ثابت ج.م)</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* 1. الخصم الإضافي (اختياري بين نسبة % أو مبلغ ثابت) */}
               <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-1.5">
@@ -1632,23 +1632,6 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
                     />
                   </div>
                 </div>
-              </div>
-
-              {/* 4. رسوم / شحن إضافي */}
-              <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700">رسوم / شحن إضافي</label>
-                  <span className="text-[10px] text-slate-500">ج.م ثابت</span>
-                </div>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  min="0"
-                  step="any"
-                  value={fees || ''}
-                  onChange={(e) => setFees(parseFloat(e.target.value) || 0)}
-                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#1a237e] focus:outline-none text-xs font-mono font-bold"
-                />
               </div>
             </div>
 

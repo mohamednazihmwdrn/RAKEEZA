@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { LogOut, AlertTriangle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { LogOut, ChevronDown } from 'lucide-react';
 import { User } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -37,12 +37,36 @@ export const Header: React.FC<HeaderProps> = ({
   const [clickCount, setClickCount] = useState(0);
   const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
   const [showOwnerModal, setShowOwnerModal] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [ownerPin, setOwnerPin] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isVerifyingOwner, setIsVerifyingOwner] = useState(false);
   const [isHoldingLogo, setIsHoldingLogo] = useState(false);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close dropdown on click outside or escape key
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   // Long press handler (holding on system name for 1.5 seconds)
   const handleHoldStart = () => {
@@ -183,82 +207,246 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-xs sm:text-sm">
-          {/* Incoming Web Orders Button */}
-          {onNavigateWebOrders && (
-            <button
-              type="button"
-              onClick={onNavigateWebOrders}
-              className={`min-h-[38px] flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black transition cursor-pointer shadow-xs active:scale-95 ${
-                pendingWebOrdersCount > 0
-                  ? 'bg-rose-500 hover:bg-rose-600 text-white animate-pulse'
-                  : 'bg-white/15 hover:bg-white/25 text-white'
-              }`}
-              title="صندوق طلبات الويب سايت والكتالوج الإلكتروني"
-            >
-              <span>📥</span>
-              <span className="hidden sm:inline">طلبات الويب سايت</span>
-              {pendingWebOrdersCount > 0 ? (
-                <span className="bg-white text-rose-700 text-[11px] font-black px-1.5 py-0.2 rounded-full">
-                  {pendingWebOrdersCount}
-                </span>
-              ) : (
-                <span className="text-[10px] text-slate-300">وارد</span>
-              )}
-            </button>
-          )}
-
-          {/* Share Catalog Button */}
-          {onShareCatalog && (
-            <button
-              type="button"
-              onClick={onShareCatalog}
-              className="min-h-[38px] flex items-center gap-1.5 px-3 py-1 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 font-black rounded-full text-xs transition cursor-pointer shadow-xs active:scale-95"
-              title="مشاركة كتالوج المنتجات والمتجر الإلكتروني للعملاء وتوليد QR Code"
-            >
-              <span>🛍️</span>
-              <span className="hidden sm:inline">مشاركة الكتالوج</span>
-              <span className="text-[10px] bg-slate-900 text-amber-300 px-1.5 py-0.5 rounded-full font-mono font-bold">
-                QR
+        {/* Left Side: Organized Dropdown Menu & User Badge */}
+        <div className="flex items-center gap-2 text-xs sm:text-sm relative" ref={menuRef}>
+          {/* User Badge on medium+ screens */}
+          <div className="hidden md:flex items-center gap-2 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-xl text-white text-xs border border-white/10 transition">
+            <span className="w-6 h-6 rounded-lg bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-xs">
+              👤
+            </span>
+            <div className="flex flex-col text-right leading-tight">
+              <span className="font-bold text-[12px] truncate max-w-[130px]">
+                {currentUser?.name || 'مدير النظام'}
               </span>
-            </button>
-          )}
+              {subscriptionPlan && (
+                <span className="text-[10px] text-amber-300 font-medium">
+                  {subscriptionPlan}
+                </span>
+              )}
+            </div>
+          </div>
 
-          {/* Auto-Backup Status Indicator */}
+          {/* Main Dropdown Button */}
           <button
-            onClick={() => onNavigateBackup && onNavigateBackup()}
-            className={`min-h-[38px] flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
-              autoBackupActive
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/30'
-                : 'bg-amber-500/20 text-amber-300 border border-amber-400/30 hover:bg-amber-500/30'
+            type="button"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            className={`min-h-[40px] px-3 sm:px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm border ${
+              isMenuOpen
+                ? 'bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-400/40 shadow-md'
+                : pendingWebOrdersCount > 0
+                ? 'bg-gradient-to-r from-rose-600 to-amber-500 text-white border-amber-300 shadow-rose-900/30'
+                : 'bg-white/15 hover:bg-white/25 active:bg-white/30 text-white border-white/20'
             }`}
-            title="حالة النسخ الاحتياطي التلقائي - اضغط لفتح مركز النسخ والاستعادة"
+            title="القائمة المنسدلة للخدمات السريعة وإدارة المنظومة"
+            aria-expanded={isMenuOpen}
           >
-            <span className={`w-2.5 h-2.5 rounded-full ${autoBackupActive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
-            <span className="hidden sm:inline">{autoBackupActive ? '🛡️ النسخ التلقائي نشط' : '⚠️ النسخ متوقف'}</span>
-            <span className="sm:hidden text-[11px]">{autoBackupActive ? 'محمي' : 'تنبيه'}</span>
-          </button>
-
-          {/* PWA Mobile App Install Button */}
-          <PWAInstallButton variant="header" />
-
-          <span className="hidden md:inline-flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-full text-white font-medium text-xs">
-            <span>👤 {currentUser?.name || 'مدير النظام'}</span>
-            {subscriptionPlan && (
-              <span className="text-[10px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full font-bold">
-                {subscriptionPlan}
+            {pendingWebOrdersCount > 0 ? (
+              <span className="relative flex items-center justify-center">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-300 animate-ping absolute"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 relative"></span>
+              </span>
+            ) : (
+              <span className="text-base">⚡</span>
+            )}
+            <span className="font-bold">القائمة السريعة</span>
+            {pendingWebOrdersCount > 0 && (
+              <span className="bg-rose-500 text-white font-black text-[10px] px-1.5 py-0.2 rounded-full shadow-2xs">
+                {pendingWebOrdersCount}
               </span>
             )}
-          </span>
-
-          <button
-            onClick={() => setShowLogoutConfirmModal(true)}
-            className="min-h-[38px] flex items-center gap-1.5 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm shadow-rose-950/30 cursor-pointer border border-rose-400/40 shrink-0"
-            title="تسجيل الخروج من المنظومة"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>تسجيل خروج</span>
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${isMenuOpen ? 'rotate-180 text-slate-950' : 'text-white/80'}`}
+            />
           </button>
+
+          {/* Professional Dropdown Menu Popup */}
+          {isMenuOpen && (
+            <div
+              className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200/90 p-2 z-50 animate-fade-in text-right"
+              dir="rtl"
+            >
+              {/* User and Company Info Card */}
+              <div className="p-3 bg-gradient-to-br from-slate-50 to-indigo-50/70 rounded-xl border border-slate-200/80 mb-2">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="font-black text-xs sm:text-sm text-slate-900 truncate">
+                    👤 {currentUser?.name || 'مدير النظام'}
+                  </span>
+                  {subscriptionPlan && (
+                    <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-full shadow-2xs">
+                      {subscriptionPlan}
+                    </span>
+                  )}
+                </div>
+                {companyName && (
+                  <p className="text-[11px] text-slate-500 font-medium truncate">
+                    🏢 {companyName} {companyCode ? `(${companyCode})` : ''}
+                  </p>
+                )}
+              </div>
+
+              {/* Menu Action Items */}
+              <div className="space-y-1">
+                {/* 1. طلبات الويب سايت وارد */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    if (onNavigateWebOrders) onNavigateWebOrders();
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl text-right transition cursor-pointer hover:bg-slate-100 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-400/40 flex items-center justify-center text-base shrink-0 group-hover:scale-105 transition-transform">
+                      📥
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-xs font-black text-slate-900 group-hover:text-indigo-900">
+                        طلبات الويب سايت (وارد)
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        الطلبات الواردة من المتجر الإلكتروني
+                      </span>
+                    </div>
+                  </div>
+                  {pendingWebOrdersCount > 0 ? (
+                    <span className="text-[11px] bg-rose-600 text-white font-black px-2 py-0.5 rounded-full animate-bounce shadow-2xs">
+                      {pendingWebOrdersCount} جديدة
+                    </span>
+                  ) : (
+                    <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-md">
+                      وارد
+                    </span>
+                  )}
+                </button>
+
+                {/* 2. مشاركة الكتالوج */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    if (onShareCatalog) onShareCatalog();
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl text-right transition cursor-pointer hover:bg-slate-100 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-base shrink-0 group-hover:scale-105 transition-transform">
+                      🛍️
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-xs font-black text-slate-900 group-hover:text-indigo-900">
+                        مشاركة الكتالوج والمتجر
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        رابط المتجر السحابي وكود QR للعملاء
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-slate-900 text-amber-300 font-mono font-bold px-2 py-0.5 rounded-md shadow-2xs">
+                    QR / متجر
+                  </span>
+                </button>
+
+                {/* 3. النسخ التلقائي */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    if (onNavigateBackup) onNavigateBackup();
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl text-right transition cursor-pointer hover:bg-slate-100 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-400/40 flex items-center justify-center text-base shrink-0 group-hover:scale-105 transition-transform">
+                      🛡️
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-xs font-black text-slate-900 group-hover:text-indigo-900">
+                        النسخ التلقائي والسحابي
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        {autoBackupActive ? 'الحماية السحابية نشطة ومؤمنة' : 'تنبيه: النسخ التلقائي متوقف'}
+                      </span>
+                    </div>
+                  </div>
+                  {autoBackupActive ? (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      نشط
+                    </span>
+                  ) : (
+                    <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300 font-bold px-2 py-0.5 rounded-full">
+                      متوقف
+                    </span>
+                  )}
+                </button>
+
+                {/* 4. تثبيت التطبيق PWA */}
+                <PWAInstallButton
+                  variant="menu-item"
+                  onAfterClick={() => setIsMenuOpen(false)}
+                />
+
+                {/* 5. المدير العام */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setShowOwnerModal(true);
+                    setOwnerPin('');
+                    setErrorMessage('');
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl text-right transition cursor-pointer hover:bg-slate-100 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-400/40 flex items-center justify-center text-base shrink-0 group-hover:scale-105 transition-transform">
+                      👑
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-xs font-black text-slate-900 group-hover:text-indigo-900">
+                        المدير العام (لوحة المالك)
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        إدارة التراخيص والمشتركين والشركات
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-indigo-100 text-indigo-900 font-bold px-2 py-0.5 rounded-md">
+                    لوحة المالك
+                  </span>
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="my-2 border-t border-slate-100" />
+
+              {/* 6. تسجيل الخروج */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setShowLogoutConfirmModal(true);
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl text-right transition cursor-pointer bg-rose-50/70 hover:bg-rose-100 text-rose-800 border border-rose-200/80 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-700 flex items-center justify-center text-base shrink-0 group-hover:scale-105 transition-transform">
+                    <LogOut className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span className="text-xs font-black text-rose-900">
+                      تسجيل الخروج
+                    </span>
+                    <span className="text-[10px] text-rose-600 font-medium">
+                      إنهاء الجلسة والعودة لشاشة الدخول
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-rose-700">
+                  خروج ⬅
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
