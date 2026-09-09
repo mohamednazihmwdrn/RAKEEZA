@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppData, CatalogConfig } from '../types';
 import { generateQrDataUrl, printQrPoster } from '../utils/qrHelper';
+import { generateBarcodeDataUrl } from '../utils/barcodeHelper';
 import { addAuditLog } from '../utils/storage';
 import { DEFAULT_COMPANIES } from '../utils/multiTenantService';
 
@@ -25,7 +26,9 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'share' | 'settings'>('share');
   const [copied, setCopied] = useState(false);
+  const [copiedMarketplace, setCopiedMarketplace] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [barcodeDataUrl, setBarcodeDataUrl] = useState<string>('');
 
   const companies = useMemo(() => {
     return appData.companies && appData.companies.length > 0 ? appData.companies : DEFAULT_COMPANIES;
@@ -57,6 +60,17 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
     typeof window !== 'undefined'
       ? `${window.location.origin}${window.location.pathname}?mode=catalog&company=${encodeURIComponent(companyCode)}`
       : `https://rakeeza-erp.com/?mode=catalog&company=${encodeURIComponent(companyCode)}`;
+
+  // Derive unified marketplace URL
+  const marketplaceUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}?mode=catalog&company=all`
+      : 'https://rakeeza-erp.com/?mode=catalog&company=all';
+
+  // Check store activation status
+  const isStoreActive =
+    activeCompany?.ecommerceActive !== false &&
+    (!activeCompany?.ecommerceStatus || activeCompany?.ecommerceStatus === 'active');
 
   // Per-company configuration state
   const [storeName, setStoreName] = useState('');
@@ -106,14 +120,24 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
     }
   }, [activeCompany, appData.companyCatalogConfigs, appData.catalogConfig, appData.settings]);
 
-  // Generate QR code when modal opens or URL changes
+  // Generate QR code and Barcode when modal opens or URL changes
   useEffect(() => {
     if (isOpen && catalogUrl) {
       generateQrDataUrl(catalogUrl, 360).then((url) => {
         setQrDataUrl(url);
       });
+      try {
+        const barcodeData = generateBarcodeDataUrl(companyCode, {
+          width: 360,
+          height: 80,
+          includeText: true,
+        });
+        setBarcodeDataUrl(barcodeData);
+      } catch (err) {
+        console.error('Error generating barcode', err);
+      }
     }
-  }, [isOpen, catalogUrl]);
+  }, [isOpen, catalogUrl, companyCode]);
 
   if (!isOpen) return null;
 
@@ -131,11 +155,73 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
         document.body.removeChild(textArea);
       }
       setCopied(true);
-      showToast(`تم نسخ رابط المتجر الخاص بـ "${activeCompany.name}" بنجاح! 📋`, 'success');
+      showToast(`تم نسخ رابط متجر "${activeCompany.name}" بنجاح! 📋`, 'success');
       setTimeout(() => setCopied(false), 3000);
     } catch {
       showToast('تعذر النسخ التلقائي، يمكنك تحديد الرابط ونسخه يدوياً', 'warning');
     }
+  };
+
+  // Copy Marketplace Link
+  const handleCopyMarketplaceLink = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(marketplaceUrl);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = marketplaceUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopiedMarketplace(true);
+      showToast('تم نسخ رابط السوق الإلكتروني الموحد (أمازون التجار) بنجاح! 🌐', 'success');
+      setTimeout(() => setCopiedMarketplace(false), 3000);
+    } catch {
+      showToast('تعذر النسخ التلقائي، يمكنك تحديد الرابط ونسخه يدوياً', 'warning');
+    }
+  };
+
+  // Download Barcode as PNG
+  const handleDownloadBarcode = () => {
+    if (!barcodeDataUrl) return;
+    const a = document.createElement('a');
+    a.href = barcodeDataUrl;
+    a.download = `barcode-${companyCode}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(`تم تحميل باركود شركة ${activeCompany.name} بنجاح`, 'success');
+  };
+
+  // Owner Toggle Store Activation
+  const handleToggleStoreActivation = () => {
+    const nextStatus = !isStoreActive;
+    const updatedCompanies = (appData.companies || []).map((c) =>
+      c.id === activeCompany.id
+        ? {
+            ...c,
+            ecommerceActive: nextStatus,
+            ecommerceStatus: nextStatus ? ('active' as const) : ('pending' as const),
+            ecommercePaidAt: nextStatus ? new Date().toISOString() : undefined,
+            ecommerceFee: 1000,
+          }
+        : c
+    );
+    const updatedData = addAuditLog(
+      { ...appData, companies: updatedCompanies },
+      'update',
+      'المتجر الإلكتروني',
+      `تغيير حالة المتجر الإلكتروني لشركة ${activeCompany.name} إلى: ${nextStatus ? 'مفعل (سداد 1000 ج.م)' : 'بانتظار التفعيل'}`
+    );
+    onUpdateData(updatedData);
+    showToast(
+      nextStatus
+        ? `تم تفعيل المتجر الإلكتروني لشركة ${activeCompany.name} بنجاح! 🚀`
+        : `تم تعطيل المتجر لشركة ${activeCompany.name}`,
+      'success'
+    );
   };
 
   // Share via WhatsApp
@@ -297,6 +383,82 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 text-xs sm:text-sm">
           {activeTab === 'share' ? (
             <div className="space-y-6">
+              {/* Store Activation & Subscription Status Banner (1000 EGP & 1 Month Trial) */}
+              <div
+                className={`rounded-2xl p-4 border transition-all ${
+                  isStoreActive
+                    ? 'bg-emerald-50/70 border-emerald-200'
+                    : 'bg-amber-50/80 border-amber-300'
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
+                          isStoreActive
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-amber-500 text-slate-950 animate-pulse'
+                        }`}
+                      >
+                        {isStoreActive ? '✓ المتجر مفعل ونشط أونلاين' : '⏳ المتجر بانتظار تفعيل الاشتراك'}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-slate-700 bg-white/80 px-2 py-0.5 rounded-md border border-slate-200">
+                        كود: {companyCode}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-black text-slate-900">
+                      حالة متجر {activeCompany.tradeName || activeCompany.name}
+                    </h4>
+                    <p className="text-xs text-slate-600 leading-relaxed max-w-xl">
+                      {isStoreActive ? (
+                        <span>
+                          المتجر مفعل ومربوط بالسوق الموحد والرابط والباركود الخاص. يستقبل الطلبات وفواتير الشراء مباشرة.
+                        </span>
+                      ) : (
+                        <span>
+                          دخول وتفعيل المتجر الإلكتروني والسوق الموحد باشتراك لأول مرة بقيمة <strong>1,000 ج.م</strong>.
+                          (تواصل مع المالك لتأكيد التحويل وتفعيل المتجر).
+                        </span>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 pt-0.5">
+                      <span>🎁</span>
+                      <span>كافة أقسام المنظومة المحاسبية مجانية لمدة شهر كامل لجميع الشركات المسجلة!</span>
+                    </div>
+                  </div>
+
+                  <div className="flex sm:flex-col gap-2 shrink-0">
+                    {!isStoreActive && (
+                      <a
+                        href={`https://wa.me/201029190615?text=${encodeURIComponent(
+                          `مرحباً، أود تفعيل المتجر الإلكتروني لشركة (${activeCompany.name}) كود: ${companyCode} وسداد اشتراك الـ 1000 جنية.`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
+                      >
+                        <span>💬</span> تواصل مع المالك لتفعيل المتجر
+                      </a>
+                    )}
+
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={handleToggleStoreActivation}
+                        className={`text-xs font-black px-3.5 py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap ${
+                          isStoreActive
+                            ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        }`}
+                      >
+                        <span>{isStoreActive ? '⏸️ تعطيل المتجر' : '⚡ تفعيل المتجر فوراً (مالك)'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Tenant Selection & Multi-Company Isolation Assurance */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -306,7 +468,7 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
                         🏢 الشركة الحالية
                       </span>
                       <span className="font-mono text-xs font-bold text-blue-900 bg-blue-100 px-2 py-0.5 rounded-md">
-                        {activeCompany.code || activeCompany.id}
+                        {companyCode}
                       </span>
                     </div>
                     <h4 className="text-sm font-black text-slate-900 mt-1">
@@ -316,7 +478,7 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
 
                   {isOwner && companies.length > 1 && (
                     <div className="flex items-center gap-2">
-                      <label className="text-xs font-bold text-slate-600 whitespace-nowrap">عرض رابط شركة أخرى:</label>
+                      <label className="text-xs font-bold text-slate-600 whitespace-nowrap">عرض شركة أخرى:</label>
                       <select
                         value={selectedCompanyId}
                         onChange={(e) => setSelectedCompanyId(e.target.value)}
@@ -335,19 +497,19 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
                 <div className="mt-3 pt-2.5 border-t border-blue-200/60 flex items-start gap-2 text-xs text-blue-950">
                   <span className="text-base leading-none">🔒</span>
                   <p className="leading-relaxed">
-                    <strong>ضمان العزل والخصوصية التامة:</strong> هذا الرابط ورمز الـ QR مخصصان حصرياً لـ <strong>{activeCompany.name}</strong>. لا يمكن لأي عميل أو شركة أخرى الاطلاع على المنتجات أو الأسعار أو الطلبيات إلا للشركة المحددة بهذا الرابط.
+                    <strong>ضمان العزل التام:</strong> الرابط والباركود أدناه مخصصان حصرياً لـ <strong>{activeCompany.name}</strong>، ولا تعرض إلا منتجات وبضائع هذه الشركة فقط.
                   </p>
                 </div>
               </div>
 
-              {/* External Link Section */}
+              {/* Dedicated Company Store Link Section */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="font-black text-slate-800 text-xs flex items-center gap-1.5">
-                    <span>🌐</span> رابط الكتالوج الخارجي للعملاء
+                    <span>🌐</span> رابط متجر الشركة الخاص (مباشر ومستقل)
                   </label>
-                  <span className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-bold">
-                    متاح للفتح بدون تسجيل دخول
+                  <span className="text-[11px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md font-bold font-mono">
+                    company={companyCode}
                   </span>
                 </div>
 
@@ -383,7 +545,7 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
                       }}
                       className="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 px-3 py-1.5 rounded-lg font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
                     >
-                      <span>👁️</span> فتح ومعاينة الكتالوج الآن
+                      <span>👁️</span> فتح ومعاينة متجر الشركة
                     </button>
                   ) : (
                     <a
@@ -406,51 +568,134 @@ export const ShareCatalogModal: React.FC<ShareCatalogModalProps> = ({
                 </div>
               </div>
 
-              {/* QR Code Section */}
-              <div className="bg-white border-2 border-dashed border-slate-300 rounded-3xl p-5 text-center space-y-4 shadow-xs">
-                <div className="flex flex-col items-center justify-center">
-                  <span className="text-xs font-black text-slate-500 mb-1">
-                    رمز الاستجابة السريعة (QR Code) للمتجر
+              {/* Unified Multi-Tenant Marketplace Link Section (Amazon-like) */}
+              <div className="bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-amber-50/70 border border-amber-200 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="font-black text-amber-950 text-xs flex items-center gap-1.5">
+                    <span>🛒</span> رابط السوق الإلكتروني الموحد لجميع الشركات (منصة مثل أمازون)
+                  </label>
+                  <span className="text-[11px] text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md font-black">
+                    Multi-Vendor Marketplace
                   </span>
-                  <h4 className="text-sm font-black text-slate-900">{storeName}</h4>
-
-                  {/* QR Image */}
-                  <div className="mt-3 p-3 bg-white border border-slate-200 rounded-2xl shadow-sm inline-block">
-                    {qrDataUrl ? (
-                      <img
-                        src={qrDataUrl}
-                        alt="QR Code لكتالوج المتجر"
-                        className="w-48 h-48 rounded-lg mx-auto block"
-                      />
-                    ) : (
-                      <div className="w-48 h-48 flex items-center justify-center text-slate-400 text-xs">
-                        جاري توليد رمز الـ QR...
-                      </div>
-                    )}
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 mt-2 max-w-xs">
-                    وجّه كاميرا أي هاتف محمول نحو الرمز ليفتح الكتالوج الإلكتروني فورياً دون تثبيت أي برامج
-                  </p>
                 </div>
 
-                {/* QR Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-2.5 justify-center max-w-md mx-auto pt-2">
+                <p className="text-xs text-amber-900/90 leading-relaxed">
+                  هذا الرابط يفتح السوق العام الموحد لجميع التجار والشركات المسجلة في النظام. يمكن للزبون تصفح بضائع كافة التجار في سلة واحدة، وعند تأكيد الطلب يتم <strong>فرز الفواتير تلقائياً</strong> وإرسال فاتورة كل تاجر إلى حسابه ومخزونه فوراً!
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={marketplaceUrl}
+                    dir="ltr"
+                    className="flex-1 bg-white border border-amber-300 rounded-xl px-3 py-2.5 font-mono text-xs text-slate-700 select-all focus:outline-hidden"
+                  />
                   <button
                     type="button"
-                    onClick={handleDownloadQr}
-                    className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-4 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-xs text-xs"
+                    onClick={handleCopyMarketplaceLink}
+                    className={`px-4 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs ${
+                      copiedMarketplace
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black'
+                    }`}
                   >
-                    <span>💾</span> تحميل صورة الـ QR (PNG)
+                    <span>{copiedMarketplace ? '✓' : '🌐'}</span>
+                    <span>{copiedMarketplace ? 'تم النسخ!' : 'نسخ رابط السوق'}</span>
                   </button>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <a
+                    href={marketplaceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 px-3 py-1.5 rounded-lg font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>🛒</span> استعراض السوق الموحد الآن
+                  </a>
+                </div>
+              </div>
+
+              {/* Barcode & QR Code Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Company Barcode (Code 128) */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center space-y-3 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <span className="text-[11px] font-black text-slate-500 uppercase block mb-1">
+                      باركود الشركة الخاص (Code 128)
+                    </span>
+                    <h4 className="text-xs font-black text-slate-900">{companyCode}</h4>
+
+                    <div className="mt-2 p-3 bg-white border border-slate-200 rounded-xl inline-block shadow-inner">
+                      {barcodeDataUrl ? (
+                        <img
+                          src={barcodeDataUrl}
+                          alt={`باركود ${companyCode}`}
+                          className="max-h-20 mx-auto block object-contain"
+                        />
+                      ) : (
+                        <div className="h-16 flex items-center justify-center text-slate-400 text-xs">
+                          جاري توليد الباركود...
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      يمكن مسحه بأي قارئ باركود أو ليزر للوصول المباشر لحساب ومتجر الشركة
+                    </p>
+                  </div>
 
                   <button
                     type="button"
-                    onClick={handlePrintPoster}
-                    className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-2.5 px-4 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-xs text-xs"
+                    onClick={handleDownloadBarcode}
+                    className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 text-xs shadow-xs"
                   >
-                    <span>🖨️</span> طباعة بوستر / ملصق الكتالوج
+                    <span>💾</span> تحميل صورة الباركود (PNG)
                   </button>
+                </div>
+
+                {/* QR Code Section */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center space-y-3 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <span className="text-[11px] font-black text-slate-500 uppercase block mb-1">
+                      رمز الاستجابة السريعة (QR Code)
+                    </span>
+                    <h4 className="text-xs font-black text-slate-900">{storeName}</h4>
+
+                    <div className="mt-2 p-2.5 bg-white border border-slate-200 rounded-xl inline-block shadow-inner">
+                      {qrDataUrl ? (
+                        <img
+                          src={qrDataUrl}
+                          alt="QR Code لكتالوج المتجر"
+                          className="w-32 h-32 rounded-lg mx-auto block"
+                        />
+                      ) : (
+                        <div className="w-32 h-32 flex items-center justify-center text-slate-400 text-xs">
+                          جاري توليد رمز الـ QR...
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      مسح مباشر بكاميرا الهاتف المحمول لفتح المتجر فوراً
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadQr}
+                      className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 text-xs shadow-xs"
+                    >
+                      <span>💾</span> تحميل QR
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePrintPoster}
+                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-2 px-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 text-xs shadow-xs"
+                    >
+                      <span>🖨️</span> طباعة بوستر
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

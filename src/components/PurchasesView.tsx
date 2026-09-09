@@ -43,9 +43,13 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
   const [itemQty, setItemQty] = useState('');
   const [itemPrice, setItemPrice] = useState('');
 
-  // Discount/Tax/Fees (All empty / zero by default - never default to 14%!)
+  // Discount/Tax/Fees & Extra Adjustments (All empty / zero by default, optional percent vs fixed)
+  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
   const [discount, setDiscount] = useState<number>(0);
+  const [taxType, setTaxType] = useState<'percent' | 'fixed'>('percent');
   const [tax, setTax] = useState<number>(0);
+  const [extraRevenueName, setExtraRevenueName] = useState<string>(''); // اسم الإيراد / الخصم الإضافي
+  const [extraRevenueAmount, setExtraRevenueAmount] = useState<number>(0); // مبلغ الإيراد الإضافي
   const [fees, setFees] = useState<number>(0);
 
   // Payment Modal for Credit Invoices
@@ -118,8 +122,12 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
     setItemName('');
     setItemQty('');
     setItemPrice('');
+    setDiscountType('percent');
     setDiscount(0);
+    setTaxType('percent');
     setTax(0);
+    setExtraRevenueName('');
+    setExtraRevenueAmount(0);
     setFees(0);
     setShowSupplierDropdown(false);
     setShowPhoneDropdown(false);
@@ -144,8 +152,12 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
     setItemName('');
     setItemQty('');
     setItemPrice('');
-    setDiscount(inv.discount || 0);
-    setTax(inv.tax !== undefined ? inv.tax : 0);
+    setDiscountType(inv.discountType || 'percent');
+    setDiscount(inv.discountValue !== undefined ? inv.discountValue : (inv.discount || 0));
+    setTaxType(inv.taxType || 'percent');
+    setTax(inv.taxValue !== undefined ? inv.taxValue : (inv.tax !== undefined ? inv.tax : 0));
+    setExtraRevenueName(inv.extraRevenueName || '');
+    setExtraRevenueAmount(inv.extraRevenueAmount || 0);
     setFees(inv.fees || 0);
     setShowSupplierDropdown(false);
     setShowPhoneDropdown(false);
@@ -243,13 +255,29 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
 
     // 2. Invoice-level additional discount & tax
     const afterItemDiscBase = Math.max(0, itemsBaseSubtotal - totalItemDiscounts);
-    const invoiceLevelDiscount = (afterItemDiscBase * (discount || 0)) / 100;
+    let invoiceLevelDiscount = 0;
+    if (typeof discount === 'number' && discount > 0) {
+      if (discountType === 'percent') {
+        invoiceLevelDiscount = (afterItemDiscBase * discount) / 100;
+      } else {
+        invoiceLevelDiscount = discount;
+      }
+    }
+
     const finalTaxableBase = Math.max(0, afterItemDiscBase - invoiceLevelDiscount);
-    const invoiceLevelTax = (finalTaxableBase * (tax || 0)) / 100;
+    let invoiceLevelTax = 0;
+    if (typeof tax === 'number' && tax > 0) {
+      if (taxType === 'percent') {
+        invoiceLevelTax = (finalTaxableBase * tax) / 100;
+      } else {
+        invoiceLevelTax = tax;
+      }
+    }
 
     const totalDiscount = totalItemDiscounts + invoiceLevelDiscount;
     const totalTax = totalItemTaxes + invoiceLevelTax;
-    const grandTotal = Math.max(0, itemsBaseSubtotal - totalDiscount + totalTax + (fees || 0));
+    const extraRev = typeof extraRevenueAmount === 'number' && extraRevenueAmount > 0 ? extraRevenueAmount : 0;
+    const grandTotal = Math.max(0, itemsBaseSubtotal - totalDiscount + totalTax + (fees || 0) + extraRev);
 
     let effectivePaid = 0;
     let effectiveRemaining = 0;
@@ -267,8 +295,11 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
       subtotal: itemsBaseSubtotal,
       totalItemDiscounts,
       totalItemTaxes,
+      invoiceLevelDiscount,
+      invoiceLevelTax,
       totalDiscount,
       totalTax,
+      extraRevenueAmount: extraRev,
       total: grandTotal,
       effectivePaid,
       effectiveRemaining,
@@ -315,7 +346,13 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
       items: tempItems,
       subtotal,
       discount: totalDiscount || 0,
+      discountType,
+      discountValue: discount || 0,
       tax: totalTax || 0,
+      taxType,
+      taxValue: tax || 0,
+      extraRevenueName: extraRevenueName.trim() || undefined,
+      extraRevenueAmount: extraRevenueAmount > 0 ? extraRevenueAmount : undefined,
       fees: fees || 0,
       total,
       paymentMethod,
@@ -1459,39 +1496,150 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
             </div>
           )}
 
-          {/* Discounts & Tax Section - Aggregated & Clean */}
-          <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-slate-700 pb-1 border-b border-slate-200">
-              <span>تعديلات الخصم والضريبة العامة لفاتورة المشتريات (اختياري - بدون أي قيم مفروضة)</span>
-              <span className="text-[11px] text-slate-500">الخصم والضريبة المحددة في الأصناف يتم تجميعها تلقائياً بالأسفل</span>
+          {/* Discounts, Tax & Extra Adjustments Section */}
+          <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-slate-700 pb-1.5 border-b border-slate-200">
+              <span className="flex items-center gap-1.5">
+                <span>⚡</span>
+                <span>الخانات الإضافية أسفل بيانات الفاتورة (الخصم والضريبة والتسويات/الإيرادات)</span>
+              </span>
+              <span className="text-[11px] text-slate-500 font-normal">الخصم والضريبة اختياري (نسبة مئوية % أو مبلغ ثابت ج.م)</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-gray-700">خصم إضافي على الفاتورة (%)</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  min="0"
-                  step="any"
-                  value={discount || ''}
-                  onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                  className="w-full p-2 border-2 border-gray-200 rounded-xl focus:border-[#1a237e] focus:outline-none text-xs font-mono font-bold"
-                />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* 1. الخصم الإضافي (اختياري بين نسبة % أو مبلغ ثابت) */}
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">خصم الفاتورة</label>
+                  <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType('percent')}
+                      className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
+                        discountType === 'percent'
+                          ? 'bg-amber-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                      title="خصم نسبة مئوية"
+                    >
+                      % نسبة
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType('fixed')}
+                      className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
+                        discountType === 'fixed'
+                          ? 'bg-amber-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                      title="خصم مبلغ ثابت"
+                    >
+                      ج.م ثابت
+                    </button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder={discountType === 'percent' ? '0 %' : '0.00 ج.م'}
+                    min="0"
+                    step="any"
+                    value={discount || ''}
+                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                    className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-amber-600 focus:outline-none text-xs font-mono font-bold"
+                  />
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-gray-400 pointer-events-none">
+                    {discountType === 'percent' ? '%' : 'ج.م'}
+                  </span>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-gray-700">ضريبة إضافية على الفاتورة (%)</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  min="0"
-                  step="any"
-                  value={tax || ''}
-                  onChange={(e) => setTax(parseFloat(e.target.value) || 0)}
-                  className="w-full p-2 border-2 border-gray-200 rounded-xl focus:border-[#1a237e] focus:outline-none text-xs font-mono font-bold"
-                />
+
+              {/* 2. الضريبة الإضافية (اختياري بين نسبة % أو مبلغ ثابت) */}
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">ضريبة الفاتورة</label>
+                  <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setTaxType('percent')}
+                      className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
+                        taxType === 'percent'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                      title="ضريبة نسبة مئوية"
+                    >
+                      % نسبة
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaxType('fixed')}
+                      className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all ${
+                        taxType === 'fixed'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                      title="ضريبة مبلغ ثابت"
+                    >
+                      ج.م ثابت
+                    </button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder={taxType === 'percent' ? '0 %' : '0.00 ج.م'}
+                    min="0"
+                    step="any"
+                    value={tax || ''}
+                    onChange={(e) => setTax(parseFloat(e.target.value) || 0)}
+                    className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-indigo-600 focus:outline-none text-xs font-mono font-bold"
+                  />
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-gray-400 pointer-events-none">
+                    {taxType === 'percent' ? '%' : 'ج.م'}
+                  </span>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-gray-700">رسوم / شحن إضافي (ج.م)</label>
+
+              {/* 3. تسوية / إيراد إضافي (خانة للاسم وخانة للمبلغ) */}
+              <div className="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-emerald-900 flex items-center gap-1">
+                    <span>💵</span>
+                    <span>إيراد / مصاريف إضافية</span>
+                  </label>
+                  <span className="text-[10px] text-emerald-700 font-medium">اسم ومبلغ</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1.5">
+                  <div className="col-span-3">
+                    <input
+                      type="text"
+                      placeholder="اسم البند (مثال: نقل، عمالة)"
+                      value={extraRevenueName}
+                      onChange={(e) => setExtraRevenueName(e.target.value)}
+                      className="w-full p-2 border-2 border-emerald-200 rounded-lg focus:border-emerald-600 focus:outline-none text-[11px]"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <input
+                      type="number"
+                      placeholder="المبلغ (ج.م)"
+                      min="0"
+                      step="any"
+                      value={extraRevenueAmount || ''}
+                      onChange={(e) => setExtraRevenueAmount(parseFloat(e.target.value) || 0)}
+                      className="w-full p-2 border-2 border-emerald-200 rounded-lg focus:border-emerald-600 focus:outline-none text-xs font-mono font-bold text-emerald-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. رسوم / شحن إضافي */}
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">رسوم / شحن إضافي</label>
+                  <span className="text-[10px] text-slate-500">ج.م ثابت</span>
+                </div>
                 <input
                   type="number"
                   placeholder="0.00"
@@ -1499,28 +1647,40 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
                   step="any"
                   value={fees || ''}
                   onChange={(e) => setFees(parseFloat(e.target.value) || 0)}
-                  className="w-full p-2 border-2 border-gray-200 rounded-xl focus:border-[#1a237e] focus:outline-none text-xs font-mono font-bold"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-[#1a237e] focus:outline-none text-xs font-mono font-bold"
                 />
               </div>
             </div>
 
             {/* Aggregated Totals Preview */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-2 border-t border-slate-200 text-xs">
               <div className="p-2 bg-white rounded-lg border border-slate-200">
                 <span className="text-gray-500 text-[10px] block">إجمالي قيمة الأصناف</span>
                 <span className="font-bold font-mono text-slate-800">{calculateTotals().subtotal.toFixed(2)} ج.م</span>
               </div>
               <div className="p-2 bg-amber-50 rounded-lg border border-amber-200">
-                <span className="text-amber-800 text-[10px] block">إجمالي الخصومات المجمعة</span>
-                <span className="font-bold font-mono text-amber-900">{calculateTotals().totalDiscount.toFixed(2)} ج.م</span>
+                <span className="text-amber-800 text-[10px] flex items-center justify-between">
+                  <span>إجمالي الخصومات</span>
+                  <span className="text-[9px] font-mono font-semibold">({discountType === 'percent' ? `${discount}%` : 'ثابت'})</span>
+                </span>
+                <span className="font-bold font-mono text-amber-900">-{calculateTotals().totalDiscount.toFixed(2)} ج.م</span>
               </div>
               <div className="p-2 bg-indigo-50 rounded-lg border border-indigo-200">
-                <span className="text-indigo-800 text-[10px] block">إجمالي الضرائب المجمعة</span>
-                <span className="font-bold font-mono text-indigo-900">{calculateTotals().totalTax.toFixed(2)} ج.م</span>
+                <span className="text-indigo-800 text-[10px] flex items-center justify-between">
+                  <span>إجمالي الضرائب</span>
+                  <span className="text-[9px] font-mono font-semibold">({taxType === 'percent' ? `${tax}%` : 'ثابت'})</span>
+                </span>
+                <span className="font-bold font-mono text-indigo-900">+{calculateTotals().totalTax.toFixed(2)} ج.م</span>
               </div>
               <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-200">
-                <span className="text-emerald-800 text-[10px] block">الصافي النهائي للفاتورة</span>
-                <span className="font-bold font-mono text-emerald-900">{calculateTotals().total.toFixed(2)} ج.م</span>
+                <span className="text-emerald-800 text-[10px] truncate block" title={extraRevenueName || 'تسوية / إضافي'}>
+                  {extraRevenueName ? `بند: ${extraRevenueName}` : 'تسوية / إضافي'}
+                </span>
+                <span className="font-bold font-mono text-emerald-900">+{calculateTotals().extraRevenueAmount.toFixed(2)} ج.م</span>
+              </div>
+              <div className="col-span-2 sm:col-span-1 p-2 bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-lg shadow-sm">
+                <span className="text-blue-200 text-[10px] block">الصافي النهائي للفاتورة</span>
+                <span className="font-bold font-mono text-white text-sm">{calculateTotals().total.toFixed(2)} ج.م</span>
               </div>
             </div>
           </div>

@@ -52,8 +52,20 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
   // Security guard: If a specific company code was requested in URL but doesn't exist
   const isInvalidCompanyRequested = Boolean(companyParam && !matchedCompany);
 
-  // Active Company Context (Default to user's active tenant if no URL param)
+  // 3. Selection mode: 'all' (السوق الإلكتروني الموحد لجميع التجار - مثل أمازون) أو شركة محددة
+  const [selectedVendorCompanyId, setSelectedVendorCompanyId] = useState<string>(() => {
+    if (matchedCompany) return matchedCompany.id;
+    return 'all'; // Default to unified marketplace showing all companies!
+  });
+
+  const isUnifiedMarketplace = selectedVendorCompanyId === 'all';
+
+  // Active Company Context (Derived from selection, URL param, or primary tenant)
   const activeCompany = useMemo(() => {
+    if (selectedVendorCompanyId !== 'all') {
+      const found = companies.find((c) => c.id === selectedVendorCompanyId);
+      if (found) return found;
+    }
     if (matchedCompany) return matchedCompany;
     if (appData.companyId) {
       const found = companies.find((c) => c.id === appData.companyId);
@@ -65,10 +77,58 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
       name: appData.settings.companyName || 'شركة ركيزة للمحاسبة والتجارة RAKEEZA',
       phone: appData.settings.phone1 || '01029190615',
     };
-  }, [matchedCompany, appData.companyId, companies, appData.settings]);
+  }, [selectedVendorCompanyId, matchedCompany, appData.companyId, companies, appData.settings]);
 
-  // Per-Company Catalog Configuration
+  // Check store activation status (1000 EGP subscription)
+  const isCompanyStoreActive = (comp: typeof companies[0] | undefined | null): boolean => {
+    if (!comp) return false;
+    if (comp.id === 'COMP-000001' || comp.code === 'RKZ-001') return true;
+    if (comp.storeSubscriptionStatus === 'active' || comp.storeSubscriptionStatus === 'trial') return true;
+    if (comp.isMarketplacePublished) return true;
+    return false;
+  };
+
+  // Helper to get vendor company for any product
+  const getVendorForItem = (item: Item): typeof companies[0] => {
+    if (item.companyId) {
+      const found = companies.find((c) => c.id === item.companyId);
+      if (found) return found;
+    }
+    return companies[0] || activeCompany;
+  };
+
+  // Product counts per company
+  const companyItemCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    (appData.items || []).forEach((it) => {
+      if (it.showInCatalog !== false) {
+        const cId = it.companyId || 'COMP-000001';
+        counts[cId] = (counts[cId] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [appData.items]);
+
+  // Catalog Configuration: Unified Marketplace vs. Single Company Store
   const config = useMemo(() => {
+    if (isUnifiedMarketplace) {
+      return {
+        enabled: true,
+        storeName: 'السوق الإلكتروني الموحد | Market Hub',
+        storeDescription: 'المنصة التجارية الموحدة لجميع الشركات والتجار المعتمدين - مثل أمازون، تصفح واطلب وتصل الفاتورة للتاجر مباشرة',
+        contactPhone: appData.settings.phone1 || '01029190615',
+        whatsappNumber: '01029190615',
+        allowOnlineOrders: true,
+        priceDisplayMode: 'both' as const,
+        showStockStatus: true,
+        showExactStockQty: false,
+        bannerMessage: '🛒 مرحباً بكم في السوق الإلكتروني الموحد! تصفح معروضات مختلف التجار والشركات، وتصل كل طلبية وفاتورة لحساب التاجر الخاص في المنظومة.',
+        currencySymbol: appData.settings.currencySymbol || 'ج.م',
+        autoPrintOrders: true,
+        soundAlertEnabled: true,
+      };
+    }
+
     const tenantSpecific = appData.companyCatalogConfigs?.[activeCompany.id];
     const companyDirect = activeCompany.catalogConfig;
     const fallback = appData.catalogConfig;
@@ -139,7 +199,7 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
         fallback?.soundAlertEnabled ??
         true,
     };
-  }, [appData.companyCatalogConfigs, activeCompany, appData.catalogConfig, appData.settings]);
+  }, [isUnifiedMarketplace, appData.companyCatalogConfigs, activeCompany, appData.catalogConfig, appData.settings]);
 
   const storeName = config.storeName;
   const contactPhone = config.contactPhone;
@@ -184,18 +244,32 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
     deliveryAddress: string;
     orderNotes: string;
     date: string;
+    createdOrders?: Array<{
+      orderId: number;
+      orderReference: string;
+      companyId: string;
+      companyName: string;
+      companyPhone: string;
+      companyWhatsapp: string;
+      itemsCount: number;
+      total: number;
+    }>;
   } | null>(null);
 
-  // STRICT ISOLATION: Filter products belonging strictly to the active company
+  // Products available based on mode (Unified Marketplace vs. Isolated Company Store)
   const companyItems = useMemo(() => {
+    if (isUnifiedMarketplace) {
+      // In unified marketplace, display all catalog-enabled items from all companies!
+      return (appData.items || []).filter((it) => it.showInCatalog !== false);
+    }
+    // In isolated single-company mode, display strictly that company's items:
     return (appData.items || []).filter((it) => {
       if (it.companyId) {
         return it.companyId === activeCompany.id;
       }
-      // If item has no companyId, default to primary company COMP-000001 only
       return activeCompany.id === companies[0]?.id || activeCompany.id === 'COMP-000001';
     });
-  }, [appData.items, activeCompany, companies]);
+  }, [isUnifiedMarketplace, appData.items, activeCompany, companies]);
 
   // STRICT ISOLATION: Categories derived ONLY from active company's items!
   const categories = useMemo(() => {
@@ -355,64 +429,106 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
     setIsSubmitting(true);
 
     try {
-      const nextId = appData.nextQuoteId || (appData.quotations?.length || 0) + 1;
+      // Multi-Tenant Isolation for Orders:
+      // Group items by vendor company so each company gets their own order and invoice!
+      const itemsByCompany: Record<string, CartItem[]> = {};
+      cartItemsList.forEach((c) => {
+        const vendor = getVendorForItem(c.item);
+        const vId = vendor.id || 'COMP-000001';
+        if (!itemsByCompany[vId]) {
+          itemsByCompany[vId] = [];
+        }
+        itemsByCompany[vId].push(c);
+      });
+
+      let currentNextQuoteId = appData.nextQuoteId || (appData.quotations?.length || 0) + 1;
+      let updatedQuotations = [...(appData.quotations || [])];
+      let updatedData = { ...appData };
+      const createdOrdersInfo: Array<{
+        orderId: number;
+        orderReference: string;
+        companyId: string;
+        companyName: string;
+        companyPhone: string;
+        companyWhatsapp: string;
+        itemsCount: number;
+        total: number;
+      }> = [];
+
       const today = new Date().toISOString().split('T')[0];
-      const orderRef = `ORD-${new Date().getFullYear()}-${String(nextId).padStart(4, '0')}`;
-
-      const invoiceItems: InvoiceItem[] = cartItemsList.map((c) => ({
-        itemId: c.item.id,
-        name: c.item.name,
-        qty: c.qty,
-        price: c.price,
-        total: c.qty * c.price,
-        notes: c.item.unit ? `الوحدة: ${c.item.unit}` : undefined,
-      }));
-
       const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-      const targetCompanyId = activeCompany.id;
-      const shouldAutoPrint = Boolean(config.autoPrintOrders);
+      let primaryOrderDoc: Quotation | null = null;
 
-      const newOrderDoc: Quotation = {
-        id: nextId,
-        type: 'sale_quote',
-        status: 'online_order',
-        source: 'online_catalog',
-        orderReference: orderRef,
-        clientName: customerName.trim(),
-        phone: customerPhone.trim(),
-        customerAddress: deliveryAddress.trim() || undefined,
-        deliveryNotes: orderNotes.trim() || undefined,
-        notes: `طلب أونلاين عبر كتالوج المنتجات لشركة ${storeName}. ${deliveryAddress ? `العنوان: ${deliveryAddress}. ` : ''}${
-          orderNotes ? `ملاحظات: ${orderNotes}` : ''
-        }`,
-        date: today,
-        time: nowTime,
-        items: invoiceItems,
-        subtotal: cartTotalPrice,
-        discount: 0,
-        tax: 0,
-        total: cartTotalPrice,
-        createdBy: `العميل (المتجر الإلكتروني - ${storeName})`,
-        companyId: targetCompanyId,
-        orderStatus: 'new',
-        autoPrinted: shouldAutoPrint,
-      };
+      Object.entries(itemsByCompany).forEach(([vCompanyId, vItems]) => {
+        const vCompany = companies.find((c) => c.id === vCompanyId) || companies[0];
+        const nextId = currentNextQuoteId++;
+        const orderRef = `ORD-${new Date().getFullYear()}-${String(nextId).padStart(4, '0')}`;
+        const vTotal = vItems.reduce((sum, it) => sum + it.qty * it.price, 0);
 
-      let updatedData = {
-        ...appData,
-        quotations: [newOrderDoc, ...(appData.quotations || [])],
-        nextQuoteId: nextId + 1,
-      };
+        const invoiceItems: InvoiceItem[] = vItems.map((c) => ({
+          itemId: c.item.id,
+          name: c.item.name,
+          qty: c.qty,
+          price: c.price,
+          total: c.qty * c.price,
+          notes: c.item.unit ? `الوحدة: ${c.item.unit}` : undefined,
+        }));
 
-      updatedData = addAuditLog(
-        updatedData,
-        'create',
-        'كتالوج المنتجات والمتجر الإلكتروني',
-        `استلام طلب شراء أونلاين جديد #${orderRef} لشركة (${storeName}) من العميل: ${customerName.trim()} بقيمة ${cartTotalPrice.toFixed(
-          2
-        )} ${currency}`
-      );
+        const newOrderDoc: Quotation = {
+          id: nextId,
+          type: 'sale_quote',
+          status: 'online_order',
+          source: 'online_catalog',
+          orderReference: orderRef,
+          clientName: customerName.trim(),
+          phone: customerPhone.trim(),
+          customerAddress: deliveryAddress.trim() || undefined,
+          deliveryNotes: orderNotes.trim() || undefined,
+          notes: `طلب أونلاين عبر المتجر الإلكتروني والسوق الموحد لشركة ${vCompany.name}. ${
+            deliveryAddress ? `العنوان: ${deliveryAddress}. ` : ''
+          }${orderNotes ? `ملاحظات: ${orderNotes}` : ''}`,
+          date: today,
+          time: nowTime,
+          items: invoiceItems,
+          subtotal: vTotal,
+          discount: 0,
+          tax: 0,
+          total: vTotal,
+          createdBy: `العميل (المتجر الإلكتروني - ${vCompany.name})`,
+          companyId: vCompanyId,
+          orderStatus: 'new',
+          autoPrinted: Boolean(config.autoPrintOrders),
+        };
 
+        if (!primaryOrderDoc) {
+          primaryOrderDoc = newOrderDoc;
+        }
+
+        updatedQuotations.unshift(newOrderDoc);
+
+        createdOrdersInfo.push({
+          orderId: nextId,
+          orderReference: orderRef,
+          companyId: vCompanyId,
+          companyName: vCompany.tradeName || vCompany.name,
+          companyPhone: vCompany.phone || '01029190615',
+          companyWhatsapp: vCompany.whatsapp || vCompany.phone || '01029190615',
+          itemsCount: vItems.length,
+          total: vTotal,
+        });
+
+        updatedData = addAuditLog(
+          updatedData,
+          'create',
+          'المتجر الإلكتروني والسوق الموحد',
+          `استلام طلب شراء أونلاين جديد #${orderRef} لشركة (${vCompany.name}) من العميل: ${customerName.trim()} بقيمة ${vTotal.toFixed(
+            2
+          )} ${currency}`
+        );
+      });
+
+      updatedData.quotations = updatedQuotations;
+      updatedData.nextQuoteId = currentNextQuoteId;
       onUpdateData(updatedData);
 
       // Play alert chime if enabled
@@ -420,10 +536,10 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
         playOrderAlertChime();
       }
 
-      // Auto-print receipt if enabled on current machine
-      if (shouldAutoPrint) {
+      // Auto-print receipt for first order if enabled
+      if (Boolean(config.autoPrintOrders) && primaryOrderDoc) {
         try {
-          printWebOrderReceipt(newOrderDoc, updatedData, appData.catalogConfig?.printFormat || '80mm', true);
+          printWebOrderReceipt(primaryOrderDoc, updatedData, appData.catalogConfig?.printFormat || '80mm', true);
         } catch (printErr) {
           console.warn('Auto print failed:', printErr);
         }
@@ -431,8 +547,8 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
 
       // Set confirmed order view
       setConfirmedOrder({
-        orderId: nextId,
-        orderReference: orderRef,
+        orderId: createdOrdersInfo[0]?.orderId || 1,
+        orderReference: createdOrdersInfo.map((o) => o.orderReference).join(', '),
         items: [...cartItemsList],
         total: cartTotalPrice,
         customerName: customerName.trim(),
@@ -440,12 +556,13 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
         deliveryAddress: deliveryAddress.trim(),
         orderNotes: orderNotes.trim(),
         date: today,
+        createdOrders: createdOrdersInfo,
       });
 
       // Clear cart
       setCart({});
       setIsCartOpen(false);
-      showToast('🎉 تم إرسال طلب الشراء إلى المنظومة بنجاح!', 'success');
+      showToast('🎉 تم إرسال طلب الشراء إلى فواتير التجار المختصين بنجاح!', 'success');
     } catch (err) {
       console.error(err);
       showToast('حدث خطأ أثناء إرسال الطلب، يرجى المحاولة مرة أخرى', 'error');
@@ -658,6 +775,70 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
         </div>
       )}
 
+      {/* Amazon-like Multi-Vendor Navigation Bar (السوق الإلكتروني الموحد) */}
+      <div className="bg-slate-900 text-white border-b border-slate-800 px-4 py-2.5 shadow-inner">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-black text-xs flex items-center gap-1">
+              <span>🌐</span> السوق الإلكتروني الموحد:
+            </span>
+            <span className="text-slate-400 text-[11px] hidden sm:inline">
+              تصفح كل الشركات أو حدد متجراً خاصاً
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setSelectedVendorCompanyId('all')}
+              className={`px-3 py-1.5 rounded-lg font-black transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                isUnifiedMarketplace
+                  ? 'bg-amber-400 text-slate-950 shadow-xs ring-2 ring-amber-300'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+              }`}
+            >
+              <span>🛒 جميع التجار (السوق الموحد)</span>
+              <span className="bg-black/20 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold">
+                {appData.items?.filter((it) => it.showInCatalog !== false).length || 0}
+              </span>
+            </button>
+
+            {companies.map((comp) => {
+              const isSelected = selectedVendorCompanyId === comp.id;
+              const count = companyItemCounts[comp.id] || 0;
+              const isActive = isCompanyStoreActive(comp);
+              return (
+                <button
+                  key={comp.id}
+                  type="button"
+                  onClick={() => setSelectedVendorCompanyId(comp.id)}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-blue-600 text-white shadow-xs ring-2 ring-blue-400'
+                      : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                  }`}
+                >
+                  <span>🏢 {comp.tradeName || comp.name}</span>
+                  {comp.code && (
+                    <span className="text-[10px] font-mono text-amber-300/90 bg-black/30 px-1 rounded">
+                      {comp.code}
+                    </span>
+                  )}
+                  <span className="bg-black/20 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
+                    {count}
+                  </span>
+                  {!isActive && (
+                    <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 rounded">
+                      بانتظار التفعيل
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Main Store Header */}
       <header className="bg-gradient-to-r from-[#1a237e] via-[#0d47a1] to-[#1565c0] text-white shadow-lg sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -665,13 +846,13 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl shadow-inner">
-                🛍️
+                {isUnifiedMarketplace ? '🌐' : '🛍️'}
               </div>
               <div>
                 <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
                   <span>{storeName}</span>
                   <span className="text-[11px] bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full font-bold">
-                    كتالوج أونلاين
+                    {isUnifiedMarketplace ? 'منصة متعددة التجار' : 'متجر الشركة'}
                   </span>
                 </h1>
                 <p className="text-xs text-blue-100/90 font-medium line-clamp-1">
@@ -767,24 +948,75 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
               </p>
             </div>
 
-            {/* Quick Actions for Order */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto pt-2">
-              <a
-                href={createWhatsAppOrderLink(confirmedOrder)}
-                target="_blank"
-                rel="noreferrer"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm px-5 py-3 rounded-2xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>💬</span> إرسال نسخة الطلب عبر الواتساب
-              </a>
-              <button
-                type="button"
-                onClick={handlePrintOrderReceipt}
-                className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-2xl transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>🖨️</span> طباعة إيصال الطلبية
-              </button>
-            </div>
+            {/* Per-Vendor Orders List if multiple vendors, or Single Order Actions */}
+            {confirmedOrder.createdOrders && confirmedOrder.createdOrders.length > 1 ? (
+              <div className="space-y-3 pt-2">
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 text-xs text-blue-900 text-right">
+                  <strong>📦 تم تقسيم طلبك حسب الشركات الموردة ({confirmedOrder.createdOrders.length} شركات):</strong>
+                  <p className="text-[11px] text-blue-700 mt-0.5">
+                    كل شركة استلمت فاتورتها الخاصة في منظومتها المحاسبية. يمكنك إرسال إشعار فوري لكل تاجر عبر الواتساب:
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-right">
+                  {confirmedOrder.createdOrders.map((ord) => {
+                    const cleanPhone = (ord.companyWhatsapp || ord.companyPhone || '01029190615').replace(/[^0-9]/g, '');
+                    const fullPhone = cleanPhone.startsWith('2') ? cleanPhone : cleanPhone.startsWith('0') ? `2${cleanPhone}` : `20${cleanPhone}`;
+                    const msg = `مرحباً ${ord.companyName}، لقد قمت بإرسال طلب شراء جديد رقم (${ord.orderReference}) عبر السوق الإلكتروني الموحد بقيمة ${ord.total.toFixed(2)} ${currency}. يرجى مراجعة الفاتورة في المنظومة وتأكيد الشحن.`;
+                    const waLink = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`;
+
+                    return (
+                      <div key={ord.orderReference} className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 text-xs">🏢 {ord.companyName}</span>
+                          <span className="font-mono text-xs font-black text-blue-700">{ord.orderReference}</span>
+                        </div>
+                        <div className="text-xs text-slate-600 flex items-center justify-between">
+                          <span>{ord.itemsCount} أصناف</span>
+                          <span className="font-black text-slate-900">{ord.total.toFixed(2)} {currency}</span>
+                        </div>
+                        <a
+                          href={waLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs"
+                        >
+                          <span>💬</span> إرسال للتاجر واتساب
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={handlePrintOrderReceipt}
+                    className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>🖨️</span> طباعة إيصال الفاتورة الإجمالية
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto pt-2">
+                <a
+                  href={createWhatsAppOrderLink(confirmedOrder)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm px-5 py-3 rounded-2xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>💬</span> إرسال نسخة الطلب عبر الواتساب
+                </a>
+                <button
+                  type="button"
+                  onClick={handlePrintOrderReceipt}
+                  className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-2xl transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>🖨️</span> طباعة إيصال الطلبية
+                </button>
+              </div>
+            )}
 
             {/* Order Items Breakdown */}
             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-right text-xs">
@@ -793,19 +1025,22 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
                 <span>{confirmedOrder.items.length} أصناف</span>
               </div>
               <div className="space-y-2 max-h-60 overflow-y-auto divide-y divide-slate-100">
-                {confirmedOrder.items.map((it, idx) => (
-                  <div key={idx} className="pt-2 flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-slate-800">{it.item.name}</p>
-                      <p className="text-[11px] text-slate-500">
-                        {it.qty} × {it.price.toFixed(2)} {currency}
-                      </p>
+                {confirmedOrder.items.map((it, idx) => {
+                  const itVendor = getVendorForItem(it.item);
+                  return (
+                    <div key={idx} className="pt-2 flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-slate-800">{it.item.name}</p>
+                        <p className="text-[11px] text-slate-500">
+                          {it.qty} × {it.price.toFixed(2)} {currency} • <span className="text-blue-700">🏢 {itVendor.tradeName || itVendor.name}</span>
+                        </p>
+                      </div>
+                      <span className="font-black text-slate-900">
+                        {(it.qty * it.price).toFixed(2)} {currency}
+                      </span>
                     </div>
-                    <span className="font-black text-slate-900">
-                      {(it.qty * it.price).toFixed(2)} {currency}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <div className="border-t-2 border-slate-300 mt-3 pt-3 flex justify-between items-center text-sm font-black text-[#1a237e]">
                 <span>المبلغ الإجمالي:</span>
@@ -827,8 +1062,68 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
         </div>
       )}
 
+      {/* Pending Store Activation Notice Screen (If a non-activated company store is viewed directly) */}
+      {!confirmedOrder && !isUnifiedMarketplace && !isCompanyStoreActive(activeCompany) && (
+        <div className="max-w-2xl mx-auto px-4 py-12 text-center" dir="rtl">
+          <div className="bg-white border border-amber-200 rounded-3xl p-8 shadow-xl space-y-4">
+            <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-3xl">
+              💳
+            </div>
+            <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full">
+              المتجر الإلكتروني بانتظار تفعيل الاشتراك (1000 ج.م)
+            </span>
+            <h2 className="text-xl font-black text-slate-900">
+              متجر {activeCompany.tradeName || activeCompany.name}
+            </h2>
+            <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-md mx-auto">
+              تفعيل المتجر الإلكتروني الخاص بهذه الشركة وعرض منتجاتها بالسوق الموحد يتطلب اشتراكاً لأول مرة بقيمة <strong>1,000 ج.م</strong>.
+              يرجى التواصل مع مالك وإدارة المنظومة لسداد الرسوم وتفعيل المتجر فوراً.
+            </p>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1.5 text-slate-700 text-right">
+              <div className="flex justify-between">
+                <span>🏢 <strong>كود الشركة:</strong></span>
+                <span className="font-mono text-blue-700 font-bold">{activeCompany.code || activeCompany.id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>📞 <strong>رقم هاتف المالك المباشر:</strong></span>
+                <span dir="ltr" className="font-bold text-slate-900">01029190615</span>
+              </div>
+              <div className="flex justify-between">
+                <span>🎁 <strong>فترة تجربة المنظومة:</strong></span>
+                <span className="font-bold text-emerald-700">شهر كامل مجاني (30 يوماً) لكافة أقسام النظام</span>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 pt-2 justify-center">
+              <a
+                href={`https://wa.me/201029190615?text=${encodeURIComponent(
+                  `مرحباً، أود تفعيل المتجر الإلكتروني والسوق الموحد لشركة (${activeCompany.name}) كود: ${activeCompany.code || activeCompany.id} وسداد اشتراك الـ 1000 جنية.`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-5 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <span>💬</span> تواصل مع المالك واتساب (01029190615)
+              </a>
+              <a
+                href="tel:01029190615"
+                className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5"
+              >
+                <span>📞</span> اتصال بالمالك
+              </a>
+              <button
+                type="button"
+                onClick={() => setSelectedVendorCompanyId('all')}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-5 py-2.5 rounded-xl transition cursor-pointer"
+              >
+                🌐 تصفح السوق الموحد (الشركات المفعلة)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Product Browsing Screen */}
-      {!confirmedOrder && (
+      {!confirmedOrder && (isUnifiedMarketplace || isCompanyStoreActive(activeCompany)) && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-6">
           {/* Controls Bar: Search & Filtering */}
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
@@ -1048,6 +1343,30 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
                     {/* Body Content */}
                     <div className="p-3 sm:p-3.5 flex-1 flex flex-col justify-between space-y-2.5">
                       <div>
+                        {/* Merchant Seller Badge (Amazon-style) */}
+                        {(() => {
+                          const itVendor = getVendorForItem(item);
+                          return (
+                            <div className="flex items-center justify-between gap-1 mb-1.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedVendorCompanyId(itVendor.id);
+                                }}
+                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition cursor-pointer truncate max-w-[140px]"
+                                title={`تصفح منتجات ${itVendor.tradeName || itVendor.name} فقط`}
+                              >
+                                <span>🏢</span>
+                                <span className="truncate">{itVendor.tradeName || itVendor.name}</span>
+                              </button>
+                              {itVendor.code && (
+                                <span className="font-mono text-[9px] text-slate-400">#{itVendor.code}</span>
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 leading-snug">
                           {item.name}
                         </h4>
@@ -1215,49 +1534,57 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
                       </button>
                     </div>
 
-                    {cartItemsList.map(({ item, qty, price }) => (
-                      <div key={item.id} className="pt-2.5 flex items-center justify-between gap-2">
-                        <div className="flex-1">
-                          <h4 className="font-bold text-slate-900 line-clamp-1">{item.name}</h4>
-                          <p className="text-[11px] text-slate-500">
-                            {price.toFixed(2)} {currency} {item.unit ? `(${item.unit})` : ''}
-                          </p>
-                        </div>
+                    {cartItemsList.map(({ item, qty, price }) => {
+                      const itVendor = getVendorForItem(item);
+                      return (
+                        <div key={item.id} className="pt-2.5 flex items-center justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="font-bold text-slate-900 line-clamp-1">{item.name}</h4>
+                              <span className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap">
+                                🏢 {itVendor.tradeName || itVendor.name}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500">
+                              {price.toFixed(2)} {currency} {item.unit ? `(${item.unit})` : ''}
+                            </p>
+                          </div>
 
-                        {/* Qty Controls */}
-                        <div className="flex items-center gap-1.5 bg-slate-100 rounded-xl p-1 border border-slate-200">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateCartQty(item.id, -1)}
-                            className="w-6 h-6 bg-white hover:bg-slate-200 text-slate-800 rounded-lg font-bold flex items-center justify-center text-xs cursor-pointer"
-                          >
-                            -
-                          </button>
-                          <span className="w-8 text-center font-bold text-xs">{qty}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateCartQty(item.id, 1)}
-                            className="w-6 h-6 bg-[#1a237e] text-white hover:bg-[#0d47a1] rounded-lg font-bold flex items-center justify-center text-xs cursor-pointer"
-                          >
-                            +
-                          </button>
-                        </div>
+                          {/* Qty Controls */}
+                          <div className="flex items-center gap-1.5 bg-slate-100 rounded-xl p-1 border border-slate-200">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCartQty(item.id, -1)}
+                              className="w-6 h-6 bg-white hover:bg-slate-200 text-slate-800 rounded-lg font-bold flex items-center justify-center text-xs cursor-pointer"
+                            >
+                              -
+                            </button>
+                            <span className="w-8 text-center font-bold text-xs">{qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCartQty(item.id, 1)}
+                              className="w-6 h-6 bg-[#1a237e] text-white hover:bg-[#0d47a1] rounded-lg font-bold flex items-center justify-center text-xs cursor-pointer"
+                            >
+                              +
+                            </button>
+                          </div>
 
-                        {/* Line Total & Remove */}
-                        <div className="text-left min-w-[75px]">
-                          <span className="font-black text-slate-900 block text-xs">
-                            {(qty * price).toFixed(2)} {currency}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFromCart(item.id)}
-                            className="text-[10px] text-rose-500 hover:text-rose-700 cursor-pointer"
-                          >
-                            حذف
-                          </button>
+                          {/* Line Total & Remove */}
+                          <div className="text-left min-w-[75px]">
+                            <span className="font-black text-slate-900 block text-xs">
+                              {(qty * price).toFixed(2)} {currency}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFromCart(item.id)}
+                              className="text-[10px] text-rose-500 hover:text-rose-700 cursor-pointer"
+                            >
+                              حذف
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Cart Totals Summary Card */}

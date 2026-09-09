@@ -214,7 +214,13 @@ export interface SaleInvoice {
   items: InvoiceItem[];
   subtotal: number;
   discount: number;
+  discountType?: 'percent' | 'fixed';
+  discountValue?: number;
   tax: number;
+  taxType?: 'percent' | 'fixed';
+  taxValue?: number;
+  extraRevenueName?: string; // اسم الإيراد الإضافي للفاتورة
+  extraRevenueAmount?: number; // مبلغ الإيراد الإضافي للفاتورة
   withholdingTax?: number;
   fees: number;
   total: number;
@@ -256,7 +262,13 @@ export interface PurchaseInvoice {
   items: InvoiceItem[];
   subtotal: number;
   discount: number;
+  discountType?: 'percent' | 'fixed';
+  discountValue?: number;
   tax: number;
+  taxType?: 'percent' | 'fixed';
+  taxValue?: number;
+  extraRevenueName?: string; // اسم الإيراد أو المصروف الإضافي
+  extraRevenueAmount?: number; // مبلغ الإيراد أو المصروف الإضافي
   withholdingTax?: number;
   fees: number;
   total: number;
@@ -473,6 +485,14 @@ export interface CatalogConfig {
   printFormat?: '80mm' | 'a4'; // صيغة الطباعة: بون حراري 80mm أو نموذج A4
   soundAlertEnabled?: boolean; // تشغيل نغمة تنبيه صوتية عند استلام طلب جديد
   companyId?: string; // عزل الإعدادات للشركة المحددة
+  isMarketplacePublished?: boolean; // ظهور منتجات الشركة في المتجر الموحد (أمازون)
+  storeSubscriptionStatus?: 'trial' | 'active' | 'pending_payment' | 'inactive'; // حالة اشتراك المتجر الإلكتروني (1000 ج.م)
+  storeSubscriptionPaid?: boolean;
+  storeSubscriptionAmount?: number; // قيمة الاشتراك 1000 ج.م
+  storeSubscriptionPaidAt?: string;
+  storeSlug?: string; // رابط فريد باسم الشركة
+  ownerContactPhone?: string; // رقم هاتف المالك للتفعيل
+  ownerContactWhatsapp?: string; // واتساب المالك للتفعيل
 }
 
 // 4. Audit Trail & Security
@@ -1062,6 +1082,10 @@ export interface TenantCompany {
   lastActivityAt?: string;
   notes?: string;
   isSupportAccessActive?: boolean;
+  storeSubscriptionStatus?: 'trial' | 'active' | 'pending_payment' | 'inactive';
+  storeSubscriptionPaid?: boolean;
+  storeSubscriptionAmount?: number;
+  storeSubscriptionPaidAt?: string;
   catalogConfig?: CatalogConfig;
 }
 

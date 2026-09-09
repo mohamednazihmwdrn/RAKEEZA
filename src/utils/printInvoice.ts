@@ -65,6 +65,8 @@ export function generateInvoicePrintHtml(
   const taxVal = inv.tax || 0;
   const feesName = (inv as any).feeDescription || (inv.fees ? 'نقل / مصاريف' : 'رسوم');
   const feesVal = inv.fees || 0;
+  const extraRevenueName = (inv as any).extraRevenueName || 'إيرادات إضافية';
+  const extraRevenueVal = (inv as any).extraRevenueAmount || 0;
   const grandTotal = inv.total;
 
   let paidAmount = inv.paidAmount;
@@ -770,6 +772,11 @@ export function generateInvoicePrintHtml(
           <div class="summary-line" id="row-fees">
             <span id="lbl-fees">${feesName}:</span>
             <span id="val-fees">+${feesVal.toFixed(2)} ج.م</span>
+          </div>` : ''}
+          ${extraRevenueVal > 0 ? `
+          <div class="summary-line" id="row-extra-revenue" style="color: #047857; font-weight: bold;">
+            <span id="lbl-extra-revenue">➕ ${extraRevenueName}:</span>
+            <span id="val-extra-revenue">+${extraRevenueVal.toFixed(2)} ج.م</span>
           </div>` : ''}
           <div class="summary-line total-line" id="row-total">
             <span>صافي القيمة / الإجمالي:</span>
