@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "tenants": {
+      "description": "Tenant isolated business data including invoices, items, accounts, and transactions for real-time multi-device sync",
+      "fields": {
+        "companyId": { "type": "string", "description": "Unique identifier for the tenant company" },
+        "companyName": { "type": "string", "description": "Commercial name of the business" },
+        "salesInvoices": { "type": "array", "description": "Real-time list of sales invoices" },
+        "purchaseInvoices": { "type": "array", "description": "Real-time list of purchase invoices" },
+        "cashTransactions": { "type": "array", "description": "Real-time cash in and out transactions" },
+        "items": { "type": "array", "description": "Real-time inventory products and quantities" },
+        "customers": { "type": "array", "description": "Customers registry and balances" },
+        "suppliers": { "type": "array", "description": "Suppliers registry and balances" },
+        "accounts": { "type": "array", "description": "Chart of accounts and general ledger balances" },
+        "cashBox": { "type": "object", "description": "Live drawer, vodafone cash, instapay, and bank balances" },
+        "bankAccounts": { "type": "array", "description": "Bank accounts with current balances" },
+        "employees": { "type": "array", "description": "Employees directory and salaries" },
+        "auditLogs": { "type": "array", "description": "System activity logs" },
+        "journalEntries": { "type": "array", "description": "Daily double-entry journal records" },
+        "nextInvoiceNumber": { "type": "number", "description": "Auto-increment sales invoice counter" },
+        "nextPurchaseNumber": { "type": "number", "description": "Auto-increment purchase invoice counter" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of the most recent change" },
+        "lastModifiedBy": { "type": "string", "description": "User or device who performed the last write" }
+      }
+    },
+    "companies": {
+      "description": "Registered organizations and tenant accounts in the system",
+      "fields": {
+        "id": { "type": "string", "description": "Company ID" },
+        "code": { "type": "string", "description": "Company unique 3-4 digit code" },
+        "name": { "type": "string", "description": "Company name" },
+        "phone": { "type": "string", "description": "Admin phone number" },
+        "planId": { "type": "string", "description": "Active subscription plan id" },
+        "status": { "type": "string", "description": "Subscription status (trial, active, expired)" },
+        "operationsCount": { "type": "number", "description": "Total operation count" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      }
+    },
+    "ownerSettings": {
+      "description": "Global settings, license codes, and trials registry",
+      "fields": {
+        "licenses": { "type": "array", "description": "Generated activation license codes" },
+        "trialRegistry": { "type": "array", "description": "Trial phone records and device fingerprints" },
+        "plans": { "type": "array", "description": "Available subscription plans" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp" }
+      }
+    }
+  }
+}

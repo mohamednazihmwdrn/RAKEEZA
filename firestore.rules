@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Tenant-isolated business operations, invoices, inventory, and accounts
+    match /tenants/{companyId} {
+      allow read, write: if true;
+    }
+
+    // Registered tenant companies
+    match /companies/{companyId} {
+      allow read, write: if true;
+    }
+
+    // Owner configuration, license keys, and trial registries
+    match /ownerSettings/{docId} {
+      allow read, write: if true;
+    }
+  }
+}
