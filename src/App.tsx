@@ -97,6 +97,14 @@ export default function App() {
   };
 
   const updateData = (newData: AppData, actionInfo?: { action?: string; module?: string; details?: string }) => {
+    // 🔒 If viewing a closed fiscal year, prevent any alterations or deletions (Review & Print only)
+    if (appData.viewingClosedYear && newData.viewingClosedYear === appData.viewingClosedYear) {
+      const isSwitchingYear = actionInfo?.action === 'تبديل سنة مالية' || actionInfo?.module === 'تبديل سنة مالية';
+      if (!isSwitchingYear) {
+        showToast('عفواً، لا يمكن تعديل أو حذف أي بيانات أثناء تصفح سنة مالية مغلقة! السنة مخصصة للمراجعة والطباعة والعرض فقط.', 'warning');
+        return;
+      }
+    }
     setAppData(newData);
     saveAppData(newData);
     if (session?.company?.id) {
@@ -332,13 +340,53 @@ export default function App() {
     return () => clearInterval(backupIntervalTimer);
   }, [appData]);
 
-  const handleNavigate = (page: string) => {
+  const handleNavigate = (page: string, pushHistory = true) => {
+    if (page === currentPage) return;
+    if (pushHistory) {
+      window.history.pushState({ page }, '', `#${page}`);
+    }
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.innerWidth <= 768) {
       setIsSidebarOpen(false);
     }
   };
+
+  // Mobile Phone Back Button & Navigation History Handler (Hardware back button & gestures)
+  useEffect(() => {
+    // Initialize initial state if empty
+    const currentHash = window.location.hash.replace('#', '') || currentPage || 'home';
+    window.history.replaceState({ page: currentHash }, '', `#${currentHash}`);
+
+    const handlePopState = (event: PopStateEvent) => {
+      // 1. If mobile sidebar is open, phone back button closes the sidebar first
+      if (isSidebarOpen) {
+        setIsSidebarOpen(false);
+        window.history.pushState({ page: currentPage }, '', `#${currentPage}`);
+        return;
+      }
+
+      // 2. If any modal is open, close it
+      if (isInspectModalOpen) {
+        setIsInspectModalOpen(false);
+        return;
+      }
+      if (isShareCatalogOpen) {
+        setIsShareCatalogOpen(false);
+        return;
+      }
+
+      // 3. Navigate back to previous page in app
+      const targetPage = event.state?.page || window.location.hash.replace('#', '') || 'home';
+      setCurrentPage(targetPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isSidebarOpen, isInspectModalOpen, isShareCatalogOpen, currentPage]);
 
   // Keyboard Shortcuts (Ctrl+1: Sales, Ctrl+2: Purchases, Ctrl+3: POS, Ctrl+4: Items, Ctrl+5: Accounts, Ctrl+0: Home)
   useEffect(() => {
@@ -720,6 +768,45 @@ export default function App() {
         onNavigateWebOrders={() => handleNavigate('web_orders')}
       />
 
+      {/* 🔒 Closed Fiscal Year Banner with Return Switcher */}
+      {appData.viewingClosedYear && (
+        <div className="fixed top-[60px] right-0 left-0 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 text-white px-3 sm:px-5 py-2 z-40 shadow-md flex items-center justify-between gap-3 text-xs sm:text-sm border-b border-amber-400/40 animate-fade-in no-print" dir="rtl">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-black/20 flex items-center justify-center text-base shrink-0">
+              🔒
+            </div>
+            <div>
+              <span className="font-black text-amber-100">
+                أنت تتصفح حالياً السنة المالية المغلقة ({appData.viewingClosedYear})
+              </span>
+              <span className="hidden md:inline text-amber-200 text-xs mr-2">
+                (للمراجعة والطباعة والعرض فقط - محظور أي تعديل أو حذف لحماية الدفاتر)
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const currentYear = appData.currentActiveFiscalYear || appData.settings?.fiscalYear || 'الحالية';
+              const updated = {
+                ...appData,
+                viewingClosedYear: undefined,
+              };
+              updateData(updated, {
+                action: 'تبديل سنة مالية',
+                module: 'الإقفال السنوي',
+                details: `العودة إلى السنة المالية الحالية ${currentYear}`,
+              });
+              showToast(`تمت العودة بنجاح إلى السنة المالية الحالية (${currentYear})`, 'success');
+            }}
+            className="bg-white text-amber-950 hover:bg-amber-100 active:bg-amber-200 px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm"
+          >
+            <span>العودة للسنة الحالية ({appData.currentActiveFiscalYear || appData.settings?.fiscalYear})</span>
+            <span>↩</span>
+          </button>
+        </div>
+      )}
+
       {/* Sidebar Backdrop Overlay on Mobile */}
       {isSidebarOpen && (
         <div
@@ -743,7 +830,9 @@ export default function App() {
 
       {/* Main Content Area */}
       <main
-        className={`mt-[60px] p-2.5 sm:p-4 md:p-6 pb-24 md:pb-6 transition-all duration-300 flex-1 max-w-full overflow-x-hidden ${
+        className={`${
+          appData.viewingClosedYear ? 'mt-[105px]' : 'mt-[60px]'
+        } p-2.5 sm:p-4 md:p-6 pb-24 md:pb-6 transition-all duration-300 flex-1 max-w-full overflow-x-hidden ${
           isSidebarOpen ? 'md:mr-[290px]' : 'mr-0'
         }`}
       >
@@ -785,7 +874,24 @@ export default function App() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+              {currentPage !== 'home' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.history.length > 1) {
+                      window.history.back();
+                    } else {
+                      handleNavigate('home');
+                    }
+                  }}
+                  className="min-h-[40px] bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs flex-1 sm:flex-initial"
+                  title="الرجوع إلى الصفحة السابقة (أو استخدم زر الرجوع بهاتفك)"
+                >
+                  <span>↩️</span>
+                  <span>رجوع</span>
+                </button>
+              )}
               {currentPage !== 'pos' && (
                 <button
                   onClick={() => handleNavigate('pos')}
@@ -810,20 +916,36 @@ export default function App() {
         </div>
       </main>
 
-      {/* Mobile Sticky Quick Navigation Bar */}
+      {/* Mobile Sticky Quick Navigation Bar with Hardware & Screen Back Support */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-30 flex items-center justify-around px-1 shadow-lg no-print mobile-bottom-nav"
         aria-label="التنقل السريع للهاتف"
       >
-        <button
-          onClick={() => handleNavigate('home')}
-          className={`flex flex-col items-center justify-center flex-1 min-h-[48px] py-1 transition ${
-            currentPage === 'home' ? 'text-[#1a237e] font-black' : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <span className="text-lg">🏠</span>
-          <span className="text-[10px] mt-0.5">الرئيسية</span>
-        </button>
+        {currentPage !== 'home' ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                handleNavigate('home');
+              }
+            }}
+            className="flex flex-col items-center justify-center flex-1 min-h-[48px] py-1 text-indigo-700 hover:text-indigo-900 active:scale-95 transition"
+            title="الرجوع للصفحة السابقة"
+          >
+            <span className="text-lg">↩️</span>
+            <span className="text-[10px] mt-0.5 font-bold">رجوع</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => handleNavigate('home')}
+            className="flex flex-col items-center justify-center flex-1 min-h-[48px] py-1 text-[#1a237e] font-black"
+          >
+            <span className="text-lg">🏠</span>
+            <span className="text-[10px] mt-0.5">الرئيسية</span>
+          </button>
+        )}
 
         <button
           onClick={() => handleNavigate('pos')}

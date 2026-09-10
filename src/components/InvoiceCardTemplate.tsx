@@ -304,12 +304,6 @@ export const InvoiceCardTemplate: React.FC<InvoiceCardTemplateProps> = ({
                   <span className="font-mono">{taxAmount.toFixed(2)}</span>
                 </div>
               )}
-              {feesVal > 0 && (
-                <div className="flex justify-between items-center py-0.5">
-                  <span>{feesName}:</span>
-                  <span className="font-mono">{feesVal.toFixed(2)}</span>
-                </div>
-              )}
               <div className="flex justify-between items-center border-t-[1.5px] border-black mt-1 pt-1 text-sm">
                 <span>صافي القيمة / الإجمالي:</span>
                 <span className="font-mono font-black">{grandTotal.toFixed(2)} ج.م</span>

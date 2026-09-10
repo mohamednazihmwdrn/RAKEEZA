@@ -1408,6 +1408,178 @@ export function updateCompanyCloud(
 }
 
 /**
+ * Owner: Delete a company completely from the cloud database
+ */
+export function deleteCompanyCloud(companyId: string): {
+  success: boolean;
+  error?: string;
+  remainingCompanies?: TenantCompany[];
+  deletedCompany?: TenantCompany;
+} {
+  const db = getCloudDatabase();
+  const targetId = (companyId || '').trim();
+  const companyIndex = db.companies.findIndex((c) => c.id === targetId || c.code === targetId);
+
+  if (companyIndex === -1) {
+    return { success: false, error: 'الشركة المطلوبة غير مسجلة أو تم حذفها مسبقاً.' };
+  }
+
+  const [deletedCompany] = db.companies.splice(companyIndex, 1);
+  const actualId = deletedCompany.id;
+
+  // 1. Delete tenant isolated dataset completely
+  if (db.tenantsData && db.tenantsData[actualId]) {
+    delete db.tenantsData[actualId];
+  }
+
+  // 2. Invalidate any active sessions belonging to this company
+  if (db.sessions) {
+    for (const [token, sess] of Object.entries(db.sessions)) {
+      if (sess.companyId === actualId) {
+        delete db.sessions[token];
+      }
+    }
+  }
+
+  // 3. Remove assigned licenses
+  if (db.licenses) {
+    db.licenses = db.licenses.filter((l) => l.companyId !== actualId);
+  }
+
+  // 4. Remove trial registrations matching this company
+  if (db.trialRegistry) {
+    db.trialRegistry = db.trialRegistry.filter(
+      (t) =>
+        t.companyId !== actualId &&
+        (!deletedCompany.phone || t.phone !== deletedCompany.phone) &&
+        (!deletedCompany.email || t.email !== deletedCompany.email)
+    );
+  }
+
+  saveCloudDatabase(db);
+  return {
+    success: true,
+    deletedCompany,
+    remainingCompanies: db.companies,
+  };
+}
+
+/**
+ * 🧹 Clean Entire System: Clears all movements, transactions, invoices, journals, and balances
+ * across all tenants so everything is clean and ready for real, new data.
+ */
+export function cleanEntireSystemCloud(): { success: boolean; message: string; affectedCompaniesCount: number } {
+  const db = getCloudDatabase();
+  let affectedCount = 0;
+
+  if (db.tenantsData) {
+    for (const [, tenantData] of Object.entries(db.tenantsData)) {
+      affectedCount++;
+      // Clean all transactional and movement data
+      tenantData.salesInvoices = [];
+      tenantData.purchaseInvoices = [];
+      tenantData.cashTransactions = [];
+      tenantData.journalEntries = [];
+      tenantData.physicalInventories = [];
+      tenantData.inventoryAdjustments = [];
+      tenantData.goodsIssueVouchers = [];
+      tenantData.fiscalClosings = [];
+      tenantData.stockTransfers = [];
+      tenantData.quotations = [];
+      tenantData.payrollSlips = [];
+      tenantData.employeeAdvances = [];
+      tenantData.cheques = [];
+      tenantData.commissions = [];
+      tenantData.productionOrders = [];
+      tenantData.bankStatements = [];
+      tenantData.approvalRequests = [];
+
+      // Reset numeric counters to 1
+      tenantData.nextInvoiceNumber = 1;
+      tenantData.nextPurchaseNumber = 1;
+      tenantData.nextCashId = 1;
+      tenantData.nextJournalId = 1;
+      tenantData.nextQuoteId = 1;
+      tenantData.nextStocktakeId = 1;
+      tenantData.nextAdjustmentId = 1;
+      tenantData.nextGoodsIssueId = 1;
+      tenantData.nextClosingId = 1;
+      tenantData.nextPayrollId = 1;
+      tenantData.nextChequeId = 1;
+      tenantData.nextProductionId = 1;
+
+      // Reset cash boxes & bank balances to 0
+      tenantData.cashBox = { drawer: 0, vodafone: 0, instapay: 0, bank: 0 };
+      if (tenantData.bankAccounts) {
+        tenantData.bankAccounts = tenantData.bankAccounts.map((b) => ({ ...b, balance: 0 }));
+      }
+
+      // Reset customer & supplier balances to 0
+      if (tenantData.customers) {
+        tenantData.customers = tenantData.customers.map((c) => ({
+          ...c,
+          balance: 0,
+        }));
+      }
+      if (tenantData.suppliers) {
+        tenantData.suppliers = tenantData.suppliers.map((s) => ({
+          ...s,
+          balance: 0,
+        }));
+      }
+
+      // Reset items stock and quantities to 0
+      if (tenantData.items) {
+        tenantData.items = tenantData.items.map((it) => ({
+          ...it,
+          quantity: 0,
+          stock: 0,
+          branchQuantities: {},
+        }));
+      }
+
+      // Reset general ledger tree debit/credit/balances
+      if (tenantData.accounts) {
+        tenantData.accounts = tenantData.accounts.map((acc) => ({
+          ...acc,
+          debit: 0,
+          credit: 0,
+          balance: 0,
+        }));
+      }
+
+      // Add audit log entry
+      tenantData.auditLogs = [
+        {
+          id: `log-clean-${Date.now()}`,
+          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+          userName: 'مالك المنظومة (Owner System Reset)',
+          action: 'system_cleanup',
+          module: 'إدارة النظام',
+          details: 'تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة.',
+        },
+      ];
+    }
+  }
+
+  // Update operationsCount on registered companies to 0
+  if (db.companies) {
+    db.companies = db.companies.map((c) => ({
+      ...c,
+      operationsCount: 0,
+    }));
+  }
+
+  saveCloudDatabase(db);
+
+  return {
+    success: true,
+    message: `تم تنظيف النظام بالكامل بنجاح وتصفير كافة الحركات والفواتير والمبالغ لعدد ${affectedCount} شركة.`,
+    affectedCompaniesCount: affectedCount,
+  };
+}
+
+/**
  * Owner: Generate License Activation Code
  */
 export function generateLicenseCloud(

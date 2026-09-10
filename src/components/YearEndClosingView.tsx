@@ -449,6 +449,40 @@ export const YearEndClosingView: React.FC<YearEndClosingViewProps> = ({
     showToast(`تم إعادة فتح السنة المالية ${selectedClosingRecord.fiscalYear} بنجاح`, 'success');
   };
 
+  // 5. SWITCH BETWEEN CURRENT ACTIVE FISCAL YEAR AND CLOSED YEAR
+  const handleSwitchToClosedYear = (fiscalYear: string) => {
+    const currentActive = appData.currentActiveFiscalYear || appData.settings?.fiscalYear || '2026';
+    const updatedData: AppData = {
+      ...appData,
+      viewingClosedYear: fiscalYear,
+      currentActiveFiscalYear: currentActive,
+    };
+    const withLog = addAuditLog(
+      updatedData,
+      'update',
+      'الإقفال السنوي',
+      `وضع المراجعة: تم التبديل إلى تصفح السنة المالية المغلقة ${fiscalYear} للقراءة والعرض فقط`
+    );
+    onUpdateData(withLog);
+    showToast(`أنت الآن في وضع مراجعة السنة المالية (${fiscalYear}) - للقراءة والطباعة والعرض فقط`, 'info');
+  };
+
+  const handleReturnToCurrentYear = () => {
+    const currentActive = appData.currentActiveFiscalYear || appData.settings?.fiscalYear || '2026';
+    const updatedData: AppData = {
+      ...appData,
+      viewingClosedYear: undefined,
+    };
+    const withLog = addAuditLog(
+      updatedData,
+      'update',
+      'الإقفال السنوي',
+      `تمت العودة إلى السنة المالية الحالية ${currentActive}`
+    );
+    onUpdateData(withLog);
+    showToast(`تمت العودة بنجاح إلى السنة المالية الحالية (${currentActive})`, 'success');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -475,6 +509,62 @@ export const YearEndClosingView: React.FC<YearEndClosingViewProps> = ({
             <span className="block text-[10px] text-rose-300 font-sans font-bold">
               🔒 مقفلة حتى: {appData.fiscalLockDate}
             </span>
+          )}
+        </div>
+      </div>
+
+      {/* 🔄 Interactive Switcher between Current Fiscal Year and Closed Year */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-5 rounded-3xl border border-indigo-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+        <div className="flex items-center gap-3.5">
+          <div
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${
+              appData.viewingClosedYear
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-amber-500/20'
+                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-emerald-500/20'
+            }`}
+          >
+            {appData.viewingClosedYear ? '🔒' : '🟢'}
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-slate-400">وضع السنة المالية في شاشتك:</span>
+              <span
+                className={`font-mono font-black text-xs sm:text-sm px-2.5 py-1 rounded-lg ${
+                  appData.viewingClosedYear
+                    ? 'bg-amber-500/25 text-amber-300 border border-amber-400/30'
+                    : 'bg-emerald-500/25 text-emerald-300 border border-emerald-400/30'
+                }`}
+              >
+                {appData.viewingClosedYear
+                  ? `سنة ${appData.viewingClosedYear} (مغلقة - مراجعة وطباعة فقط)`
+                  : `سنة ${appData.settings?.fiscalYear} (الحالية النشطة - تشغيل كامل)`}
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1">
+              {appData.viewingClosedYear
+                ? '⚠️ تم قفل التعديلات والحذف لحماية الدفاتر؛ متاح الاستعراض والطباعة واستخراج التقارير فقط.'
+                : 'الوضع التشغيلي النشط: يتم تسجيل الفواتير والسندات والقيود على السنة الحالية كالمعتاد.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+          {appData.viewingClosedYear ? (
+            <button
+              type="button"
+              onClick={handleReturnToCurrentYear}
+              className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 active:from-emerald-700 active:to-emerald-800 text-white rounded-2xl text-xs sm:text-sm font-black transition flex items-center justify-center gap-2 shadow-md cursor-pointer"
+            >
+              <span>العودة للسنة الحالية ({appData.currentActiveFiscalYear || appData.settings?.fiscalYear})</span>
+              <span className="text-base">↩</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-3.5 py-2 rounded-xl flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                السنة الحالية نشطة
+              </span>
+            </div>
           )}
         </div>
       </div>
@@ -1025,15 +1115,30 @@ export const YearEndClosingView: React.FC<YearEndClosingViewProps> = ({
                     >
                       📄 محضر الإقفال
                     </button>
+                    {appData.viewingClosedYear === rec.fiscalYear ? (
+                      <button
+                        onClick={handleReturnToCurrentYear}
+                        className="min-h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm"
+                      >
+                        العودة للحالية ↩
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleSwitchToClosedYear(rec.fiscalYear)}
+                        className="min-h-[42px] bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"
+                      >
+                        👁️ تصفح ومراجعة
+                      </button>
+                    )}
                     {rec.status === 'completed' && (
                       <button
                         onClick={() => {
                           setSelectedClosingRecord(rec);
                           setIsReopenModalOpen(true);
                         }}
-                        className="min-h-[42px] bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"
+                        className="col-span-2 min-h-[42px] bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"
                       >
-                        🔓 إعادة فتح
+                        🔓 إعادة فتح للمراجعة
                       </button>
                     )}
                   </div>
@@ -1097,7 +1202,24 @@ export const YearEndClosingView: React.FC<YearEndClosingViewProps> = ({
                         )}
                       </td>
                       <td className="p-3 text-center">
-                        <div className="flex justify-center gap-1.5">
+                        <div className="flex justify-center items-center gap-1.5 flex-wrap">
+                          {appData.viewingClosedYear === rec.fiscalYear ? (
+                            <button
+                              onClick={handleReturnToCurrentYear}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
+                              title="العودة إلى السنة المالية الحالية"
+                            >
+                              <span>العودة للحالية ↩</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleSwitchToClosedYear(rec.fiscalYear)}
+                              className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                              title="تصفح بيانات هذه السنة المالية للمراجعة والطباعة فقط"
+                            >
+                              <span>👁️ مراجعة</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               setSelectedClosingRecord(rec);

@@ -4,7 +4,7 @@
     {
       "id": "COMP-000001",
       "tenantId": "TENANT-8812-HQ1",
-      "code": "RKZ-001",
+      "code": "101",
       "name": "شركة ركيزة للمحاسبة والتجارة العامة (RAKEEZA)",
       "tradeName": "ركيزة للأنظمة والحلول التقنية RAKEEZA",
       "activity": "4651 - تجارة أجهزة الكمبيوتر والمعدات الإلكترونية",
@@ -56,13 +56,13 @@
       "usersCount": 3,
       "branchesCount": 2,
       "warehousesCount": 2,
-      "operationsCount": 142,
+      "operationsCount": 0,
       "lastActivityAt": "2026-09-02 11:20"
     },
     {
       "id": "COMP-000002",
       "tenantId": "TENANT-4491-TR2",
-      "code": "RKZ-002",
+      "code": "102",
       "name": "مؤسسة الأمل للتوريدات العمومية",
       "tradeName": "الأمل سوفت وير",
       "activity": "4791 - تجارة التجزئة والتوريدات",
@@ -109,13 +109,13 @@
       "usersCount": 2,
       "branchesCount": 1,
       "warehousesCount": 1,
-      "operationsCount": 28,
+      "operationsCount": 0,
       "lastActivityAt": "2026-09-01 16:45"
     },
     {
       "id": "COMP-000003",
       "tenantId": "TENANT-9923-SL3",
-      "code": "RKZ-003",
+      "code": "103",
       "name": "مجموعة السلام الهندسية والمقاولات",
       "tradeName": "السلام إنجينيرينج",
       "activity": "4321 - التركيبات والتجهيزات الهندسية",
@@ -157,13 +157,13 @@
       "usersCount": 3,
       "branchesCount": 2,
       "warehousesCount": 2,
-      "operationsCount": 84,
+      "operationsCount": 0,
       "lastActivityAt": "2026-08-30 14:10"
     },
     {
       "id": "COMP-748566",
       "tenantId": "TENANT-YTNI-70",
-      "code": "RKZ-633",
+      "code": "107",
       "name": "مؤسسة الاخوة للحدايد والبويات",
       "tradeName": "مؤسسة الاخوة للحدايد والبويات",
       "activity": "تجارة عامة وخدمات",
@@ -222,7 +222,7 @@
     {
       "id": "COMP-672842",
       "tenantId": "TENANT-RDQ6-96",
-      "code": "RKZ-655",
+      "code": "108",
       "name": "مؤسسة نزيه للتجارة",
       "tradeName": "مؤسسة نزيه للتجارة",
       "activity": "تجارة عامة وخدمات",
@@ -281,7 +281,7 @@
     {
       "id": "COMP-516314",
       "tenantId": "TENANT-ZJHS-89",
-      "code": "RKZ-192",
+      "code": "109",
       "name": "الصفا مكرم",
       "tradeName": "الصفا مكرم",
       "activity": "تجارة عامة وخدمات",
@@ -870,178 +870,9 @@
         }
       ],
       "currentUser": "user1",
-      "customers": [
-        {
-          "id": "c1",
-          "name": "شركة النور للتجارة",
-          "phone": "01011111111",
-          "balance": 0,
-          "taxNumber": "321-654-987",
-          "commercialReg": "12345",
-          "address": "مدينة نصر، القاهرة",
-          "priceTier": "wholesale",
-          "creditLimit": 50000,
-          "transactions": []
-        },
-        {
-          "id": "c2",
-          "name": "مؤسسة السلام الحديثة",
-          "phone": "01022222222",
-          "balance": 0,
-          "taxNumber": "444-555-666",
-          "address": "الدقي، الجيزة",
-          "priceTier": "retail",
-          "creditLimit": 20000,
-          "transactions": []
-        },
-        {
-          "id": "c3",
-          "name": "شركة الأمل للمقاولات",
-          "phone": "01033333333",
-          "balance": 0,
-          "address": "التجمع الخامس، القاهرة",
-          "priceTier": "special",
-          "transactions": []
-        }
-      ],
-      "suppliers": [
-        {
-          "id": "s1",
-          "name": "مصنع الخير للإلكترونيات",
-          "phone": "01111111111",
-          "balance": 0,
-          "taxNumber": "777-888-999",
-          "address": "مدينة العاشر من رمضان",
-          "transactions": []
-        },
-        {
-          "id": "s2",
-          "name": "شركة الرازي للاستيراد",
-          "phone": "01122222222",
-          "balance": 0,
-          "taxNumber": "111-222-333",
-          "address": "المهندسين، الجيزة",
-          "transactions": []
-        },
-        {
-          "id": "s3",
-          "name": "مؤسسة النيل للتوريدات",
-          "phone": "01133333333",
-          "balance": 0,
-          "transactions": []
-        }
-      ],
-      "items": [
-        {
-          "id": "i1",
-          "companyId": "COMP-000001",
-          "name": "جهاز كمبيوتر Core i7 Desktop",
-          "barcode": "62210010001",
-          "category": "أجهزة كمبيوتر",
-          "unit": "جهاز",
-          "description": "Core i7 16GB RAM 512GB SSD NVMe",
-          "quantity": 15,
-          "purchasePrice": 5000,
-          "salePrice": 6500,
-          "wholesalePrice": 5900,
-          "catalogPrice": 6500,
-          "catalogDiscountPrice": 6250,
-          "catalogBadge": "🔥 الأكثر طلباً",
-          "catalogFeatured": true,
-          "showInCatalog": true,
-          "minStockAlert": 3,
-          "costMethod": "fifo",
-          "batches": [
-            {
-              "id": "b1",
-              "batchNumber": "LOT-2026-01",
-              "expiryDate": "2028-12-31",
-              "qty": 15,
-              "purchasePrice": 5000
-            }
-          ],
-          "branchStock": {
-            "br-main": 10,
-            "br-branch2": 5
-          },
-          "movements": []
-        },
-        {
-          "id": "i2",
-          "companyId": "COMP-000001",
-          "name": "طابعة ملونة HP LaserJet Pro",
-          "barcode": "62210010002",
-          "category": "طابعات ومعدات",
-          "unit": "طابعة",
-          "description": "طابعة ليزر ملونة متعددة المهام واي فاي",
-          "quantity": 8,
-          "purchasePrice": 1800,
-          "salePrice": 2400,
-          "wholesalePrice": 2150,
-          "catalogPrice": 2400,
-          "catalogDiscountPrice": 0,
-          "catalogBadge": "",
-          "catalogFeatured": false,
-          "showInCatalog": true,
-          "minStockAlert": 2,
-          "costMethod": "avg",
-          "branchStock": {
-            "br-main": 5,
-            "br-branch2": 3
-          },
-          "movements": []
-        },
-        {
-          "id": "i3",
-          "companyId": "COMP-000001",
-          "name": "شاشة 24 بوصة Full HD IPS",
-          "barcode": "62210010003",
-          "category": "شاشات",
-          "unit": "شاشة",
-          "description": "شاشة 24 بوصة بدون حواف 75Hz HDMI",
-          "quantity": 12,
-          "purchasePrice": 1200,
-          "salePrice": 1650,
-          "wholesalePrice": 1450,
-          "catalogPrice": 1650,
-          "catalogDiscountPrice": 1550,
-          "catalogBadge": "⭐ عرض خاص",
-          "catalogFeatured": true,
-          "showInCatalog": true,
-          "minStockAlert": 4,
-          "costMethod": "avg",
-          "branchStock": {
-            "br-main": 8,
-            "br-branch2": 4
-          },
-          "movements": []
-        },
-        {
-          "id": "i4",
-          "companyId": "COMP-000001",
-          "name": "ماوس وكيبورد لاسلكي Wireless Combo",
-          "barcode": "62210010004",
-          "category": "إكسسوارات",
-          "unit": "طقم",
-          "description": "طقم ماوس وكيبورد لاسلكي عربي/إنجليزي",
-          "quantity": 25,
-          "purchasePrice": 180,
-          "salePrice": 290,
-          "wholesalePrice": 240,
-          "catalogPrice": 290,
-          "catalogDiscountPrice": 0,
-          "catalogBadge": "",
-          "catalogFeatured": false,
-          "showInCatalog": true,
-          "minStockAlert": 5,
-          "costMethod": "fifo",
-          "branchStock": {
-            "br-main": 15,
-            "br-branch2": 10
-          },
-          "movements": []
-        }
-      ],
+      "customers": [],
+      "suppliers": [],
+      "items": [],
       "salesInvoices": [],
       "purchaseInvoices": [],
       "cashTransactions": [],
@@ -1055,24 +886,7 @@
         "instapay": 0,
         "bank": 0
       },
-      "salesReps": [
-        {
-          "id": "r1",
-          "name": "أحمد محمود",
-          "phone": "01001234567",
-          "region": "القاهرة الكبرى",
-          "totalSales": 0,
-          "commission": 2.5
-        },
-        {
-          "id": "r2",
-          "name": "محمد علي",
-          "phone": "01109876543",
-          "region": "الجيزة والصعيد",
-          "totalSales": 0,
-          "commission": 2.5
-        }
-      ],
+      "salesReps": [],
       "bankAccounts": [
         {
           "id": "b1",
@@ -1093,155 +907,13 @@
           "balance": 0
         }
       ],
-      "physicalInventories": [
-        {
-          "id": "stk-1",
-          "sessionNumber": "INV-2026-001",
-          "title": "جرد نصف سنوي شامل - المخزن الرئيسي",
-          "date": "2026-08-15",
-          "branchId": "br-main",
-          "branchName": "الفرع الرئيسي والمخزن المركزي",
-          "category": "الكل",
-          "status": "draft",
-          "items": [
-            {
-              "itemId": "i1",
-              "itemName": "جهاز كمبيوتر Core i7 Desktop",
-              "barcode": "62210010001",
-              "category": "أجهزة كمبيوتر",
-              "unit": "جهاز",
-              "bookQty": 15,
-              "countedQty": 14,
-              "varianceQty": -1,
-              "costPrice": 5000,
-              "varianceCostTotal": -5000,
-              "reason": "shortage_loss",
-              "notes": "عجز جهاز واحد قيد الفحص مع موظف الأمن"
-            },
-            {
-              "itemId": "i2",
-              "itemName": "طابعة ليزر HP LaserJet Pro",
-              "barcode": "62210010002",
-              "category": "طابعات ومعدات",
-              "unit": "طابعة",
-              "bookQty": 8,
-              "countedQty": 8,
-              "varianceQty": 0,
-              "costPrice": 3200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "barcode": "62210010003",
-              "category": "شاشات",
-              "unit": "شاشة",
-              "bookQty": 20,
-              "countedQty": 20,
-              "varianceQty": 0,
-              "costPrice": 1200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "barcode": "62210010004",
-              "category": "إكسسوارات",
-              "unit": "طقم",
-              "bookQty": 25,
-              "countedQty": 26,
-              "varianceQty": 1,
-              "costPrice": 180,
-              "varianceCostTotal": 180,
-              "reason": "surplus_found",
-              "notes": "طقم إضافي من توريدة سابقة"
-            }
-          ],
-          "totalItemsCounted": 4,
-          "matchedItemsCount": 2,
-          "shortageItemsCount": 1,
-          "surplusItemsCount": 1,
-          "totalShortageValue": 5000,
-          "totalSurplusValue": 180,
-          "netVarianceValue": -4820,
-          "committeeMembers": "أحمد محمود (أمين المخزن)، كريم عادل (عضو الجرد)",
-          "notes": "جلسة جرد دورية للمخزن الرئيسي",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 09:00"
-        }
-      ],
+      "physicalInventories": [],
       "inventoryAdjustments": [],
-      "goodsIssueVouchers": [
-        {
-          "id": "gin-88",
-          "voucherNumber": "GIN-2026-088",
-          "date": "2026-08-27",
-          "time": "11:45 ص",
-          "sourceBranchId": "br-main",
-          "sourceBranchName": "المخزن الرئيسي",
-          "recipientName": "فرع المنتزه / قسم الصيانة",
-          "recipientType": "maintenance",
-          "purposeReason": "صرف قطع غيار ومستلزمات تشغيل بناءً على طلب الاحتياج رقم (REQ-402) بغرض صيانة وتشغيل خط الإنتاج الثاني.",
-          "items": [
-            {
-              "itemId": "i101",
-              "code": "ITM-001",
-              "name": "كابلات شبكة Cat6 (لفة)",
-              "unit": "لفة",
-              "qty": 5,
-              "unitCost": 1200,
-              "totalCost": 6000,
-              "notes": "أصلية معتمدة"
-            },
-            {
-              "itemId": "i102",
-              "code": "ITM-045",
-              "name": "مفتاح كهرباء ثلاثي معزول",
-              "unit": "قطعة",
-              "qty": 20,
-              "unitCost": 85.5,
-              "totalCost": 1710,
-              "notes": "صناعة إيطالي"
-            },
-            {
-              "itemId": "i103",
-              "code": "ITM-102",
-              "name": "محول طاقة 12V 5A",
-              "unit": "قطعة",
-              "qty": 8,
-              "unitCost": 250,
-              "totalCost": 2000,
-              "notes": "حماية من التردد"
-            },
-            {
-              "itemId": "i104",
-              "code": "ITM-308",
-              "name": "شريط لاصق عازل (كرتونة)",
-              "unit": "كرتونة",
-              "qty": 2,
-              "unitCost": 450,
-              "totalCost": 900,
-              "notes": "مقاوم للحرارة"
-            }
-          ],
-          "totalQty": 35,
-          "totalCost": 10610,
-          "createdBy": "Mohamed Nazih",
-          "warehouseKeeper": "سامح إبراهيم (أمين المخزن)",
-          "recipientSignatory": "م. أحمد فؤاد (مشرف الصيانة)",
-          "approvedBy": "أ. محمد نزيه (مدير المخازن)",
-          "status": "approved",
-          "notes": "تم فحص البضاعة ومطابقتها قبل الصرف."
-        }
-      ],
+      "goodsIssueVouchers": [],
       "fiscalClosings": [],
-      "nextStocktakeId": 2,
+      "nextStocktakeId": 1,
       "nextAdjustmentId": 1,
-      "nextGoodsIssueId": 89,
+      "nextGoodsIssueId": 1,
       "nextClosingId": 1,
       "advancedSettings": {
         "categories": [
@@ -1660,12 +1332,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-init",
-          "timestamp": "2026-09-05 12:13:24",
-          "userName": "Mohamed Nazih (المدير)",
-          "action": "login",
-          "module": "النظام العام",
-          "details": "تم تشغيل وتهيئة منظومة ركيزة RAKEEZA ERP الاحترافية بجميع وحدات المحاسبة والربط الضريبي بنجاح."
+          "id": "log-clean-1789033421995",
+          "timestamp": "2026-09-10 09:43:41",
+          "userName": "مالك المنظومة (Owner System Reset)",
+          "action": "system_cleanup",
+          "module": "إدارة النظام",
+          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
         }
       ],
       "eInvoiceConfig": {
@@ -1677,220 +1349,19 @@
         "isEtaConnected": true,
         "autoGenerateQr": true
       },
-      "employees": [
-        {
-          "id": "emp-1",
-          "code": "EMP-001",
-          "name": "كريم عادل الشناوي",
-          "phone": "01055566778",
-          "nationalId": "29001011234567",
-          "department": "المبيعات والتسويق",
-          "jobTitle": "مشرف مبيعات خارجي",
-          "basicSalary": 7000,
-          "housingAllowance": 1000,
-          "transportAllowance": 800,
-          "otherAllowances": 200,
-          "insuranceDeduction": 500,
-          "taxDeduction": 200,
-          "hireDate": "2024-01-15",
-          "status": "active",
-          "bankAccount": "EG1200020001000000123456789",
-          "notes": "موظف متميز - مسؤول عن منطقة القاهرة والجيزة"
-        },
-        {
-          "id": "emp-2",
-          "code": "EMP-002",
-          "name": "ياسمين ممدوح فوزي",
-          "phone": "01122334455",
-          "nationalId": "29405051234568",
-          "department": "الحسابات والمالية",
-          "jobTitle": "محاسب عام وتكاليف",
-          "basicSalary": 8500,
-          "housingAllowance": 1200,
-          "transportAllowance": 600,
-          "otherAllowances": 0,
-          "insuranceDeduction": 600,
-          "taxDeduction": 350,
-          "hireDate": "2023-06-01",
-          "status": "active",
-          "bankAccount": "EG3400030002000000987654321",
-          "notes": "مسؤولة عن تدقيق القيود والإقرارات الضريبية"
-        },
-        {
-          "id": "emp-3",
-          "code": "EMP-003",
-          "name": "سامح إبراهيم الدسوقي",
-          "phone": "01299887766",
-          "department": "المستودعات واللوجستيات",
-          "jobTitle": "أمين مخزن مركزي",
-          "basicSalary": 6000,
-          "housingAllowance": 800,
-          "transportAllowance": 500,
-          "otherAllowances": 300,
-          "insuranceDeduction": 450,
-          "taxDeduction": 150,
-          "hireDate": "2024-03-10",
-          "status": "active",
-          "notes": "مسؤول عن أذون الصرف والاستلام"
-        }
-      ],
+      "employees": [],
       "payrollSlips": [],
       "nextPayrollId": 1,
-      "employeeAdvances": [
-        {
-          "id": "adv-1",
-          "employeeId": "emp-1",
-          "employeeName": "كريم عادل الشناوي",
-          "date": "2026-08-01",
-          "totalAmount": 3000,
-          "monthlyDeduction": 1000,
-          "paidAmount": 1000,
-          "remainingAmount": 2000,
-          "installmentsCount": 3,
-          "notes": "سلفة مصاريف دراسية",
-          "status": "active"
-        }
-      ],
-      "fixedAssets": [
-        {
-          "id": "asset-1",
-          "code": "AST-001",
-          "name": "سيارة فان لنقل وتوزيع البضائع (تويوتا)",
-          "category": "vehicles",
-          "purchaseDate": "2025-01-01",
-          "purchasePrice": 450000,
-          "salvageValue": 50000,
-          "usefulLifeYears": 5,
-          "annualDepreciationRate": 20,
-          "accumulatedDepreciation": 90000,
-          "netBookValue": 360000,
-          "location": "المخزن المركزي - القاهرة",
-          "status": "active",
-          "assetAccountCode": "1201",
-          "depExpenseAccountCode": "5204",
-          "notes": "لوحة أرقام ق ب ر 4589"
-        },
-        {
-          "id": "asset-2",
-          "code": "AST-002",
-          "name": "سيرفر تخزين بيانات وشبكات Dell PowerEdge",
-          "category": "computers",
-          "purchaseDate": "2025-06-01",
-          "purchasePrice": 65000,
-          "salvageValue": 5000,
-          "usefulLifeYears": 3,
-          "annualDepreciationRate": 33.33,
-          "accumulatedDepreciation": 20000,
-          "netBookValue": 45000,
-          "location": "غرفة السيرفرات - المقر الرئيسي",
-          "status": "active",
-          "assetAccountCode": "1202",
-          "depExpenseAccountCode": "5204",
-          "notes": "شامل وحدة UPS ونسخ احتياطي"
-        }
-      ],
+      "employeeAdvances": [],
+      "fixedAssets": [],
       "depreciationLogs": [],
-      "cheques": [
-        {
-          "id": 1,
-          "chequeNumber": "CHK-998821",
-          "bankName": "البنك الأهلي المصري",
-          "drawerName": "شركة النور للتجارة",
-          "beneficiaryName": "منظومة RAKEEZA للمحاسبة",
-          "amount": 25000,
-          "issueDate": "2026-08-15",
-          "dueDate": "2026-09-01",
-          "type": "receivable",
-          "status": "under_collection",
-          "collectingBankAccountId": "b1",
-          "notes": "دفعة تحت حساب فاتورة مبيعات سابقة",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 10:30"
-        },
-        {
-          "id": 2,
-          "chequeNumber": "CHK-441102",
-          "bankName": "بنك مصر",
-          "drawerName": "منظومة RAKEEZA للمحاسبة",
-          "beneficiaryName": "مصنع الخير للإلكترونيات",
-          "amount": 40000,
-          "issueDate": "2026-08-10",
-          "dueDate": "2026-09-15",
-          "type": "payable",
-          "status": "received",
-          "notes": "سداد دفعة توريد أجهزة مكتبية",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-10 14:20"
-        }
-      ],
-      "nextChequeId": 3,
+      "cheques": [],
+      "nextChequeId": 1,
       "commissions": [],
-      "boms": [
-        {
-          "id": "bom-1",
-          "code": "BOM-PC-01",
-          "name": "تجميع كمبيوتر مكتبي متكامل مع شاشة وملحقات",
-          "finishedItemId": "i1",
-          "finishedItemName": "جهاز كمبيوتر Core i7 Desktop",
-          "outputQty": 1,
-          "rawMaterials": [
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "unit": "شاشة",
-              "qty": 1,
-              "unitCost": 1200,
-              "totalCost": 1200
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "unit": "طقم",
-              "qty": 1,
-              "unitCost": 180,
-              "totalCost": 180
-            }
-          ],
-          "indirectCosts": [
-            {
-              "name": "أجور تجميع وفحص فني",
-              "cost": 150
-            },
-            {
-              "name": "تغليف وكرتونة خاصة",
-              "cost": 70
-            }
-          ],
-          "totalUnitCost": 1600,
-          "notes": "معادلة تجميع معيارية للمنتج الكامل",
-          "createdAt": "2026-08-01"
-        }
-      ],
+      "boms": [],
       "productionOrders": [],
       "nextProductionId": 1,
-      "bankStatements": [
-        {
-          "id": "bs-1",
-          "bankAccountId": "b1",
-          "date": "2026-08-20",
-          "reference": "TRF-889922",
-          "description": "تحويل وارد من عميل تجاري",
-          "debit": 0,
-          "credit": 15000,
-          "isReconciled": true,
-          "matchedDate": "2026-08-20"
-        },
-        {
-          "id": "bs-2",
-          "bankAccountId": "b1",
-          "date": "2026-08-22",
-          "reference": "CHQ-PAID-01",
-          "description": "صرف شيك مورد رقم 441101",
-          "debit": 12000,
-          "credit": 0,
-          "isReconciled": false
-        }
-      ],
+      "bankStatements": [],
       "approvalRequests": [],
       "autoBackupConfig": {
         "enabled": true,
@@ -2100,7 +1571,9 @@
           "soundAlertEnabled": true,
           "companyId": "COMP-000002"
         }
-      }
+      },
+      "productPrices": [],
+      "priceHistories": []
     },
     "COMP-000002": {
       "settings": {
@@ -2149,111 +1622,9 @@
         }
       ],
       "currentUser": "user1",
-      "customers": [
-        {
-          "id": "c-amal-1",
-          "name": "سلسلة مطاعم البركة",
-          "phone": "01099887766",
-          "balance": 0,
-          "address": "الدقي، الجيزة",
-          "priceTier": "wholesale"
-        },
-        {
-          "id": "c-amal-2",
-          "name": "هايبر ماركت التوحيد",
-          "phone": "01233445566",
-          "balance": 0,
-          "address": "الهرم، الجيزة",
-          "priceTier": "retail"
-        }
-      ],
-      "suppliers": [
-        {
-          "id": "s-amal-1",
-          "name": "مصنع الأهرام للبكر الحراري",
-          "phone": "01188776655",
-          "balance": 0,
-          "address": "مدينة 6 أكتوبر"
-        }
-      ],
-      "items": [
-        {
-          "id": "amal-1",
-          "companyId": "COMP-000002",
-          "name": "ورق تصوير A4 ماليزي دبل إيه Double A (كرتونة 5 رزم)",
-          "barcode": "62220010001",
-          "category": "أوراق ومطبوعات",
-          "unit": "كرتونة",
-          "description": "ورق تصوير فاخر 80 جرام عالي البياض للتصوير والليزر المكتبي",
-          "quantity": 45,
-          "purchasePrice": 650,
-          "salePrice": 850,
-          "wholesalePrice": 790,
-          "catalogPrice": 850,
-          "catalogDiscountPrice": 810,
-          "catalogBadge": "🔥 الأكثر مبيعاً",
-          "catalogFeatured": true,
-          "showInCatalog": true,
-          "minStockAlert": 10
-        },
-        {
-          "id": "amal-2",
-          "companyId": "COMP-000002",
-          "name": "طابعة فواتير وإيصالات كاشير حرارية Xprinter 80mm USB+LAN",
-          "barcode": "62220010002",
-          "category": "طابعات وكاشير",
-          "unit": "طابعة",
-          "description": "طابعة إيصالات سريعة مع قاطع آلي تدعم الدرج الإلكتروني وبلوتوث",
-          "quantity": 18,
-          "purchasePrice": 1600,
-          "salePrice": 2200,
-          "wholesalePrice": 1950,
-          "catalogPrice": 2200,
-          "catalogDiscountPrice": 2050,
-          "catalogBadge": "⭐ ضمان سنتين",
-          "catalogFeatured": true,
-          "showInCatalog": true,
-          "minStockAlert": 3
-        },
-        {
-          "id": "amal-3",
-          "companyId": "COMP-000002",
-          "name": "كرتونة بكر كاشير حراري 80*70 مم (50 بكرة)",
-          "barcode": "62220010003",
-          "category": "مستلزمات تشغيل",
-          "unit": "كرتونة",
-          "description": "ورق حراري نقي خالي من مادة BPA عالي الوضوح لماكينات الكاشير",
-          "quantity": 35,
-          "purchasePrice": 420,
-          "salePrice": 580,
-          "wholesalePrice": 520,
-          "catalogPrice": 580,
-          "catalogDiscountPrice": 0,
-          "catalogBadge": "",
-          "catalogFeatured": false,
-          "showInCatalog": true,
-          "minStockAlert": 5
-        },
-        {
-          "id": "amal-4",
-          "companyId": "COMP-000002",
-          "name": "قارئ باركود لاسلكي 2D مع قاعدة شحن (يدعم QR والباركود العادي)",
-          "barcode": "62220010004",
-          "category": "أجهزة مسح وتتبع",
-          "unit": "جهاز",
-          "description": "ماسح باركود ذكي يعمل بالبلوتوث والوايرلس 2.4G لمسافة 50 متر",
-          "quantity": 12,
-          "purchasePrice": 950,
-          "salePrice": 1450,
-          "wholesalePrice": 1250,
-          "catalogPrice": 1450,
-          "catalogDiscountPrice": 1350,
-          "catalogBadge": "💥 خصم 100 ج",
-          "catalogFeatured": true,
-          "showInCatalog": true,
-          "minStockAlert": 2
-        }
-      ],
+      "customers": [],
+      "suppliers": [],
+      "items": [],
       "salesInvoices": [],
       "purchaseInvoices": [],
       "cashTransactions": [],
@@ -2267,24 +1638,7 @@
         "instapay": 0,
         "bank": 0
       },
-      "salesReps": [
-        {
-          "id": "r1",
-          "name": "أحمد محمود",
-          "phone": "01001234567",
-          "region": "القاهرة الكبرى",
-          "totalSales": 0,
-          "commission": 2.5
-        },
-        {
-          "id": "r2",
-          "name": "محمد علي",
-          "phone": "01109876543",
-          "region": "الجيزة والصعيد",
-          "totalSales": 0,
-          "commission": 2.5
-        }
-      ],
+      "salesReps": [],
       "bankAccounts": [
         {
           "id": "b1",
@@ -2305,155 +1659,13 @@
           "balance": 0
         }
       ],
-      "physicalInventories": [
-        {
-          "id": "stk-1",
-          "sessionNumber": "INV-2026-001",
-          "title": "جرد نصف سنوي شامل - المخزن الرئيسي",
-          "date": "2026-08-15",
-          "branchId": "br-main",
-          "branchName": "الفرع الرئيسي والمخزن المركزي",
-          "category": "الكل",
-          "status": "draft",
-          "items": [
-            {
-              "itemId": "i1",
-              "itemName": "جهاز كمبيوتر Core i7 Desktop",
-              "barcode": "62210010001",
-              "category": "أجهزة كمبيوتر",
-              "unit": "جهاز",
-              "bookQty": 15,
-              "countedQty": 14,
-              "varianceQty": -1,
-              "costPrice": 5000,
-              "varianceCostTotal": -5000,
-              "reason": "shortage_loss",
-              "notes": "عجز جهاز واحد قيد الفحص مع موظف الأمن"
-            },
-            {
-              "itemId": "i2",
-              "itemName": "طابعة ليزر HP LaserJet Pro",
-              "barcode": "62210010002",
-              "category": "طابعات ومعدات",
-              "unit": "طابعة",
-              "bookQty": 8,
-              "countedQty": 8,
-              "varianceQty": 0,
-              "costPrice": 3200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "barcode": "62210010003",
-              "category": "شاشات",
-              "unit": "شاشة",
-              "bookQty": 20,
-              "countedQty": 20,
-              "varianceQty": 0,
-              "costPrice": 1200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "barcode": "62210010004",
-              "category": "إكسسوارات",
-              "unit": "طقم",
-              "bookQty": 25,
-              "countedQty": 26,
-              "varianceQty": 1,
-              "costPrice": 180,
-              "varianceCostTotal": 180,
-              "reason": "surplus_found",
-              "notes": "طقم إضافي من توريدة سابقة"
-            }
-          ],
-          "totalItemsCounted": 4,
-          "matchedItemsCount": 2,
-          "shortageItemsCount": 1,
-          "surplusItemsCount": 1,
-          "totalShortageValue": 5000,
-          "totalSurplusValue": 180,
-          "netVarianceValue": -4820,
-          "committeeMembers": "أحمد محمود (أمين المخزن)، كريم عادل (عضو الجرد)",
-          "notes": "جلسة جرد دورية للمخزن الرئيسي",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 09:00"
-        }
-      ],
+      "physicalInventories": [],
       "inventoryAdjustments": [],
-      "goodsIssueVouchers": [
-        {
-          "id": "gin-88",
-          "voucherNumber": "GIN-2026-088",
-          "date": "2026-08-27",
-          "time": "11:45 ص",
-          "sourceBranchId": "br-main",
-          "sourceBranchName": "المخزن الرئيسي",
-          "recipientName": "فرع المنتزه / قسم الصيانة",
-          "recipientType": "maintenance",
-          "purposeReason": "صرف قطع غيار ومستلزمات تشغيل بناءً على طلب الاحتياج رقم (REQ-402) بغرض صيانة وتشغيل خط الإنتاج الثاني.",
-          "items": [
-            {
-              "itemId": "i101",
-              "code": "ITM-001",
-              "name": "كابلات شبكة Cat6 (لفة)",
-              "unit": "لفة",
-              "qty": 5,
-              "unitCost": 1200,
-              "totalCost": 6000,
-              "notes": "أصلية معتمدة"
-            },
-            {
-              "itemId": "i102",
-              "code": "ITM-045",
-              "name": "مفتاح كهرباء ثلاثي معزول",
-              "unit": "قطعة",
-              "qty": 20,
-              "unitCost": 85.5,
-              "totalCost": 1710,
-              "notes": "صناعة إيطالي"
-            },
-            {
-              "itemId": "i103",
-              "code": "ITM-102",
-              "name": "محول طاقة 12V 5A",
-              "unit": "قطعة",
-              "qty": 8,
-              "unitCost": 250,
-              "totalCost": 2000,
-              "notes": "حماية من التردد"
-            },
-            {
-              "itemId": "i104",
-              "code": "ITM-308",
-              "name": "شريط لاصق عازل (كرتونة)",
-              "unit": "كرتونة",
-              "qty": 2,
-              "unitCost": 450,
-              "totalCost": 900,
-              "notes": "مقاوم للحرارة"
-            }
-          ],
-          "totalQty": 35,
-          "totalCost": 10610,
-          "createdBy": "Mohamed Nazih",
-          "warehouseKeeper": "سامح إبراهيم (أمين المخزن)",
-          "recipientSignatory": "م. أحمد فؤاد (مشرف الصيانة)",
-          "approvedBy": "أ. محمد نزيه (مدير المخازن)",
-          "status": "approved",
-          "notes": "تم فحص البضاعة ومطابقتها قبل الصرف."
-        }
-      ],
+      "goodsIssueVouchers": [],
       "fiscalClosings": [],
-      "nextStocktakeId": 2,
+      "nextStocktakeId": 1,
       "nextAdjustmentId": 1,
-      "nextGoodsIssueId": 89,
+      "nextGoodsIssueId": 1,
       "nextClosingId": 1,
       "advancedSettings": {
         "categories": [
@@ -2863,12 +2075,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-init",
-          "timestamp": "2026-09-05 12:13:24",
-          "userName": "Mohamed Nazih (المدير)",
-          "action": "login",
-          "module": "النظام العام",
-          "details": "تم تشغيل وتهيئة منظومة ركيزة RAKEEZA ERP الاحترافية بجميع وحدات المحاسبة والربط الضريبي بنجاح."
+          "id": "log-clean-1789033421995",
+          "timestamp": "2026-09-10 09:43:41",
+          "userName": "مالك المنظومة (Owner System Reset)",
+          "action": "system_cleanup",
+          "module": "إدارة النظام",
+          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
         }
       ],
       "eInvoiceConfig": {
@@ -2880,220 +2092,19 @@
         "isEtaConnected": true,
         "autoGenerateQr": true
       },
-      "employees": [
-        {
-          "id": "emp-1",
-          "code": "EMP-001",
-          "name": "كريم عادل الشناوي",
-          "phone": "01055566778",
-          "nationalId": "29001011234567",
-          "department": "المبيعات والتسويق",
-          "jobTitle": "مشرف مبيعات خارجي",
-          "basicSalary": 7000,
-          "housingAllowance": 1000,
-          "transportAllowance": 800,
-          "otherAllowances": 200,
-          "insuranceDeduction": 500,
-          "taxDeduction": 200,
-          "hireDate": "2024-01-15",
-          "status": "active",
-          "bankAccount": "EG1200020001000000123456789",
-          "notes": "موظف متميز - مسؤول عن منطقة القاهرة والجيزة"
-        },
-        {
-          "id": "emp-2",
-          "code": "EMP-002",
-          "name": "ياسمين ممدوح فوزي",
-          "phone": "01122334455",
-          "nationalId": "29405051234568",
-          "department": "الحسابات والمالية",
-          "jobTitle": "محاسب عام وتكاليف",
-          "basicSalary": 8500,
-          "housingAllowance": 1200,
-          "transportAllowance": 600,
-          "otherAllowances": 0,
-          "insuranceDeduction": 600,
-          "taxDeduction": 350,
-          "hireDate": "2023-06-01",
-          "status": "active",
-          "bankAccount": "EG3400030002000000987654321",
-          "notes": "مسؤولة عن تدقيق القيود والإقرارات الضريبية"
-        },
-        {
-          "id": "emp-3",
-          "code": "EMP-003",
-          "name": "سامح إبراهيم الدسوقي",
-          "phone": "01299887766",
-          "department": "المستودعات واللوجستيات",
-          "jobTitle": "أمين مخزن مركزي",
-          "basicSalary": 6000,
-          "housingAllowance": 800,
-          "transportAllowance": 500,
-          "otherAllowances": 300,
-          "insuranceDeduction": 450,
-          "taxDeduction": 150,
-          "hireDate": "2024-03-10",
-          "status": "active",
-          "notes": "مسؤول عن أذون الصرف والاستلام"
-        }
-      ],
+      "employees": [],
       "payrollSlips": [],
       "nextPayrollId": 1,
-      "employeeAdvances": [
-        {
-          "id": "adv-1",
-          "employeeId": "emp-1",
-          "employeeName": "كريم عادل الشناوي",
-          "date": "2026-08-01",
-          "totalAmount": 3000,
-          "monthlyDeduction": 1000,
-          "paidAmount": 1000,
-          "remainingAmount": 2000,
-          "installmentsCount": 3,
-          "notes": "سلفة مصاريف دراسية",
-          "status": "active"
-        }
-      ],
-      "fixedAssets": [
-        {
-          "id": "asset-1",
-          "code": "AST-001",
-          "name": "سيارة فان لنقل وتوزيع البضائع (تويوتا)",
-          "category": "vehicles",
-          "purchaseDate": "2025-01-01",
-          "purchasePrice": 450000,
-          "salvageValue": 50000,
-          "usefulLifeYears": 5,
-          "annualDepreciationRate": 20,
-          "accumulatedDepreciation": 90000,
-          "netBookValue": 360000,
-          "location": "المخزن المركزي - القاهرة",
-          "status": "active",
-          "assetAccountCode": "1201",
-          "depExpenseAccountCode": "5204",
-          "notes": "لوحة أرقام ق ب ر 4589"
-        },
-        {
-          "id": "asset-2",
-          "code": "AST-002",
-          "name": "سيرفر تخزين بيانات وشبكات Dell PowerEdge",
-          "category": "computers",
-          "purchaseDate": "2025-06-01",
-          "purchasePrice": 65000,
-          "salvageValue": 5000,
-          "usefulLifeYears": 3,
-          "annualDepreciationRate": 33.33,
-          "accumulatedDepreciation": 20000,
-          "netBookValue": 45000,
-          "location": "غرفة السيرفرات - المقر الرئيسي",
-          "status": "active",
-          "assetAccountCode": "1202",
-          "depExpenseAccountCode": "5204",
-          "notes": "شامل وحدة UPS ونسخ احتياطي"
-        }
-      ],
+      "employeeAdvances": [],
+      "fixedAssets": [],
       "depreciationLogs": [],
-      "cheques": [
-        {
-          "id": 1,
-          "chequeNumber": "CHK-998821",
-          "bankName": "البنك الأهلي المصري",
-          "drawerName": "شركة النور للتجارة",
-          "beneficiaryName": "منظومة RAKEEZA للمحاسبة",
-          "amount": 25000,
-          "issueDate": "2026-08-15",
-          "dueDate": "2026-09-01",
-          "type": "receivable",
-          "status": "under_collection",
-          "collectingBankAccountId": "b1",
-          "notes": "دفعة تحت حساب فاتورة مبيعات سابقة",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 10:30"
-        },
-        {
-          "id": 2,
-          "chequeNumber": "CHK-441102",
-          "bankName": "بنك مصر",
-          "drawerName": "منظومة RAKEEZA للمحاسبة",
-          "beneficiaryName": "مصنع الخير للإلكترونيات",
-          "amount": 40000,
-          "issueDate": "2026-08-10",
-          "dueDate": "2026-09-15",
-          "type": "payable",
-          "status": "received",
-          "notes": "سداد دفعة توريد أجهزة مكتبية",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-10 14:20"
-        }
-      ],
-      "nextChequeId": 3,
+      "cheques": [],
+      "nextChequeId": 1,
       "commissions": [],
-      "boms": [
-        {
-          "id": "bom-1",
-          "code": "BOM-PC-01",
-          "name": "تجميع كمبيوتر مكتبي متكامل مع شاشة وملحقات",
-          "finishedItemId": "i1",
-          "finishedItemName": "جهاز كمبيوتر Core i7 Desktop",
-          "outputQty": 1,
-          "rawMaterials": [
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "unit": "شاشة",
-              "qty": 1,
-              "unitCost": 1200,
-              "totalCost": 1200
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "unit": "طقم",
-              "qty": 1,
-              "unitCost": 180,
-              "totalCost": 180
-            }
-          ],
-          "indirectCosts": [
-            {
-              "name": "أجور تجميع وفحص فني",
-              "cost": 150
-            },
-            {
-              "name": "تغليف وكرتونة خاصة",
-              "cost": 70
-            }
-          ],
-          "totalUnitCost": 1600,
-          "notes": "معادلة تجميع معيارية للمنتج الكامل",
-          "createdAt": "2026-08-01"
-        }
-      ],
+      "boms": [],
       "productionOrders": [],
       "nextProductionId": 1,
-      "bankStatements": [
-        {
-          "id": "bs-1",
-          "bankAccountId": "b1",
-          "date": "2026-08-20",
-          "reference": "TRF-889922",
-          "description": "تحويل وارد من عميل تجاري",
-          "debit": 0,
-          "credit": 15000,
-          "isReconciled": true,
-          "matchedDate": "2026-08-20"
-        },
-        {
-          "id": "bs-2",
-          "bankAccountId": "b1",
-          "date": "2026-08-22",
-          "reference": "CHQ-PAID-01",
-          "description": "صرف شيك مورد رقم 441101",
-          "debit": 12000,
-          "credit": 0,
-          "isReconciled": false
-        }
-      ],
+      "bankStatements": [],
       "approvalRequests": [],
       "autoBackupConfig": {
         "enabled": true,
@@ -3303,7 +2314,9 @@
           "soundAlertEnabled": true,
           "companyId": "COMP-000002"
         }
-      }
+      },
+      "productPrices": [],
+      "priceHistories": []
     },
     "COMP-000003": {
       "settings": {
@@ -3337,67 +2350,8 @@
         }
       ],
       "currentUser": "user1",
-      "customers": [
-        {
-          "id": "c1",
-          "name": "شركة النور للتجارة",
-          "phone": "01011111111",
-          "balance": 0,
-          "taxNumber": "321-654-987",
-          "commercialReg": "12345",
-          "address": "مدينة نصر، القاهرة",
-          "priceTier": "wholesale",
-          "creditLimit": 50000,
-          "transactions": []
-        },
-        {
-          "id": "c2",
-          "name": "مؤسسة السلام الحديثة",
-          "phone": "01022222222",
-          "balance": 0,
-          "taxNumber": "444-555-666",
-          "address": "الدقي، الجيزة",
-          "priceTier": "retail",
-          "creditLimit": 20000,
-          "transactions": []
-        },
-        {
-          "id": "c3",
-          "name": "شركة الأمل للمقاولات",
-          "phone": "01033333333",
-          "balance": 0,
-          "address": "التجمع الخامس، القاهرة",
-          "priceTier": "special",
-          "transactions": []
-        }
-      ],
-      "suppliers": [
-        {
-          "id": "s1",
-          "name": "مصنع الخير للإلكترونيات",
-          "phone": "01111111111",
-          "balance": 0,
-          "taxNumber": "777-888-999",
-          "address": "مدينة العاشر من رمضان",
-          "transactions": []
-        },
-        {
-          "id": "s2",
-          "name": "شركة الرازي للاستيراد",
-          "phone": "01122222222",
-          "balance": 0,
-          "taxNumber": "111-222-333",
-          "address": "المهندسين، الجيزة",
-          "transactions": []
-        },
-        {
-          "id": "s3",
-          "name": "مؤسسة النيل للتوريدات",
-          "phone": "01133333333",
-          "balance": 0,
-          "transactions": []
-        }
-      ],
+      "customers": [],
+      "suppliers": [],
       "items": [],
       "salesInvoices": [],
       "purchaseInvoices": [],
@@ -3412,24 +2366,7 @@
         "instapay": 0,
         "bank": 0
       },
-      "salesReps": [
-        {
-          "id": "r1",
-          "name": "أحمد محمود",
-          "phone": "01001234567",
-          "region": "القاهرة الكبرى",
-          "totalSales": 0,
-          "commission": 2.5
-        },
-        {
-          "id": "r2",
-          "name": "محمد علي",
-          "phone": "01109876543",
-          "region": "الجيزة والصعيد",
-          "totalSales": 0,
-          "commission": 2.5
-        }
-      ],
+      "salesReps": [],
       "bankAccounts": [
         {
           "id": "b1",
@@ -3450,155 +2387,13 @@
           "balance": 0
         }
       ],
-      "physicalInventories": [
-        {
-          "id": "stk-1",
-          "sessionNumber": "INV-2026-001",
-          "title": "جرد نصف سنوي شامل - المخزن الرئيسي",
-          "date": "2026-08-15",
-          "branchId": "br-main",
-          "branchName": "الفرع الرئيسي والمخزن المركزي",
-          "category": "الكل",
-          "status": "draft",
-          "items": [
-            {
-              "itemId": "i1",
-              "itemName": "جهاز كمبيوتر Core i7 Desktop",
-              "barcode": "62210010001",
-              "category": "أجهزة كمبيوتر",
-              "unit": "جهاز",
-              "bookQty": 15,
-              "countedQty": 14,
-              "varianceQty": -1,
-              "costPrice": 5000,
-              "varianceCostTotal": -5000,
-              "reason": "shortage_loss",
-              "notes": "عجز جهاز واحد قيد الفحص مع موظف الأمن"
-            },
-            {
-              "itemId": "i2",
-              "itemName": "طابعة ليزر HP LaserJet Pro",
-              "barcode": "62210010002",
-              "category": "طابعات ومعدات",
-              "unit": "طابعة",
-              "bookQty": 8,
-              "countedQty": 8,
-              "varianceQty": 0,
-              "costPrice": 3200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "barcode": "62210010003",
-              "category": "شاشات",
-              "unit": "شاشة",
-              "bookQty": 20,
-              "countedQty": 20,
-              "varianceQty": 0,
-              "costPrice": 1200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "barcode": "62210010004",
-              "category": "إكسسوارات",
-              "unit": "طقم",
-              "bookQty": 25,
-              "countedQty": 26,
-              "varianceQty": 1,
-              "costPrice": 180,
-              "varianceCostTotal": 180,
-              "reason": "surplus_found",
-              "notes": "طقم إضافي من توريدة سابقة"
-            }
-          ],
-          "totalItemsCounted": 4,
-          "matchedItemsCount": 2,
-          "shortageItemsCount": 1,
-          "surplusItemsCount": 1,
-          "totalShortageValue": 5000,
-          "totalSurplusValue": 180,
-          "netVarianceValue": -4820,
-          "committeeMembers": "أحمد محمود (أمين المخزن)، كريم عادل (عضو الجرد)",
-          "notes": "جلسة جرد دورية للمخزن الرئيسي",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 09:00"
-        }
-      ],
+      "physicalInventories": [],
       "inventoryAdjustments": [],
-      "goodsIssueVouchers": [
-        {
-          "id": "gin-88",
-          "voucherNumber": "GIN-2026-088",
-          "date": "2026-08-27",
-          "time": "11:45 ص",
-          "sourceBranchId": "br-main",
-          "sourceBranchName": "المخزن الرئيسي",
-          "recipientName": "فرع المنتزه / قسم الصيانة",
-          "recipientType": "maintenance",
-          "purposeReason": "صرف قطع غيار ومستلزمات تشغيل بناءً على طلب الاحتياج رقم (REQ-402) بغرض صيانة وتشغيل خط الإنتاج الثاني.",
-          "items": [
-            {
-              "itemId": "i101",
-              "code": "ITM-001",
-              "name": "كابلات شبكة Cat6 (لفة)",
-              "unit": "لفة",
-              "qty": 5,
-              "unitCost": 1200,
-              "totalCost": 6000,
-              "notes": "أصلية معتمدة"
-            },
-            {
-              "itemId": "i102",
-              "code": "ITM-045",
-              "name": "مفتاح كهرباء ثلاثي معزول",
-              "unit": "قطعة",
-              "qty": 20,
-              "unitCost": 85.5,
-              "totalCost": 1710,
-              "notes": "صناعة إيطالي"
-            },
-            {
-              "itemId": "i103",
-              "code": "ITM-102",
-              "name": "محول طاقة 12V 5A",
-              "unit": "قطعة",
-              "qty": 8,
-              "unitCost": 250,
-              "totalCost": 2000,
-              "notes": "حماية من التردد"
-            },
-            {
-              "itemId": "i104",
-              "code": "ITM-308",
-              "name": "شريط لاصق عازل (كرتونة)",
-              "unit": "كرتونة",
-              "qty": 2,
-              "unitCost": 450,
-              "totalCost": 900,
-              "notes": "مقاوم للحرارة"
-            }
-          ],
-          "totalQty": 35,
-          "totalCost": 10610,
-          "createdBy": "Mohamed Nazih",
-          "warehouseKeeper": "سامح إبراهيم (أمين المخزن)",
-          "recipientSignatory": "م. أحمد فؤاد (مشرف الصيانة)",
-          "approvedBy": "أ. محمد نزيه (مدير المخازن)",
-          "status": "approved",
-          "notes": "تم فحص البضاعة ومطابقتها قبل الصرف."
-        }
-      ],
+      "goodsIssueVouchers": [],
       "fiscalClosings": [],
-      "nextStocktakeId": 2,
+      "nextStocktakeId": 1,
       "nextAdjustmentId": 1,
-      "nextGoodsIssueId": 89,
+      "nextGoodsIssueId": 1,
       "nextClosingId": 1,
       "advancedSettings": {
         "categories": [
@@ -4008,12 +2803,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-init",
-          "timestamp": "2026-09-05 12:13:24",
-          "userName": "Mohamed Nazih (المدير)",
-          "action": "login",
-          "module": "النظام العام",
-          "details": "تم تشغيل وتهيئة منظومة ركيزة RAKEEZA ERP الاحترافية بجميع وحدات المحاسبة والربط الضريبي بنجاح."
+          "id": "log-clean-1789033421995",
+          "timestamp": "2026-09-10 09:43:41",
+          "userName": "مالك المنظومة (Owner System Reset)",
+          "action": "system_cleanup",
+          "module": "إدارة النظام",
+          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
         }
       ],
       "eInvoiceConfig": {
@@ -4025,220 +2820,19 @@
         "isEtaConnected": true,
         "autoGenerateQr": true
       },
-      "employees": [
-        {
-          "id": "emp-1",
-          "code": "EMP-001",
-          "name": "كريم عادل الشناوي",
-          "phone": "01055566778",
-          "nationalId": "29001011234567",
-          "department": "المبيعات والتسويق",
-          "jobTitle": "مشرف مبيعات خارجي",
-          "basicSalary": 7000,
-          "housingAllowance": 1000,
-          "transportAllowance": 800,
-          "otherAllowances": 200,
-          "insuranceDeduction": 500,
-          "taxDeduction": 200,
-          "hireDate": "2024-01-15",
-          "status": "active",
-          "bankAccount": "EG1200020001000000123456789",
-          "notes": "موظف متميز - مسؤول عن منطقة القاهرة والجيزة"
-        },
-        {
-          "id": "emp-2",
-          "code": "EMP-002",
-          "name": "ياسمين ممدوح فوزي",
-          "phone": "01122334455",
-          "nationalId": "29405051234568",
-          "department": "الحسابات والمالية",
-          "jobTitle": "محاسب عام وتكاليف",
-          "basicSalary": 8500,
-          "housingAllowance": 1200,
-          "transportAllowance": 600,
-          "otherAllowances": 0,
-          "insuranceDeduction": 600,
-          "taxDeduction": 350,
-          "hireDate": "2023-06-01",
-          "status": "active",
-          "bankAccount": "EG3400030002000000987654321",
-          "notes": "مسؤولة عن تدقيق القيود والإقرارات الضريبية"
-        },
-        {
-          "id": "emp-3",
-          "code": "EMP-003",
-          "name": "سامح إبراهيم الدسوقي",
-          "phone": "01299887766",
-          "department": "المستودعات واللوجستيات",
-          "jobTitle": "أمين مخزن مركزي",
-          "basicSalary": 6000,
-          "housingAllowance": 800,
-          "transportAllowance": 500,
-          "otherAllowances": 300,
-          "insuranceDeduction": 450,
-          "taxDeduction": 150,
-          "hireDate": "2024-03-10",
-          "status": "active",
-          "notes": "مسؤول عن أذون الصرف والاستلام"
-        }
-      ],
+      "employees": [],
       "payrollSlips": [],
       "nextPayrollId": 1,
-      "employeeAdvances": [
-        {
-          "id": "adv-1",
-          "employeeId": "emp-1",
-          "employeeName": "كريم عادل الشناوي",
-          "date": "2026-08-01",
-          "totalAmount": 3000,
-          "monthlyDeduction": 1000,
-          "paidAmount": 1000,
-          "remainingAmount": 2000,
-          "installmentsCount": 3,
-          "notes": "سلفة مصاريف دراسية",
-          "status": "active"
-        }
-      ],
-      "fixedAssets": [
-        {
-          "id": "asset-1",
-          "code": "AST-001",
-          "name": "سيارة فان لنقل وتوزيع البضائع (تويوتا)",
-          "category": "vehicles",
-          "purchaseDate": "2025-01-01",
-          "purchasePrice": 450000,
-          "salvageValue": 50000,
-          "usefulLifeYears": 5,
-          "annualDepreciationRate": 20,
-          "accumulatedDepreciation": 90000,
-          "netBookValue": 360000,
-          "location": "المخزن المركزي - القاهرة",
-          "status": "active",
-          "assetAccountCode": "1201",
-          "depExpenseAccountCode": "5204",
-          "notes": "لوحة أرقام ق ب ر 4589"
-        },
-        {
-          "id": "asset-2",
-          "code": "AST-002",
-          "name": "سيرفر تخزين بيانات وشبكات Dell PowerEdge",
-          "category": "computers",
-          "purchaseDate": "2025-06-01",
-          "purchasePrice": 65000,
-          "salvageValue": 5000,
-          "usefulLifeYears": 3,
-          "annualDepreciationRate": 33.33,
-          "accumulatedDepreciation": 20000,
-          "netBookValue": 45000,
-          "location": "غرفة السيرفرات - المقر الرئيسي",
-          "status": "active",
-          "assetAccountCode": "1202",
-          "depExpenseAccountCode": "5204",
-          "notes": "شامل وحدة UPS ونسخ احتياطي"
-        }
-      ],
+      "employeeAdvances": [],
+      "fixedAssets": [],
       "depreciationLogs": [],
-      "cheques": [
-        {
-          "id": 1,
-          "chequeNumber": "CHK-998821",
-          "bankName": "البنك الأهلي المصري",
-          "drawerName": "شركة النور للتجارة",
-          "beneficiaryName": "منظومة RAKEEZA للمحاسبة",
-          "amount": 25000,
-          "issueDate": "2026-08-15",
-          "dueDate": "2026-09-01",
-          "type": "receivable",
-          "status": "under_collection",
-          "collectingBankAccountId": "b1",
-          "notes": "دفعة تحت حساب فاتورة مبيعات سابقة",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 10:30"
-        },
-        {
-          "id": 2,
-          "chequeNumber": "CHK-441102",
-          "bankName": "بنك مصر",
-          "drawerName": "منظومة RAKEEZA للمحاسبة",
-          "beneficiaryName": "مصنع الخير للإلكترونيات",
-          "amount": 40000,
-          "issueDate": "2026-08-10",
-          "dueDate": "2026-09-15",
-          "type": "payable",
-          "status": "received",
-          "notes": "سداد دفعة توريد أجهزة مكتبية",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-10 14:20"
-        }
-      ],
-      "nextChequeId": 3,
+      "cheques": [],
+      "nextChequeId": 1,
       "commissions": [],
-      "boms": [
-        {
-          "id": "bom-1",
-          "code": "BOM-PC-01",
-          "name": "تجميع كمبيوتر مكتبي متكامل مع شاشة وملحقات",
-          "finishedItemId": "i1",
-          "finishedItemName": "جهاز كمبيوتر Core i7 Desktop",
-          "outputQty": 1,
-          "rawMaterials": [
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "unit": "شاشة",
-              "qty": 1,
-              "unitCost": 1200,
-              "totalCost": 1200
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "unit": "طقم",
-              "qty": 1,
-              "unitCost": 180,
-              "totalCost": 180
-            }
-          ],
-          "indirectCosts": [
-            {
-              "name": "أجور تجميع وفحص فني",
-              "cost": 150
-            },
-            {
-              "name": "تغليف وكرتونة خاصة",
-              "cost": 70
-            }
-          ],
-          "totalUnitCost": 1600,
-          "notes": "معادلة تجميع معيارية للمنتج الكامل",
-          "createdAt": "2026-08-01"
-        }
-      ],
+      "boms": [],
       "productionOrders": [],
       "nextProductionId": 1,
-      "bankStatements": [
-        {
-          "id": "bs-1",
-          "bankAccountId": "b1",
-          "date": "2026-08-20",
-          "reference": "TRF-889922",
-          "description": "تحويل وارد من عميل تجاري",
-          "debit": 0,
-          "credit": 15000,
-          "isReconciled": true,
-          "matchedDate": "2026-08-20"
-        },
-        {
-          "id": "bs-2",
-          "bankAccountId": "b1",
-          "date": "2026-08-22",
-          "reference": "CHQ-PAID-01",
-          "description": "صرف شيك مورد رقم 441101",
-          "debit": 12000,
-          "credit": 0,
-          "isReconciled": false
-        }
-      ],
+      "bankStatements": [],
       "approvalRequests": [],
       "autoBackupConfig": {
         "enabled": true,
@@ -4448,7 +3042,9 @@
           "soundAlertEnabled": true,
           "companyId": "COMP-000002"
         }
-      }
+      },
+      "productPrices": [],
+      "priceHistories": []
     },
     "COMP-748566": {
       "settings": {
@@ -4499,24 +3095,7 @@
         "instapay": 0,
         "bank": 0
       },
-      "salesReps": [
-        {
-          "id": "r1",
-          "name": "أحمد محمود",
-          "phone": "01001234567",
-          "region": "القاهرة الكبرى",
-          "totalSales": 0,
-          "commission": 2.5
-        },
-        {
-          "id": "r2",
-          "name": "محمد علي",
-          "phone": "01109876543",
-          "region": "الجيزة والصعيد",
-          "totalSales": 0,
-          "commission": 2.5
-        }
-      ],
+      "salesReps": [],
       "bankAccounts": [
         {
           "id": "b1",
@@ -4537,155 +3116,13 @@
           "balance": 0
         }
       ],
-      "physicalInventories": [
-        {
-          "id": "stk-1",
-          "sessionNumber": "INV-2026-001",
-          "title": "جرد نصف سنوي شامل - المخزن الرئيسي",
-          "date": "2026-08-15",
-          "branchId": "br-main",
-          "branchName": "الفرع الرئيسي والمخزن المركزي",
-          "category": "الكل",
-          "status": "draft",
-          "items": [
-            {
-              "itemId": "i1",
-              "itemName": "جهاز كمبيوتر Core i7 Desktop",
-              "barcode": "62210010001",
-              "category": "أجهزة كمبيوتر",
-              "unit": "جهاز",
-              "bookQty": 15,
-              "countedQty": 14,
-              "varianceQty": -1,
-              "costPrice": 5000,
-              "varianceCostTotal": -5000,
-              "reason": "shortage_loss",
-              "notes": "عجز جهاز واحد قيد الفحص مع موظف الأمن"
-            },
-            {
-              "itemId": "i2",
-              "itemName": "طابعة ليزر HP LaserJet Pro",
-              "barcode": "62210010002",
-              "category": "طابعات ومعدات",
-              "unit": "طابعة",
-              "bookQty": 8,
-              "countedQty": 8,
-              "varianceQty": 0,
-              "costPrice": 3200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "barcode": "62210010003",
-              "category": "شاشات",
-              "unit": "شاشة",
-              "bookQty": 20,
-              "countedQty": 20,
-              "varianceQty": 0,
-              "costPrice": 1200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "barcode": "62210010004",
-              "category": "إكسسوارات",
-              "unit": "طقم",
-              "bookQty": 25,
-              "countedQty": 26,
-              "varianceQty": 1,
-              "costPrice": 180,
-              "varianceCostTotal": 180,
-              "reason": "surplus_found",
-              "notes": "طقم إضافي من توريدة سابقة"
-            }
-          ],
-          "totalItemsCounted": 4,
-          "matchedItemsCount": 2,
-          "shortageItemsCount": 1,
-          "surplusItemsCount": 1,
-          "totalShortageValue": 5000,
-          "totalSurplusValue": 180,
-          "netVarianceValue": -4820,
-          "committeeMembers": "أحمد محمود (أمين المخزن)، كريم عادل (عضو الجرد)",
-          "notes": "جلسة جرد دورية للمخزن الرئيسي",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 09:00"
-        }
-      ],
+      "physicalInventories": [],
       "inventoryAdjustments": [],
-      "goodsIssueVouchers": [
-        {
-          "id": "gin-88",
-          "voucherNumber": "GIN-2026-088",
-          "date": "2026-08-27",
-          "time": "11:45 ص",
-          "sourceBranchId": "br-main",
-          "sourceBranchName": "المخزن الرئيسي",
-          "recipientName": "فرع المنتزه / قسم الصيانة",
-          "recipientType": "maintenance",
-          "purposeReason": "صرف قطع غيار ومستلزمات تشغيل بناءً على طلب الاحتياج رقم (REQ-402) بغرض صيانة وتشغيل خط الإنتاج الثاني.",
-          "items": [
-            {
-              "itemId": "i101",
-              "code": "ITM-001",
-              "name": "كابلات شبكة Cat6 (لفة)",
-              "unit": "لفة",
-              "qty": 5,
-              "unitCost": 1200,
-              "totalCost": 6000,
-              "notes": "أصلية معتمدة"
-            },
-            {
-              "itemId": "i102",
-              "code": "ITM-045",
-              "name": "مفتاح كهرباء ثلاثي معزول",
-              "unit": "قطعة",
-              "qty": 20,
-              "unitCost": 85.5,
-              "totalCost": 1710,
-              "notes": "صناعة إيطالي"
-            },
-            {
-              "itemId": "i103",
-              "code": "ITM-102",
-              "name": "محول طاقة 12V 5A",
-              "unit": "قطعة",
-              "qty": 8,
-              "unitCost": 250,
-              "totalCost": 2000,
-              "notes": "حماية من التردد"
-            },
-            {
-              "itemId": "i104",
-              "code": "ITM-308",
-              "name": "شريط لاصق عازل (كرتونة)",
-              "unit": "كرتونة",
-              "qty": 2,
-              "unitCost": 450,
-              "totalCost": 900,
-              "notes": "مقاوم للحرارة"
-            }
-          ],
-          "totalQty": 35,
-          "totalCost": 10610,
-          "createdBy": "Mohamed Nazih",
-          "warehouseKeeper": "سامح إبراهيم (أمين المخزن)",
-          "recipientSignatory": "م. أحمد فؤاد (مشرف الصيانة)",
-          "approvedBy": "أ. محمد نزيه (مدير المخازن)",
-          "status": "approved",
-          "notes": "تم فحص البضاعة ومطابقتها قبل الصرف."
-        }
-      ],
+      "goodsIssueVouchers": [],
       "fiscalClosings": [],
-      "nextStocktakeId": 2,
+      "nextStocktakeId": 1,
       "nextAdjustmentId": 1,
-      "nextGoodsIssueId": 89,
+      "nextGoodsIssueId": 1,
       "nextClosingId": 1,
       "advancedSettings": {
         "categories": [
@@ -5095,12 +3532,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-init",
-          "timestamp": "2026-09-05 12:56:05",
-          "userName": "Mohamed Nazih (المدير)",
-          "action": "login",
-          "module": "النظام العام",
-          "details": "تم تشغيل وتهيئة منظومة ركيزة RAKEEZA ERP الاحترافية بجميع وحدات المحاسبة والربط الضريبي بنجاح."
+          "id": "log-clean-1789033421995",
+          "timestamp": "2026-09-10 09:43:41",
+          "userName": "مالك المنظومة (Owner System Reset)",
+          "action": "system_cleanup",
+          "module": "إدارة النظام",
+          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
         }
       ],
       "eInvoiceConfig": {
@@ -5112,220 +3549,19 @@
         "isEtaConnected": true,
         "autoGenerateQr": true
       },
-      "employees": [
-        {
-          "id": "emp-1",
-          "code": "EMP-001",
-          "name": "كريم عادل الشناوي",
-          "phone": "01055566778",
-          "nationalId": "29001011234567",
-          "department": "المبيعات والتسويق",
-          "jobTitle": "مشرف مبيعات خارجي",
-          "basicSalary": 7000,
-          "housingAllowance": 1000,
-          "transportAllowance": 800,
-          "otherAllowances": 200,
-          "insuranceDeduction": 500,
-          "taxDeduction": 200,
-          "hireDate": "2024-01-15",
-          "status": "active",
-          "bankAccount": "EG1200020001000000123456789",
-          "notes": "موظف متميز - مسؤول عن منطقة القاهرة والجيزة"
-        },
-        {
-          "id": "emp-2",
-          "code": "EMP-002",
-          "name": "ياسمين ممدوح فوزي",
-          "phone": "01122334455",
-          "nationalId": "29405051234568",
-          "department": "الحسابات والمالية",
-          "jobTitle": "محاسب عام وتكاليف",
-          "basicSalary": 8500,
-          "housingAllowance": 1200,
-          "transportAllowance": 600,
-          "otherAllowances": 0,
-          "insuranceDeduction": 600,
-          "taxDeduction": 350,
-          "hireDate": "2023-06-01",
-          "status": "active",
-          "bankAccount": "EG3400030002000000987654321",
-          "notes": "مسؤولة عن تدقيق القيود والإقرارات الضريبية"
-        },
-        {
-          "id": "emp-3",
-          "code": "EMP-003",
-          "name": "سامح إبراهيم الدسوقي",
-          "phone": "01299887766",
-          "department": "المستودعات واللوجستيات",
-          "jobTitle": "أمين مخزن مركزي",
-          "basicSalary": 6000,
-          "housingAllowance": 800,
-          "transportAllowance": 500,
-          "otherAllowances": 300,
-          "insuranceDeduction": 450,
-          "taxDeduction": 150,
-          "hireDate": "2024-03-10",
-          "status": "active",
-          "notes": "مسؤول عن أذون الصرف والاستلام"
-        }
-      ],
+      "employees": [],
       "payrollSlips": [],
       "nextPayrollId": 1,
-      "employeeAdvances": [
-        {
-          "id": "adv-1",
-          "employeeId": "emp-1",
-          "employeeName": "كريم عادل الشناوي",
-          "date": "2026-08-01",
-          "totalAmount": 3000,
-          "monthlyDeduction": 1000,
-          "paidAmount": 1000,
-          "remainingAmount": 2000,
-          "installmentsCount": 3,
-          "notes": "سلفة مصاريف دراسية",
-          "status": "active"
-        }
-      ],
-      "fixedAssets": [
-        {
-          "id": "asset-1",
-          "code": "AST-001",
-          "name": "سيارة فان لنقل وتوزيع البضائع (تويوتا)",
-          "category": "vehicles",
-          "purchaseDate": "2025-01-01",
-          "purchasePrice": 450000,
-          "salvageValue": 50000,
-          "usefulLifeYears": 5,
-          "annualDepreciationRate": 20,
-          "accumulatedDepreciation": 90000,
-          "netBookValue": 360000,
-          "location": "المخزن المركزي - القاهرة",
-          "status": "active",
-          "assetAccountCode": "1201",
-          "depExpenseAccountCode": "5204",
-          "notes": "لوحة أرقام ق ب ر 4589"
-        },
-        {
-          "id": "asset-2",
-          "code": "AST-002",
-          "name": "سيرفر تخزين بيانات وشبكات Dell PowerEdge",
-          "category": "computers",
-          "purchaseDate": "2025-06-01",
-          "purchasePrice": 65000,
-          "salvageValue": 5000,
-          "usefulLifeYears": 3,
-          "annualDepreciationRate": 33.33,
-          "accumulatedDepreciation": 20000,
-          "netBookValue": 45000,
-          "location": "غرفة السيرفرات - المقر الرئيسي",
-          "status": "active",
-          "assetAccountCode": "1202",
-          "depExpenseAccountCode": "5204",
-          "notes": "شامل وحدة UPS ونسخ احتياطي"
-        }
-      ],
+      "employeeAdvances": [],
+      "fixedAssets": [],
       "depreciationLogs": [],
-      "cheques": [
-        {
-          "id": 1,
-          "chequeNumber": "CHK-998821",
-          "bankName": "البنك الأهلي المصري",
-          "drawerName": "شركة النور للتجارة",
-          "beneficiaryName": "منظومة RAKEEZA للمحاسبة",
-          "amount": 25000,
-          "issueDate": "2026-08-15",
-          "dueDate": "2026-09-01",
-          "type": "receivable",
-          "status": "under_collection",
-          "collectingBankAccountId": "b1",
-          "notes": "دفعة تحت حساب فاتورة مبيعات سابقة",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 10:30"
-        },
-        {
-          "id": 2,
-          "chequeNumber": "CHK-441102",
-          "bankName": "بنك مصر",
-          "drawerName": "منظومة RAKEEZA للمحاسبة",
-          "beneficiaryName": "مصنع الخير للإلكترونيات",
-          "amount": 40000,
-          "issueDate": "2026-08-10",
-          "dueDate": "2026-09-15",
-          "type": "payable",
-          "status": "received",
-          "notes": "سداد دفعة توريد أجهزة مكتبية",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-10 14:20"
-        }
-      ],
-      "nextChequeId": 3,
+      "cheques": [],
+      "nextChequeId": 1,
       "commissions": [],
-      "boms": [
-        {
-          "id": "bom-1",
-          "code": "BOM-PC-01",
-          "name": "تجميع كمبيوتر مكتبي متكامل مع شاشة وملحقات",
-          "finishedItemId": "i1",
-          "finishedItemName": "جهاز كمبيوتر Core i7 Desktop",
-          "outputQty": 1,
-          "rawMaterials": [
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "unit": "شاشة",
-              "qty": 1,
-              "unitCost": 1200,
-              "totalCost": 1200
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "unit": "طقم",
-              "qty": 1,
-              "unitCost": 180,
-              "totalCost": 180
-            }
-          ],
-          "indirectCosts": [
-            {
-              "name": "أجور تجميع وفحص فني",
-              "cost": 150
-            },
-            {
-              "name": "تغليف وكرتونة خاصة",
-              "cost": 70
-            }
-          ],
-          "totalUnitCost": 1600,
-          "notes": "معادلة تجميع معيارية للمنتج الكامل",
-          "createdAt": "2026-08-01"
-        }
-      ],
+      "boms": [],
       "productionOrders": [],
       "nextProductionId": 1,
-      "bankStatements": [
-        {
-          "id": "bs-1",
-          "bankAccountId": "b1",
-          "date": "2026-08-20",
-          "reference": "TRF-889922",
-          "description": "تحويل وارد من عميل تجاري",
-          "debit": 0,
-          "credit": 15000,
-          "isReconciled": true,
-          "matchedDate": "2026-08-20"
-        },
-        {
-          "id": "bs-2",
-          "bankAccountId": "b1",
-          "date": "2026-08-22",
-          "reference": "CHQ-PAID-01",
-          "description": "صرف شيك مورد رقم 441101",
-          "debit": 12000,
-          "credit": 0,
-          "isReconciled": false
-        }
-      ],
+      "bankStatements": [],
       "approvalRequests": [],
       "autoBackupConfig": {
         "enabled": true,
@@ -5535,7 +3771,9 @@
           "soundAlertEnabled": true,
           "companyId": "COMP-000002"
         }
-      }
+      },
+      "productPrices": [],
+      "priceHistories": []
     },
     "COMP-672842": {
       "settings": {
@@ -5586,24 +3824,7 @@
         "instapay": 0,
         "bank": 0
       },
-      "salesReps": [
-        {
-          "id": "r1",
-          "name": "أحمد محمود",
-          "phone": "01001234567",
-          "region": "القاهرة الكبرى",
-          "totalSales": 0,
-          "commission": 2.5
-        },
-        {
-          "id": "r2",
-          "name": "محمد علي",
-          "phone": "01109876543",
-          "region": "الجيزة والصعيد",
-          "totalSales": 0,
-          "commission": 2.5
-        }
-      ],
+      "salesReps": [],
       "bankAccounts": [
         {
           "id": "b1",
@@ -5624,155 +3845,13 @@
           "balance": 0
         }
       ],
-      "physicalInventories": [
-        {
-          "id": "stk-1",
-          "sessionNumber": "INV-2026-001",
-          "title": "جرد نصف سنوي شامل - المخزن الرئيسي",
-          "date": "2026-08-15",
-          "branchId": "br-main",
-          "branchName": "الفرع الرئيسي والمخزن المركزي",
-          "category": "الكل",
-          "status": "draft",
-          "items": [
-            {
-              "itemId": "i1",
-              "itemName": "جهاز كمبيوتر Core i7 Desktop",
-              "barcode": "62210010001",
-              "category": "أجهزة كمبيوتر",
-              "unit": "جهاز",
-              "bookQty": 15,
-              "countedQty": 14,
-              "varianceQty": -1,
-              "costPrice": 5000,
-              "varianceCostTotal": -5000,
-              "reason": "shortage_loss",
-              "notes": "عجز جهاز واحد قيد الفحص مع موظف الأمن"
-            },
-            {
-              "itemId": "i2",
-              "itemName": "طابعة ليزر HP LaserJet Pro",
-              "barcode": "62210010002",
-              "category": "طابعات ومعدات",
-              "unit": "طابعة",
-              "bookQty": 8,
-              "countedQty": 8,
-              "varianceQty": 0,
-              "costPrice": 3200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "barcode": "62210010003",
-              "category": "شاشات",
-              "unit": "شاشة",
-              "bookQty": 20,
-              "countedQty": 20,
-              "varianceQty": 0,
-              "costPrice": 1200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "barcode": "62210010004",
-              "category": "إكسسوارات",
-              "unit": "طقم",
-              "bookQty": 25,
-              "countedQty": 26,
-              "varianceQty": 1,
-              "costPrice": 180,
-              "varianceCostTotal": 180,
-              "reason": "surplus_found",
-              "notes": "طقم إضافي من توريدة سابقة"
-            }
-          ],
-          "totalItemsCounted": 4,
-          "matchedItemsCount": 2,
-          "shortageItemsCount": 1,
-          "surplusItemsCount": 1,
-          "totalShortageValue": 5000,
-          "totalSurplusValue": 180,
-          "netVarianceValue": -4820,
-          "committeeMembers": "أحمد محمود (أمين المخزن)، كريم عادل (عضو الجرد)",
-          "notes": "جلسة جرد دورية للمخزن الرئيسي",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 09:00"
-        }
-      ],
+      "physicalInventories": [],
       "inventoryAdjustments": [],
-      "goodsIssueVouchers": [
-        {
-          "id": "gin-88",
-          "voucherNumber": "GIN-2026-088",
-          "date": "2026-08-27",
-          "time": "11:45 ص",
-          "sourceBranchId": "br-main",
-          "sourceBranchName": "المخزن الرئيسي",
-          "recipientName": "فرع المنتزه / قسم الصيانة",
-          "recipientType": "maintenance",
-          "purposeReason": "صرف قطع غيار ومستلزمات تشغيل بناءً على طلب الاحتياج رقم (REQ-402) بغرض صيانة وتشغيل خط الإنتاج الثاني.",
-          "items": [
-            {
-              "itemId": "i101",
-              "code": "ITM-001",
-              "name": "كابلات شبكة Cat6 (لفة)",
-              "unit": "لفة",
-              "qty": 5,
-              "unitCost": 1200,
-              "totalCost": 6000,
-              "notes": "أصلية معتمدة"
-            },
-            {
-              "itemId": "i102",
-              "code": "ITM-045",
-              "name": "مفتاح كهرباء ثلاثي معزول",
-              "unit": "قطعة",
-              "qty": 20,
-              "unitCost": 85.5,
-              "totalCost": 1710,
-              "notes": "صناعة إيطالي"
-            },
-            {
-              "itemId": "i103",
-              "code": "ITM-102",
-              "name": "محول طاقة 12V 5A",
-              "unit": "قطعة",
-              "qty": 8,
-              "unitCost": 250,
-              "totalCost": 2000,
-              "notes": "حماية من التردد"
-            },
-            {
-              "itemId": "i104",
-              "code": "ITM-308",
-              "name": "شريط لاصق عازل (كرتونة)",
-              "unit": "كرتونة",
-              "qty": 2,
-              "unitCost": 450,
-              "totalCost": 900,
-              "notes": "مقاوم للحرارة"
-            }
-          ],
-          "totalQty": 35,
-          "totalCost": 10610,
-          "createdBy": "Mohamed Nazih",
-          "warehouseKeeper": "سامح إبراهيم (أمين المخزن)",
-          "recipientSignatory": "م. أحمد فؤاد (مشرف الصيانة)",
-          "approvedBy": "أ. محمد نزيه (مدير المخازن)",
-          "status": "approved",
-          "notes": "تم فحص البضاعة ومطابقتها قبل الصرف."
-        }
-      ],
+      "goodsIssueVouchers": [],
       "fiscalClosings": [],
-      "nextStocktakeId": 2,
+      "nextStocktakeId": 1,
       "nextAdjustmentId": 1,
-      "nextGoodsIssueId": 89,
+      "nextGoodsIssueId": 1,
       "nextClosingId": 1,
       "advancedSettings": {
         "categories": [
@@ -6182,12 +4261,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-init",
-          "timestamp": "2026-09-05 13:32:46",
-          "userName": "Mohamed Nazih (المدير)",
-          "action": "login",
-          "module": "النظام العام",
-          "details": "تم تشغيل وتهيئة منظومة ركيزة RAKEEZA ERP الاحترافية بجميع وحدات المحاسبة والربط الضريبي بنجاح."
+          "id": "log-clean-1789033421995",
+          "timestamp": "2026-09-10 09:43:41",
+          "userName": "مالك المنظومة (Owner System Reset)",
+          "action": "system_cleanup",
+          "module": "إدارة النظام",
+          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
         }
       ],
       "eInvoiceConfig": {
@@ -6199,220 +4278,19 @@
         "isEtaConnected": true,
         "autoGenerateQr": true
       },
-      "employees": [
-        {
-          "id": "emp-1",
-          "code": "EMP-001",
-          "name": "كريم عادل الشناوي",
-          "phone": "01055566778",
-          "nationalId": "29001011234567",
-          "department": "المبيعات والتسويق",
-          "jobTitle": "مشرف مبيعات خارجي",
-          "basicSalary": 7000,
-          "housingAllowance": 1000,
-          "transportAllowance": 800,
-          "otherAllowances": 200,
-          "insuranceDeduction": 500,
-          "taxDeduction": 200,
-          "hireDate": "2024-01-15",
-          "status": "active",
-          "bankAccount": "EG1200020001000000123456789",
-          "notes": "موظف متميز - مسؤول عن منطقة القاهرة والجيزة"
-        },
-        {
-          "id": "emp-2",
-          "code": "EMP-002",
-          "name": "ياسمين ممدوح فوزي",
-          "phone": "01122334455",
-          "nationalId": "29405051234568",
-          "department": "الحسابات والمالية",
-          "jobTitle": "محاسب عام وتكاليف",
-          "basicSalary": 8500,
-          "housingAllowance": 1200,
-          "transportAllowance": 600,
-          "otherAllowances": 0,
-          "insuranceDeduction": 600,
-          "taxDeduction": 350,
-          "hireDate": "2023-06-01",
-          "status": "active",
-          "bankAccount": "EG3400030002000000987654321",
-          "notes": "مسؤولة عن تدقيق القيود والإقرارات الضريبية"
-        },
-        {
-          "id": "emp-3",
-          "code": "EMP-003",
-          "name": "سامح إبراهيم الدسوقي",
-          "phone": "01299887766",
-          "department": "المستودعات واللوجستيات",
-          "jobTitle": "أمين مخزن مركزي",
-          "basicSalary": 6000,
-          "housingAllowance": 800,
-          "transportAllowance": 500,
-          "otherAllowances": 300,
-          "insuranceDeduction": 450,
-          "taxDeduction": 150,
-          "hireDate": "2024-03-10",
-          "status": "active",
-          "notes": "مسؤول عن أذون الصرف والاستلام"
-        }
-      ],
+      "employees": [],
       "payrollSlips": [],
       "nextPayrollId": 1,
-      "employeeAdvances": [
-        {
-          "id": "adv-1",
-          "employeeId": "emp-1",
-          "employeeName": "كريم عادل الشناوي",
-          "date": "2026-08-01",
-          "totalAmount": 3000,
-          "monthlyDeduction": 1000,
-          "paidAmount": 1000,
-          "remainingAmount": 2000,
-          "installmentsCount": 3,
-          "notes": "سلفة مصاريف دراسية",
-          "status": "active"
-        }
-      ],
-      "fixedAssets": [
-        {
-          "id": "asset-1",
-          "code": "AST-001",
-          "name": "سيارة فان لنقل وتوزيع البضائع (تويوتا)",
-          "category": "vehicles",
-          "purchaseDate": "2025-01-01",
-          "purchasePrice": 450000,
-          "salvageValue": 50000,
-          "usefulLifeYears": 5,
-          "annualDepreciationRate": 20,
-          "accumulatedDepreciation": 90000,
-          "netBookValue": 360000,
-          "location": "المخزن المركزي - القاهرة",
-          "status": "active",
-          "assetAccountCode": "1201",
-          "depExpenseAccountCode": "5204",
-          "notes": "لوحة أرقام ق ب ر 4589"
-        },
-        {
-          "id": "asset-2",
-          "code": "AST-002",
-          "name": "سيرفر تخزين بيانات وشبكات Dell PowerEdge",
-          "category": "computers",
-          "purchaseDate": "2025-06-01",
-          "purchasePrice": 65000,
-          "salvageValue": 5000,
-          "usefulLifeYears": 3,
-          "annualDepreciationRate": 33.33,
-          "accumulatedDepreciation": 20000,
-          "netBookValue": 45000,
-          "location": "غرفة السيرفرات - المقر الرئيسي",
-          "status": "active",
-          "assetAccountCode": "1202",
-          "depExpenseAccountCode": "5204",
-          "notes": "شامل وحدة UPS ونسخ احتياطي"
-        }
-      ],
+      "employeeAdvances": [],
+      "fixedAssets": [],
       "depreciationLogs": [],
-      "cheques": [
-        {
-          "id": 1,
-          "chequeNumber": "CHK-998821",
-          "bankName": "البنك الأهلي المصري",
-          "drawerName": "شركة النور للتجارة",
-          "beneficiaryName": "منظومة RAKEEZA للمحاسبة",
-          "amount": 25000,
-          "issueDate": "2026-08-15",
-          "dueDate": "2026-09-01",
-          "type": "receivable",
-          "status": "under_collection",
-          "collectingBankAccountId": "b1",
-          "notes": "دفعة تحت حساب فاتورة مبيعات سابقة",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 10:30"
-        },
-        {
-          "id": 2,
-          "chequeNumber": "CHK-441102",
-          "bankName": "بنك مصر",
-          "drawerName": "منظومة RAKEEZA للمحاسبة",
-          "beneficiaryName": "مصنع الخير للإلكترونيات",
-          "amount": 40000,
-          "issueDate": "2026-08-10",
-          "dueDate": "2026-09-15",
-          "type": "payable",
-          "status": "received",
-          "notes": "سداد دفعة توريد أجهزة مكتبية",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-10 14:20"
-        }
-      ],
-      "nextChequeId": 3,
+      "cheques": [],
+      "nextChequeId": 1,
       "commissions": [],
-      "boms": [
-        {
-          "id": "bom-1",
-          "code": "BOM-PC-01",
-          "name": "تجميع كمبيوتر مكتبي متكامل مع شاشة وملحقات",
-          "finishedItemId": "i1",
-          "finishedItemName": "جهاز كمبيوتر Core i7 Desktop",
-          "outputQty": 1,
-          "rawMaterials": [
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "unit": "شاشة",
-              "qty": 1,
-              "unitCost": 1200,
-              "totalCost": 1200
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "unit": "طقم",
-              "qty": 1,
-              "unitCost": 180,
-              "totalCost": 180
-            }
-          ],
-          "indirectCosts": [
-            {
-              "name": "أجور تجميع وفحص فني",
-              "cost": 150
-            },
-            {
-              "name": "تغليف وكرتونة خاصة",
-              "cost": 70
-            }
-          ],
-          "totalUnitCost": 1600,
-          "notes": "معادلة تجميع معيارية للمنتج الكامل",
-          "createdAt": "2026-08-01"
-        }
-      ],
+      "boms": [],
       "productionOrders": [],
       "nextProductionId": 1,
-      "bankStatements": [
-        {
-          "id": "bs-1",
-          "bankAccountId": "b1",
-          "date": "2026-08-20",
-          "reference": "TRF-889922",
-          "description": "تحويل وارد من عميل تجاري",
-          "debit": 0,
-          "credit": 15000,
-          "isReconciled": true,
-          "matchedDate": "2026-08-20"
-        },
-        {
-          "id": "bs-2",
-          "bankAccountId": "b1",
-          "date": "2026-08-22",
-          "reference": "CHQ-PAID-01",
-          "description": "صرف شيك مورد رقم 441101",
-          "debit": 12000,
-          "credit": 0,
-          "isReconciled": false
-        }
-      ],
+      "bankStatements": [],
       "approvalRequests": [],
       "autoBackupConfig": {
         "enabled": true,
@@ -6622,7 +4500,9 @@
           "soundAlertEnabled": true,
           "companyId": "COMP-000002"
         }
-      }
+      },
+      "productPrices": [],
+      "priceHistories": []
     },
     "COMP-516314": {
       "settings": {
@@ -6673,24 +4553,7 @@
         "instapay": 0,
         "bank": 0
       },
-      "salesReps": [
-        {
-          "id": "r1",
-          "name": "أحمد محمود",
-          "phone": "01001234567",
-          "region": "القاهرة الكبرى",
-          "totalSales": 0,
-          "commission": 2.5
-        },
-        {
-          "id": "r2",
-          "name": "محمد علي",
-          "phone": "01109876543",
-          "region": "الجيزة والصعيد",
-          "totalSales": 0,
-          "commission": 2.5
-        }
-      ],
+      "salesReps": [],
       "bankAccounts": [
         {
           "id": "b1",
@@ -6711,155 +4574,13 @@
           "balance": 0
         }
       ],
-      "physicalInventories": [
-        {
-          "id": "stk-1",
-          "sessionNumber": "INV-2026-001",
-          "title": "جرد نصف سنوي شامل - المخزن الرئيسي",
-          "date": "2026-08-15",
-          "branchId": "br-main",
-          "branchName": "الفرع الرئيسي والمخزن المركزي",
-          "category": "الكل",
-          "status": "draft",
-          "items": [
-            {
-              "itemId": "i1",
-              "itemName": "جهاز كمبيوتر Core i7 Desktop",
-              "barcode": "62210010001",
-              "category": "أجهزة كمبيوتر",
-              "unit": "جهاز",
-              "bookQty": 15,
-              "countedQty": 14,
-              "varianceQty": -1,
-              "costPrice": 5000,
-              "varianceCostTotal": -5000,
-              "reason": "shortage_loss",
-              "notes": "عجز جهاز واحد قيد الفحص مع موظف الأمن"
-            },
-            {
-              "itemId": "i2",
-              "itemName": "طابعة ليزر HP LaserJet Pro",
-              "barcode": "62210010002",
-              "category": "طابعات ومعدات",
-              "unit": "طابعة",
-              "bookQty": 8,
-              "countedQty": 8,
-              "varianceQty": 0,
-              "costPrice": 3200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "barcode": "62210010003",
-              "category": "شاشات",
-              "unit": "شاشة",
-              "bookQty": 20,
-              "countedQty": 20,
-              "varianceQty": 0,
-              "costPrice": 1200,
-              "varianceCostTotal": 0,
-              "reason": "routine_adjustment",
-              "notes": "مطابق تماماً"
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "barcode": "62210010004",
-              "category": "إكسسوارات",
-              "unit": "طقم",
-              "bookQty": 25,
-              "countedQty": 26,
-              "varianceQty": 1,
-              "costPrice": 180,
-              "varianceCostTotal": 180,
-              "reason": "surplus_found",
-              "notes": "طقم إضافي من توريدة سابقة"
-            }
-          ],
-          "totalItemsCounted": 4,
-          "matchedItemsCount": 2,
-          "shortageItemsCount": 1,
-          "surplusItemsCount": 1,
-          "totalShortageValue": 5000,
-          "totalSurplusValue": 180,
-          "netVarianceValue": -4820,
-          "committeeMembers": "أحمد محمود (أمين المخزن)، كريم عادل (عضو الجرد)",
-          "notes": "جلسة جرد دورية للمخزن الرئيسي",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 09:00"
-        }
-      ],
+      "physicalInventories": [],
       "inventoryAdjustments": [],
-      "goodsIssueVouchers": [
-        {
-          "id": "gin-88",
-          "voucherNumber": "GIN-2026-088",
-          "date": "2026-08-27",
-          "time": "11:45 ص",
-          "sourceBranchId": "br-main",
-          "sourceBranchName": "المخزن الرئيسي",
-          "recipientName": "فرع المنتزه / قسم الصيانة",
-          "recipientType": "maintenance",
-          "purposeReason": "صرف قطع غيار ومستلزمات تشغيل بناءً على طلب الاحتياج رقم (REQ-402) بغرض صيانة وتشغيل خط الإنتاج الثاني.",
-          "items": [
-            {
-              "itemId": "i101",
-              "code": "ITM-001",
-              "name": "كابلات شبكة Cat6 (لفة)",
-              "unit": "لفة",
-              "qty": 5,
-              "unitCost": 1200,
-              "totalCost": 6000,
-              "notes": "أصلية معتمدة"
-            },
-            {
-              "itemId": "i102",
-              "code": "ITM-045",
-              "name": "مفتاح كهرباء ثلاثي معزول",
-              "unit": "قطعة",
-              "qty": 20,
-              "unitCost": 85.5,
-              "totalCost": 1710,
-              "notes": "صناعة إيطالي"
-            },
-            {
-              "itemId": "i103",
-              "code": "ITM-102",
-              "name": "محول طاقة 12V 5A",
-              "unit": "قطعة",
-              "qty": 8,
-              "unitCost": 250,
-              "totalCost": 2000,
-              "notes": "حماية من التردد"
-            },
-            {
-              "itemId": "i104",
-              "code": "ITM-308",
-              "name": "شريط لاصق عازل (كرتونة)",
-              "unit": "كرتونة",
-              "qty": 2,
-              "unitCost": 450,
-              "totalCost": 900,
-              "notes": "مقاوم للحرارة"
-            }
-          ],
-          "totalQty": 35,
-          "totalCost": 10610,
-          "createdBy": "Mohamed Nazih",
-          "warehouseKeeper": "سامح إبراهيم (أمين المخزن)",
-          "recipientSignatory": "م. أحمد فؤاد (مشرف الصيانة)",
-          "approvedBy": "أ. محمد نزيه (مدير المخازن)",
-          "status": "approved",
-          "notes": "تم فحص البضاعة ومطابقتها قبل الصرف."
-        }
-      ],
+      "goodsIssueVouchers": [],
       "fiscalClosings": [],
-      "nextStocktakeId": 2,
+      "nextStocktakeId": 1,
       "nextAdjustmentId": 1,
-      "nextGoodsIssueId": 89,
+      "nextGoodsIssueId": 1,
       "nextClosingId": 1,
       "advancedSettings": {
         "categories": [
@@ -7269,22 +4990,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-op-1788618470892-erb0",
-          "timestamp": "2026-09-05 14:27:50",
-          "userName": "عبداللة احمد",
-          "userId": "u-COMP-516314-admin",
-          "companyId": "COMP-516314",
-          "action": "update",
-          "module": "تحديث بيانات سحابية",
-          "details": "تم حفظ وتحديث بيانات الشركة بنجاح بواسطة عبداللة احمد"
-        },
-        {
-          "id": "log-init",
-          "timestamp": "2026-09-05 14:25:24",
-          "userName": "Mohamed Nazih (المدير)",
-          "action": "login",
-          "module": "النظام العام",
-          "details": "تم تشغيل وتهيئة منظومة ركيزة RAKEEZA ERP الاحترافية بجميع وحدات المحاسبة والربط الضريبي بنجاح."
+          "id": "log-clean-1789033421995",
+          "timestamp": "2026-09-10 09:43:41",
+          "userName": "مالك المنظومة (Owner System Reset)",
+          "action": "system_cleanup",
+          "module": "إدارة النظام",
+          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
         }
       ],
       "eInvoiceConfig": {
@@ -7296,220 +5007,19 @@
         "isEtaConnected": true,
         "autoGenerateQr": true
       },
-      "employees": [
-        {
-          "id": "emp-1",
-          "code": "EMP-001",
-          "name": "كريم عادل الشناوي",
-          "phone": "01055566778",
-          "nationalId": "29001011234567",
-          "department": "المبيعات والتسويق",
-          "jobTitle": "مشرف مبيعات خارجي",
-          "basicSalary": 7000,
-          "housingAllowance": 1000,
-          "transportAllowance": 800,
-          "otherAllowances": 200,
-          "insuranceDeduction": 500,
-          "taxDeduction": 200,
-          "hireDate": "2024-01-15",
-          "status": "active",
-          "bankAccount": "EG1200020001000000123456789",
-          "notes": "موظف متميز - مسؤول عن منطقة القاهرة والجيزة"
-        },
-        {
-          "id": "emp-2",
-          "code": "EMP-002",
-          "name": "ياسمين ممدوح فوزي",
-          "phone": "01122334455",
-          "nationalId": "29405051234568",
-          "department": "الحسابات والمالية",
-          "jobTitle": "محاسب عام وتكاليف",
-          "basicSalary": 8500,
-          "housingAllowance": 1200,
-          "transportAllowance": 600,
-          "otherAllowances": 0,
-          "insuranceDeduction": 600,
-          "taxDeduction": 350,
-          "hireDate": "2023-06-01",
-          "status": "active",
-          "bankAccount": "EG3400030002000000987654321",
-          "notes": "مسؤولة عن تدقيق القيود والإقرارات الضريبية"
-        },
-        {
-          "id": "emp-3",
-          "code": "EMP-003",
-          "name": "سامح إبراهيم الدسوقي",
-          "phone": "01299887766",
-          "department": "المستودعات واللوجستيات",
-          "jobTitle": "أمين مخزن مركزي",
-          "basicSalary": 6000,
-          "housingAllowance": 800,
-          "transportAllowance": 500,
-          "otherAllowances": 300,
-          "insuranceDeduction": 450,
-          "taxDeduction": 150,
-          "hireDate": "2024-03-10",
-          "status": "active",
-          "notes": "مسؤول عن أذون الصرف والاستلام"
-        }
-      ],
+      "employees": [],
       "payrollSlips": [],
       "nextPayrollId": 1,
-      "employeeAdvances": [
-        {
-          "id": "adv-1",
-          "employeeId": "emp-1",
-          "employeeName": "كريم عادل الشناوي",
-          "date": "2026-08-01",
-          "totalAmount": 3000,
-          "monthlyDeduction": 1000,
-          "paidAmount": 1000,
-          "remainingAmount": 2000,
-          "installmentsCount": 3,
-          "notes": "سلفة مصاريف دراسية",
-          "status": "active"
-        }
-      ],
-      "fixedAssets": [
-        {
-          "id": "asset-1",
-          "code": "AST-001",
-          "name": "سيارة فان لنقل وتوزيع البضائع (تويوتا)",
-          "category": "vehicles",
-          "purchaseDate": "2025-01-01",
-          "purchasePrice": 450000,
-          "salvageValue": 50000,
-          "usefulLifeYears": 5,
-          "annualDepreciationRate": 20,
-          "accumulatedDepreciation": 90000,
-          "netBookValue": 360000,
-          "location": "المخزن المركزي - القاهرة",
-          "status": "active",
-          "assetAccountCode": "1201",
-          "depExpenseAccountCode": "5204",
-          "notes": "لوحة أرقام ق ب ر 4589"
-        },
-        {
-          "id": "asset-2",
-          "code": "AST-002",
-          "name": "سيرفر تخزين بيانات وشبكات Dell PowerEdge",
-          "category": "computers",
-          "purchaseDate": "2025-06-01",
-          "purchasePrice": 65000,
-          "salvageValue": 5000,
-          "usefulLifeYears": 3,
-          "annualDepreciationRate": 33.33,
-          "accumulatedDepreciation": 20000,
-          "netBookValue": 45000,
-          "location": "غرفة السيرفرات - المقر الرئيسي",
-          "status": "active",
-          "assetAccountCode": "1202",
-          "depExpenseAccountCode": "5204",
-          "notes": "شامل وحدة UPS ونسخ احتياطي"
-        }
-      ],
+      "employeeAdvances": [],
+      "fixedAssets": [],
       "depreciationLogs": [],
-      "cheques": [
-        {
-          "id": 1,
-          "chequeNumber": "CHK-998821",
-          "bankName": "البنك الأهلي المصري",
-          "drawerName": "شركة النور للتجارة",
-          "beneficiaryName": "منظومة RAKEEZA للمحاسبة",
-          "amount": 25000,
-          "issueDate": "2026-08-15",
-          "dueDate": "2026-09-01",
-          "type": "receivable",
-          "status": "under_collection",
-          "collectingBankAccountId": "b1",
-          "notes": "دفعة تحت حساب فاتورة مبيعات سابقة",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-15 10:30"
-        },
-        {
-          "id": 2,
-          "chequeNumber": "CHK-441102",
-          "bankName": "بنك مصر",
-          "drawerName": "منظومة RAKEEZA للمحاسبة",
-          "beneficiaryName": "مصنع الخير للإلكترونيات",
-          "amount": 40000,
-          "issueDate": "2026-08-10",
-          "dueDate": "2026-09-15",
-          "type": "payable",
-          "status": "received",
-          "notes": "سداد دفعة توريد أجهزة مكتبية",
-          "createdBy": "Mohamed Nazih",
-          "createdAt": "2026-08-10 14:20"
-        }
-      ],
-      "nextChequeId": 3,
+      "cheques": [],
+      "nextChequeId": 1,
       "commissions": [],
-      "boms": [
-        {
-          "id": "bom-1",
-          "code": "BOM-PC-01",
-          "name": "تجميع كمبيوتر مكتبي متكامل مع شاشة وملحقات",
-          "finishedItemId": "i1",
-          "finishedItemName": "جهاز كمبيوتر Core i7 Desktop",
-          "outputQty": 1,
-          "rawMaterials": [
-            {
-              "itemId": "i3",
-              "itemName": "شاشة 24 بوصة Full HD IPS",
-              "unit": "شاشة",
-              "qty": 1,
-              "unitCost": 1200,
-              "totalCost": 1200
-            },
-            {
-              "itemId": "i4",
-              "itemName": "ماوس وكيبورد لاسلكي Wireless Combo",
-              "unit": "طقم",
-              "qty": 1,
-              "unitCost": 180,
-              "totalCost": 180
-            }
-          ],
-          "indirectCosts": [
-            {
-              "name": "أجور تجميع وفحص فني",
-              "cost": 150
-            },
-            {
-              "name": "تغليف وكرتونة خاصة",
-              "cost": 70
-            }
-          ],
-          "totalUnitCost": 1600,
-          "notes": "معادلة تجميع معيارية للمنتج الكامل",
-          "createdAt": "2026-08-01"
-        }
-      ],
+      "boms": [],
       "productionOrders": [],
       "nextProductionId": 1,
-      "bankStatements": [
-        {
-          "id": "bs-1",
-          "bankAccountId": "b1",
-          "date": "2026-08-20",
-          "reference": "TRF-889922",
-          "description": "تحويل وارد من عميل تجاري",
-          "debit": 0,
-          "credit": 15000,
-          "isReconciled": true,
-          "matchedDate": "2026-08-20"
-        },
-        {
-          "id": "bs-2",
-          "bankAccountId": "b1",
-          "date": "2026-08-22",
-          "reference": "CHQ-PAID-01",
-          "description": "صرف شيك مورد رقم 441101",
-          "debit": 12000,
-          "credit": 0,
-          "isReconciled": true
-        }
-      ],
+      "bankStatements": [],
       "approvalRequests": [],
       "autoBackupConfig": {
         "enabled": true,
@@ -7942,7 +5452,9 @@
       ],
       "exportAuditLogs": [],
       "supportSessions": [],
-      "isOwnerAuthenticated": true
+      "isOwnerAuthenticated": true,
+      "productPrices": [],
+      "priceHistories": []
     }
   },
   "globalUsers": [

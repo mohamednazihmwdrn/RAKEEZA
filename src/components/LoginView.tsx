@@ -54,6 +54,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
   // Countdown timer for OTP resend
   React.useEffect(() => {
+    // Clear credentials on mount so user switching is clean and private
+    setUsername('');
+    setPassword('');
+  }, []);
+
+  React.useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => {
       setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
@@ -724,8 +730,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
                       type="text"
                       value={companyId}
                       onChange={(e) => setCompanyId(e.target.value.toUpperCase())}
-                      placeholder="مثال: COMP-000001"
+                      placeholder="مثال: 101 أو 102"
                       dir="ltr"
+                      autoComplete="off"
+                      spellCheck={false}
                       className="w-full pl-3 pr-11 py-2.5 sm:py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left uppercase"
                       disabled={isLoading}
                       required
@@ -748,6 +756,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="أدخل اسم المستخدم"
                       dir="ltr"
+                      autoComplete="off"
+                      spellCheck={false}
                       className="w-full pl-3 pr-11 py-2.5 sm:py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left"
                       disabled={isLoading}
                       required
@@ -773,6 +783,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       dir="ltr"
+                      autoComplete="new-password"
                       className="w-full pl-11 pr-11 py-2.5 sm:py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left font-mono"
                       disabled={isLoading}
                       required

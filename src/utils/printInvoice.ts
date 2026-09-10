@@ -768,11 +768,6 @@ export function generateInvoicePrintHtml(
             <span id="lbl-tax">إجمالي الضريبة:</span>
             <span id="val-tax">+${totalTax.toFixed(2)} ج.م</span>
           </div>` : ''}
-          ${feesVal > 0 ? `
-          <div class="summary-line" id="row-fees">
-            <span id="lbl-fees">${feesName}:</span>
-            <span id="val-fees">+${feesVal.toFixed(2)} ج.م</span>
-          </div>` : ''}
           ${extraRevenueVal > 0 ? `
           <div class="summary-line" id="row-extra-revenue" style="color: #047857; font-weight: bold;">
             <span id="lbl-extra-revenue">➕ ${extraRevenueName}:</span>

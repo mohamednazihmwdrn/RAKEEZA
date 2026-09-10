@@ -99,6 +99,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           )}
         </div>
+        {/* Desktop Sidebar System Branding Header */}
+        <div className="hidden md:flex items-center gap-2.5 px-4 py-3 bg-[#0d47a1]/80 border-b border-white/10 mb-1">
+          <img
+            src="/pwa-192x192.png"
+            alt="شعار ركيزة"
+            className="w-7 h-7 rounded-lg object-contain bg-[#000e28] p-0.5 border border-amber-300/30 shadow-xs"
+          />
+          <div>
+            <span className="font-black text-[#ffd54f] text-sm tracking-wider block">RAKEEZA ERP</span>
+            <span className="text-[10px] text-blue-200 block">منظومة ركيزة المحاسبية</span>
+          </div>
+        </div>
+
         {/* 🏠 الرئيسية */}
         <div
           onClick={() => onNavigate('home')}

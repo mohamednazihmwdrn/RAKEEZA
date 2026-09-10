@@ -276,7 +276,7 @@ export const DEFAULT_COMPANIES: TenantCompany[] = [
   {
     id: 'COMP-000001',
     tenantId: 'TENANT-8812-HQ1',
-    code: 'RKZ-001',
+    code: '101',
     name: 'شركة ركيزة للمحاسبة والتجارة العامة (RAKEEZA)',
     tradeName: 'ركيزة للأنظمة والحلول التقنية RAKEEZA',
     activity: '4651 - تجارة أجهزة الكمبيوتر والمعدات الإلكترونية',
@@ -328,13 +328,13 @@ export const DEFAULT_COMPANIES: TenantCompany[] = [
     usersCount: 3,
     branchesCount: 2,
     warehousesCount: 2,
-    operationsCount: 142,
+    operationsCount: 0,
     lastActivityAt: '2026-09-02 11:20',
   },
   {
     id: 'COMP-000002',
     tenantId: 'TENANT-4491-TR2',
-    code: 'RKZ-002',
+    code: '102',
     name: 'مؤسسة الأمل للتوريدات العمومية',
     tradeName: 'الأمل سوفت وير',
     activity: '4791 - تجارة التجزئة والتوريدات',
@@ -381,13 +381,13 @@ export const DEFAULT_COMPANIES: TenantCompany[] = [
     usersCount: 2,
     branchesCount: 1,
     warehousesCount: 1,
-    operationsCount: 28,
+    operationsCount: 0,
     lastActivityAt: '2026-09-01 16:45',
   },
   {
     id: 'COMP-000003',
     tenantId: 'TENANT-9923-SL3',
-    code: 'RKZ-003',
+    code: '103',
     name: 'مجموعة السلام الهندسية والمقاولات',
     tradeName: 'السلام إنجينيرينج',
     activity: '4321 - التركيبات والتجهيزات الهندسية',
@@ -571,12 +571,12 @@ export function createNewTenantCompany(
   plans: SubscriptionPlan[],
   trialRegistry: TrialRegistryRecord[]
 ): { company: TenantCompany; license: LicenseRecord; updatedRegistry: TrialRegistryRecord[] } {
-  const nextNumber = Math.floor(100000 + Math.random() * 900000);
-  const companyId = `COMP-${nextNumber}`;
-  const tenantId = `TENANT-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.floor(10 + Math.random() * 90)}`;
-  const companyCode = `RKZ-${Math.floor(100 + Math.random() * 900)}`;
-  const subId = `SUB-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-  const licId = `LIC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const shortNum = Math.floor(100 + Math.random() * 900);
+  const companyCode = `${shortNum}`;
+  const companyId = `COMP-${shortNum}`;
+  const tenantId = `TENANT-${shortNum}`;
+  const subId = `SUB-${new Date().getFullYear()}-${shortNum}`;
+  const licId = `LIC-${new Date().getFullYear()}-${shortNum}`;
 
   const selectedPlan = plans.find((p) => p.id === planId) || plans[0];
   const now = new Date();

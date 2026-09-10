@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppData,
   TenantCompany,
@@ -22,6 +22,11 @@ import {
   exportMigrationExcel,
   exportMigrationCsvPackage,
 } from '../utils/migrationExporter';
+import {
+  fetchOwnerCompaniesCloud,
+  deleteCompanyCloudApi,
+  cleanEntireSystemCloudApi,
+} from '../services/cloudApi';
 
 interface OwnerPanelViewProps {
   appData: AppData;
@@ -97,12 +102,56 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
   const [testPhone, setTestPhone] = useState<string>('');
   const [testPhoneResult, setTestPhoneResult] = useState<{ eligible: boolean; reason?: string } | null>(null);
 
+  // Real-time Cloud Companies State
+  const [cloudCompanies, setCloudCompanies] = useState<TenantCompany[]>(
+    appData.companies && appData.companies.length > 0 ? appData.companies : DEFAULT_COMPANIES
+  );
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState<boolean>(false);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<string>('');
+
+  // Delete Company Confirmation Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [companyToDelete, setCompanyToDelete] = useState<TenantCompany | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState<string>('');
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string>('');
+
+  // System Cleanup Modal State (Wipe all movements/amounts across system)
+  const [isCleanupModalOpen, setIsCleanupModalOpen] = useState<boolean>(false);
+  const [cleanupConfirmText, setCleanupConfirmText] = useState<string>('');
+  const [isCleaning, setIsCleaning] = useState<boolean>(false);
+  const [cleanupFeedback, setCleanupFeedback] = useState<string>('');
+  const [cleanupError, setCleanupError] = useState<string>('');
+
   // Initial state setup if empty
-  const companies: TenantCompany[] = appData.companies || DEFAULT_COMPANIES;
+  const companies: TenantCompany[] = cloudCompanies.length > 0 ? cloudCompanies : (appData.companies || DEFAULT_COMPANIES);
   const plans: SubscriptionPlan[] = appData.plans || DEFAULT_SUBSCRIPTION_PLANS;
   const trialRegistry: TrialRegistryRecord[] = appData.trialRegistry || DEFAULT_TRIAL_REGISTRY;
   const exportAuditLogs: ExportAuditLog[] = appData.exportAuditLogs || [];
   const supportSessions: SupportAccessSession[] = appData.supportSessions || [];
+
+  // Helper to load live companies directly from Cloud Database
+  const loadCloudCompanies = async (silent = false) => {
+    if (!silent) setIsLoadingCompanies(true);
+    try {
+      const res = await fetchOwnerCompaniesCloud();
+      if (res.success && res.companies) {
+        setCloudCompanies(res.companies);
+        onUpdateAppData({ companies: res.companies });
+        setCloudSyncStatus('متزامن مع السحابة فورياً');
+      }
+    } catch (err) {
+      console.error('Failed to load cloud companies:', err);
+    } finally {
+      if (!silent) setIsLoadingCompanies(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadCloudCompanies();
+    }
+  }, [isAuthenticated]);
 
   // Helper to persist updates
   const updateOwnerState = (updates: Partial<AppData>) => {
@@ -114,6 +163,71 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
       supportSessions,
       ...updates,
     });
+  };
+
+  // Perform safe deletion of company after confirmation
+  const handleConfirmDeleteCompany = async () => {
+    if (!companyToDelete) return;
+    setIsDeleting(true);
+    setDeleteError('');
+
+    try {
+      const res = await deleteCompanyCloudApi(companyToDelete.id);
+      if (res.success) {
+        const remaining = companies.filter((c) => c.id !== companyToDelete.id);
+        setCloudCompanies(remaining);
+        updateOwnerState({ companies: remaining });
+        setIsDeleteModalOpen(false);
+        setCompanyToDelete(null);
+        setDeleteConfirmText('');
+      } else {
+        setDeleteError(res.error || 'فشل حذف الشركة من الخادم السحابي.');
+      }
+    } catch (err: any) {
+      setDeleteError(err.message || 'حدث خطأ أثناء محاولة حذف الشركة.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Perform system cleanup: wipe all transactions/movements across all companies
+  const handleConfirmSystemCleanup = async () => {
+    setIsCleaning(true);
+    setCleanupError('');
+    setCleanupFeedback('');
+
+    try {
+      const res = await cleanEntireSystemCloudApi();
+      if (res.success) {
+        setCleanupFeedback(res.message || 'تم تنظيف النظام بنجاح وتصفير كافة الحركات والمبالغ.');
+        // Refresh cloud companies
+        await loadCloudCompanies(true);
+        // Also wipe local appData state if applicable
+        onUpdateAppData({
+          salesInvoices: [],
+          purchaseInvoices: [],
+          cashTransactions: [],
+          journalEntries: [],
+          physicalInventories: [],
+          inventoryAdjustments: [],
+          goodsIssueVouchers: [],
+          fiscalClosings: [],
+          stockTransfers: [],
+          quotations: [],
+          cashBox: { drawer: 0, vodafone: 0, instapay: 0, bank: 0 },
+        });
+        setTimeout(() => {
+          setIsCleanupModalOpen(false);
+          setCleanupConfirmText('');
+        }, 1500);
+      } else {
+        setCleanupError(res.error || 'فشل تنظيف النظام من الخادم السحابي.');
+      }
+    } catch (err: any) {
+      setCleanupError(err.message || 'حدث خطأ أثناء الاتصال بالخادم السحابي.');
+    } finally {
+      setIsCleaning(false);
+    }
   };
 
   // Authenticate Owner
@@ -615,6 +729,32 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
                 </select>
 
                 <button
+                  type="button"
+                  onClick={() => loadCloudCompanies(false)}
+                  disabled={isLoadingCompanies}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700 cursor-pointer disabled:opacity-50"
+                  title="تحديث قائمة الشركات فورياً من السحابة السحابية"
+                >
+                  <span className={isLoadingCompanies ? 'animate-spin' : ''}>🔄</span>
+                  <span>{isLoadingCompanies ? 'جاري التحميل...' : 'تحديث السحابة'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCleanupConfirmText('');
+                    setCleanupError('');
+                    setCleanupFeedback('');
+                    setIsCleanupModalOpen(true);
+                  }}
+                  className="bg-purple-950/70 hover:bg-purple-900 text-purple-300 hover:text-white border border-purple-800/80 text-xs font-black px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  title="تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة"
+                >
+                  <span>🧹</span>
+                  <span>تنظيف وتصفير النظام</span>
+                </button>
+
+                <button
                   onClick={() => setIsCreateModalOpen(true)}
                   className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl transition flex items-center gap-1 cursor-pointer"
                 >
@@ -766,6 +906,22 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
                                 ▶️ تنشيط
                               </button>
                             )}
+
+                            {/* Delete Company Button with Confirmation Protection */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCompanyToDelete(c);
+                                setDeleteConfirmText('');
+                                setDeleteError('');
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className="bg-rose-950/80 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-800/80 px-2 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                              title="حذف الشركة نهائياً من قاعدة البيانات السحابية"
+                            >
+                              <span>🗑️</span>
+                              <span>حذف</span>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1517,6 +1673,266 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
                 className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition"
               >
                 إغلاق النافذة
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🚨 MODAL: Delete Company Secure Confirmation (Safeguarded against accidental clicks) */}
+      {isDeleteModalOpen && companyToDelete && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" dir="rtl">
+          <div className="bg-slate-900 border-2 border-rose-600/80 rounded-3xl max-w-lg w-full p-6 text-white space-y-4 shadow-2xl shadow-rose-950/50">
+            {/* Header */}
+            <div className="flex justify-between items-center pb-3 border-b border-rose-900/40">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-600/20 border border-rose-500/50 flex items-center justify-center text-xl text-rose-400">
+                  ⚠️
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-rose-400">
+                    تأكيد حذف الشركة نهائياً
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    إجراء حرج لحماية البيانات من الحذف الخاطئ
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!isDeleting) {
+                    setIsDeleteModalOpen(false);
+                    setCompanyToDelete(null);
+                    setDeleteConfirmText('');
+                    setDeleteError('');
+                  }
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+                disabled={isDeleting}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Company Info Box */}
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 font-medium">اسم الشركة:</span>
+                <span className="text-white font-black text-sm">{companyToDelete.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 font-medium">كود الشركة والمعرف:</span>
+                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-amber-300 font-bold">
+                  {companyToDelete.code} ({companyToDelete.id})
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 font-medium">المدير ورقم الهاتف:</span>
+                <span className="text-slate-200">
+                  {companyToDelete.adminName || 'المدير العام'} • {companyToDelete.phone || '—'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 font-medium">الخطة الحالية:</span>
+                <span className="text-emerald-400 font-bold">
+                  {companyToDelete.planName || companyToDelete.planId}
+                </span>
+              </div>
+            </div>
+
+            {/* Critical Warning Alert */}
+            <div className="bg-rose-950/50 border border-rose-700/60 p-3.5 rounded-2xl text-xs text-rose-200 space-y-1.5 leading-relaxed">
+              <div className="font-black text-rose-300 flex items-center gap-1.5 text-sm">
+                <span>🛑</span>
+                <span>تحذير لا رجعة فيه:</span>
+              </div>
+              <p>
+                سيتم مسح هذه الشركة نهائياً من قاعدة البيانات السحابية مع كافة فواتير المبيعات والمشتريات، حركات الخزينة، أرصدة العملاء والموردين، وحسابات المستخدمين التابعة لها.
+              </p>
+              <p className="text-[11px] text-rose-300 font-bold">
+                ⚠️ لن يمكن استرجاع بيانات هذه الشركة بأي شكل بعد تأكيد الحذف.
+              </p>
+            </div>
+
+            {/* Accidental Click Prevention Step */}
+            <div className="space-y-2 pt-1">
+              <label className="block text-xs font-bold text-slate-300">
+                لتأكيد الحذف ومنع الضغط بالخطأ، اكتب كلمة <span className="text-rose-400 underline font-black">حذف</span> أو كود الشركة <span className="text-amber-400 font-mono font-bold">({companyToDelete.code})</span> أدناه:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="اكتب كلمة 'حذف' هنا..."
+                className="w-full bg-slate-950 border-2 border-rose-900/60 focus:border-rose-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none text-center font-bold"
+                disabled={isDeleting}
+                autoFocus
+              />
+            </div>
+
+            {/* Error Message */}
+            {deleteError && (
+              <div className="bg-red-500/20 border border-red-500/40 text-red-300 p-2.5 rounded-xl text-xs font-bold text-center">
+                {deleteError}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={handleConfirmDeleteCompany}
+                disabled={
+                  isDeleting ||
+                  (deleteConfirmText.trim() !== 'حذف' &&
+                    deleteConfirmText.trim() !== companyToDelete.code &&
+                    deleteConfirmText.trim() !== companyToDelete.id)
+                }
+                className="flex-1 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black py-2.5 rounded-xl text-xs transition cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md shadow-rose-900/30"
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="animate-spin">🔄</span>
+                    <span>جاري الحذف النهائي...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🗑️</span>
+                    <span>تأكيد الحذف النهائي للشركة</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setCompanyToDelete(null);
+                  setDeleteConfirmText('');
+                  setDeleteError('');
+                }}
+                disabled={isDeleting}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 🧹 SYSTEM CLEANUP CONFIRMATION MODAL                         */}
+      {/* ============================================================ */}
+      {isCleanupModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-purple-800/80 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl p-2 bg-purple-950/80 border border-purple-800 rounded-xl">🧹</span>
+                <div>
+                  <h3 className="text-base font-black text-white">تنظيف وتصفير النظام بالكامل</h3>
+                  <p className="text-xs text-purple-300">بدء العمليات الجديدة بدون أي حركات سابقة</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!isCleaning) {
+                    setIsCleanupModalOpen(false);
+                    setCleanupConfirmText('');
+                    setCleanupError('');
+                    setCleanupFeedback('');
+                  }
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+                disabled={isCleaning}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Explanatory Box */}
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between text-slate-300 font-bold">
+                <span>الشركات المسجلة الحالية:</span>
+                <span className="text-amber-400 font-mono text-sm">{companies.length} شركة مسجلة</span>
+              </div>
+              <div className="h-px bg-slate-800 my-1" />
+              <div className="space-y-1 text-slate-300 leading-relaxed">
+                <p className="font-bold text-white">ما الذي سيقوم به هذا الإجراء؟</p>
+                <ul className="list-disc list-inside space-y-1 text-slate-400">
+                  <li>مسح وتصفير كافة فواتير المبيعات وفواتير المشتريات.</li>
+                  <li>تصفير أرصدة الخزائن النقدية (الدرج، فودافون كاش، إنستاباي، البنوك).</li>
+                  <li>تصفير كشوف حسابات العملاء والموردين وأرصدتهم السابقة.</li>
+                  <li>تصفير أرصدة شجرة الحسابات العامة وكميات المخزون.</li>
+                  <li>إعادة ترقيم الفواتير والسندات لتبدأ من رقم (1).</li>
+                  <li><strong className="text-emerald-400">الحفاظ الكامل على تسجيل الشركات والمستخدمين والاشتراكات.</strong></li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Confirmation verification input */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-300">
+                لتأكيد تنظيف وتصفير كافة الحركات، اكتب كلمة <span className="text-purple-400 underline font-black">تصفير</span> أدناه:
+              </label>
+              <input
+                type="text"
+                value={cleanupConfirmText}
+                onChange={(e) => setCleanupConfirmText(e.target.value)}
+                placeholder="اكتب 'تصفير' هنا..."
+                className="w-full bg-slate-950 border-2 border-purple-800/80 focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none text-center font-bold"
+                disabled={isCleaning}
+                autoFocus
+              />
+            </div>
+
+            {/* Feedback & Error */}
+            {cleanupFeedback && (
+              <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 p-2.5 rounded-xl text-xs font-bold text-center">
+                {cleanupFeedback}
+              </div>
+            )}
+            {cleanupError && (
+              <div className="bg-red-500/20 border border-red-500/40 text-red-300 p-2.5 rounded-xl text-xs font-bold text-center">
+                {cleanupError}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={handleConfirmSystemCleanup}
+                disabled={isCleaning || cleanupConfirmText.trim() !== 'تصفير'}
+                className="flex-1 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black py-2.5 rounded-xl text-xs transition cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md shadow-purple-900/40"
+              >
+                {isCleaning ? (
+                  <>
+                    <span className="animate-spin">🔄</span>
+                    <span>جاري تصفير الحركات والمبالغ...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🧹</span>
+                    <span>تأكيد تنظيف وتصفير النظام</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCleanupModalOpen(false);
+                  setCleanupConfirmText('');
+                  setCleanupError('');
+                  setCleanupFeedback('');
+                }}
+                disabled={isCleaning}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer"
+              >
+                إلغاء
               </button>
             </div>
           </div>

@@ -685,3 +685,111 @@ export async function activateTenantLicenseCloud(
 
   return { success: false, message: 'كود التفعيل غير صالح. يرجى التأكد من الرمز المدخل.' };
 }
+
+/**
+ * 👑 Fetch real-time companies list for Owner Panel from Cloud Database
+ */
+export async function fetchOwnerCompaniesCloud(): Promise<{
+  success: boolean;
+  companies?: TenantCompany[];
+  plans?: any[];
+  trialRegistry?: any[];
+  licenses?: any[];
+  error?: string;
+}> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-owner-secret': '123456',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  try {
+    const res = await fetch('/api/owner/companies', { headers });
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
+      const json = await res.json();
+      return {
+        success: true,
+        companies: json.companies || [],
+        plans: json.plans || [],
+        trialRegistry: json.trialRegistry || [],
+        licenses: json.licenses || [],
+      };
+    }
+  } catch (err: any) {
+    console.error('Error fetching owner companies from cloud:', err);
+  }
+
+  return { success: false, error: 'تعذر جلب الشركات من السحابة' };
+}
+
+/**
+ * 🗑️ Delete a company and all its isolated cloud data with server confirmation
+ */
+export async function deleteCompanyCloudApi(companyId: string): Promise<{
+  success: boolean;
+  error?: string;
+  remainingCompanies?: TenantCompany[];
+  deletedCompany?: TenantCompany;
+}> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-owner-secret': '123456',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  try {
+    const res = await fetch(`/api/owner/companies/${encodeURIComponent(companyId)}`, {
+      method: 'DELETE',
+      headers,
+    });
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      return await res.json();
+    }
+    return { success: res.ok };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'حدث خطأ في الاتصال بالخادم السحابي أثناء حذف الشركة' };
+  }
+}
+
+/**
+ * 🧹 Clean Entire System: Clears all movements, amounts, invoices across all tenants
+ */
+export async function cleanEntireSystemCloudApi(): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+  affectedCompaniesCount?: number;
+}> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-owner-secret': '123456',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  try {
+    const res = await fetch('/api/owner/system-cleanup', {
+      method: 'POST',
+      headers,
+    });
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      return await res.json();
+    }
+    return { success: res.ok, message: 'تم تنظيف وتصفير النظام بنجاح' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'حدث خطأ في الاتصال بالخادم أثناء تنظيف النظام' };
+  }
+}
+
+

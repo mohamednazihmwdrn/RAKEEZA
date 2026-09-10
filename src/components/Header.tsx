@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, MoreVertical } from 'lucide-react';
 import { User } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -168,10 +168,10 @@ export const Header: React.FC<HeaderProps> = ({
             ☰
           </button>
           <div
-            className={`text-base sm:text-lg md:text-xl font-black tracking-wide flex items-center gap-1.5 cursor-pointer select-none py-1 px-2 rounded-lg transition-all relative ${
+            className={`flex items-center gap-2 cursor-pointer select-none py-1 px-2 rounded-xl transition-all relative ${
               isHoldingLogo
                 ? 'scale-105 bg-amber-400/25 ring-2 ring-amber-400 shadow-lg shadow-amber-400/30'
-                : 'hover:bg-white/10 active:scale-95'
+                : 'hover:bg-white/10 active:scale-98'
             }`}
             onClick={handleSystemNameClick}
             onMouseDown={handleHoldStart}
@@ -180,83 +180,73 @@ export const Header: React.FC<HeaderProps> = ({
             onTouchStart={handleHoldStart}
             onTouchEnd={handleHoldEnd}
             onTouchCancel={handleHoldEnd}
-            title="منظومة ركيزة RAKEEZA للمحاسبة السحابية"
+            title={`منشأة: ${companyName || 'الشركة المسجلة'}${companyCode ? ` (كود: ${companyCode})` : ''} - انقر مطولاً للدخول للإدارة`}
           >
-            <img
-              src="/pwa-192x192.png"
-              alt="شعار ركيزة"
-              className="w-7 h-7 rounded-lg object-contain bg-[#000e28] p-0.5 border border-amber-300/40 shadow-xs"
-            />
-            <span className="text-[#ffd54f] tracking-wider">RAKEEZA</span>
-            <span className="hidden xs:inline text-xs sm:text-base font-bold text-white/90">ERP</span>
-            {isHoldingLogo && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-amber-400 rounded-full animate-pulse" />
-            )}
-          </div>
-
-          {companyName && (
-            <div className="hidden lg:flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-xs text-white">
-              <span>🏢</span>
-              <span className="font-bold truncate max-w-[180px]">{companyName}</span>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-500/30 border border-amber-300/40 flex items-center justify-center text-base shadow-xs shrink-0">
+              🏢
+            </div>
+            <div className="flex flex-col text-right leading-tight max-w-[140px] xs:max-w-[200px] sm:max-w-[300px] md:max-w-[420px] lg:max-w-[500px]">
+              <span className="text-xs sm:text-sm md:text-base lg:text-lg font-black text-white tracking-wide truncate">
+                {companyName || 'الشركة المسجلة'}
+              </span>
               {companyCode && (
-                <span className="font-mono text-[10px] text-amber-300 bg-black/30 px-1.5 py-0.2 rounded-md">
-                  {companyCode}
-                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="font-mono text-[10px] sm:text-[11px] text-amber-300 font-black">
+                    كود: {companyCode}
+                  </span>
+                  {subscriptionPlan && (
+                    <span className="hidden sm:inline text-[9px] bg-white/15 text-blue-100 px-1.5 py-0.2 rounded font-bold truncate max-w-[140px]">
+                      {subscriptionPlan}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
-          )}
+            {isHoldingLogo && (
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-amber-400 rounded-full animate-pulse" />
+            )}
+          </div>
         </div>
 
-        {/* Left Side: Organized Dropdown Menu & User Badge */}
+        {/* Left Side: Organized Compact Dropdown Menu & User Badge */}
         <div className="flex items-center gap-2 text-xs sm:text-sm relative" ref={menuRef}>
           {/* User Badge on medium+ screens */}
-          <div className="hidden md:flex items-center gap-2 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-xl text-white text-xs border border-white/10 transition">
-            <span className="w-6 h-6 rounded-lg bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-xs">
+          <div className="hidden md:flex items-center gap-2 bg-white/10 hover:bg-white/15 px-2.5 py-1 rounded-xl text-white text-xs border border-white/10 transition">
+            <span className="w-5 h-5 rounded-lg bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-[11px]">
               👤
             </span>
             <div className="flex flex-col text-right leading-tight">
-              <span className="font-bold text-[12px] truncate max-w-[130px]">
+              <span className="font-bold text-[11px] truncate max-w-[120px]">
                 {currentUser?.name || 'مدير النظام'}
               </span>
-              {subscriptionPlan && (
-                <span className="text-[10px] text-amber-300 font-medium">
-                  {subscriptionPlan}
-                </span>
-              )}
             </div>
           </div>
 
-          {/* Main Dropdown Button */}
+          {/* 3-Dot Vertical Kebab Menu Button (⋮) Containing all quick actions */}
           <button
+            id="quick-kebab-menu-button"
             type="button"
             onClick={() => setIsMenuOpen((prev) => !prev)}
-            className={`min-h-[40px] px-3 sm:px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm border ${
+            className={`relative min-w-[38px] min-h-[38px] w-9.5 h-9.5 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-xs border ${
               isMenuOpen
-                ? 'bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-400/40 shadow-md'
+                ? 'bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-400/40 shadow-md scale-105'
                 : pendingWebOrdersCount > 0
-                ? 'bg-gradient-to-r from-rose-600 to-amber-500 text-white border-amber-300 shadow-rose-900/30'
+                ? 'bg-gradient-to-br from-rose-600 to-amber-500 text-white border-amber-300 shadow-rose-900/30'
                 : 'bg-white/15 hover:bg-white/25 active:bg-white/30 text-white border-white/20'
             }`}
-            title="القائمة المنسدلة للخدمات السريعة وإدارة المنظومة"
+            title="القائمة السريعة للخيارات والخدمات (⋮)"
+            aria-label="القائمة السريعة"
             aria-expanded={isMenuOpen}
           >
-            {pendingWebOrdersCount > 0 ? (
-              <span className="relative flex items-center justify-center">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-300 animate-ping absolute"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 relative"></span>
-              </span>
-            ) : (
-              <span className="text-base">⚡</span>
-            )}
-            <span className="font-bold">القائمة السريعة</span>
+            <MoreVertical className="w-5 h-5" />
             {pendingWebOrdersCount > 0 && (
-              <span className="bg-rose-500 text-white font-black text-[10px] px-1.5 py-0.2 rounded-full shadow-2xs">
-                {pendingWebOrdersCount}
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-600 text-white text-[9px] font-black items-center justify-center border border-white">
+                  {pendingWebOrdersCount > 9 ? '9+' : pendingWebOrdersCount}
+                </span>
               </span>
             )}
-            <ChevronDown
-              className={`w-4 h-4 transition-transform duration-200 ${isMenuOpen ? 'rotate-180 text-slate-950' : 'text-white/80'}`}
-            />
           </button>
 
           {/* Professional Dropdown Menu Popup */}
@@ -419,7 +409,34 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Divider */}
               <div className="my-2 border-t border-slate-100" />
 
-              {/* 6. تسجيل الخروج */}
+              {/* 6. تبديل المستخدم */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onLogout();
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl text-right transition cursor-pointer bg-blue-50/70 hover:bg-blue-100 text-blue-900 border border-blue-200/70 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-700 flex items-center justify-center text-base shrink-0 group-hover:scale-105 transition-transform">
+                    🔄
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span className="text-xs font-black text-blue-950">
+                      تبديل المستخدم (Switch User)
+                    </span>
+                    <span className="text-[10px] text-blue-700 font-medium">
+                      تسجيل الدخول بمستخدم آخر دون حفظ البيانات
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-blue-700">
+                  تبديل 🔁
+                </span>
+              </button>
+
+              {/* 7. تسجيل الخروج */}
               <button
                 type="button"
                 onClick={() => {

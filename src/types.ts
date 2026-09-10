@@ -940,6 +940,8 @@ export interface AppData {
   auditLogs: AuditLog[];
   eInvoiceConfig: EInvoiceConfig;
   fiscalLockDate?: string;
+  viewingClosedYear?: string; // السنة المالية المغلقة الجاري تصفحها كأرشيف للقراءة فقط
+  currentActiveFiscalYear?: string; // السنة المالية النشطة الحالية للتبديل والعودة السريعة
 
   // New Comprehensive Modules:
   employees: Employee[];
