@@ -353,8 +353,78 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
             </div>
           </div>
 
-          {/* Table of Statement Items */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+          {/* Mobile Statement Items Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {statementItems.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-slate-400">
+                لا توجد بنود كشف حساب مدخلة لهذا الحساب البنكي
+              </div>
+            ) : (
+              statementItems.map((item) => {
+                const isCredit = (item.credit || 0) > 0;
+                const amount = isCredit ? item.credit : item.debit;
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-white rounded-2xl p-4 border transition space-y-2.5 ${
+                      item.isReconciled ? 'border-emerald-200 bg-emerald-50/20' : 'border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={item.isReconciled}
+                          onChange={() => handleToggleReconciled(item.id)}
+                          className="w-5 h-5 rounded text-blue-600 cursor-pointer"
+                        />
+                        <span className="text-xs font-bold text-slate-700">مطابقة</span>
+                      </label>
+
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-slate-500">{item.date}</span>
+                        {item.reference && (
+                          <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                            {item.reference}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="font-bold text-slate-900 text-xs break-words">
+                      {item.description}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                          isCredit ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                        }`}
+                      >
+                        {isCredit ? 'إيداع وارد' : 'سحب / عمولة'}
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            item.isReconciled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {item.isReconciled ? 'مطابق ✅' : 'معلق'}
+                        </span>
+                        <span className="font-black text-sm text-slate-900 font-mono">
+                          {isCredit ? '+' : '-'}{amount.toLocaleString()} {currency}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table of Statement Items (>= md) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                 <tr>

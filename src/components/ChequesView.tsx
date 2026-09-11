@@ -345,8 +345,136 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
         </div>
       </div>
 
-      {/* Cheques Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+      {/* Cheques Container: Responsive Cards on Mobile & Table on Desktop */}
+      {/* Mobile Cards View (< md) */}
+      <div className="block md:hidden space-y-3">
+        {filteredCheques.length === 0 ? (
+          <div className="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200">
+            <span className="text-3xl block mb-2">💳</span>
+            <p className="font-bold text-sm text-slate-700">لا توجد شيكات مطابقة للفلاتر المحددة</p>
+          </div>
+        ) : (
+          filteredCheques.map((c) => {
+            const isOverdue = c.status !== 'collected' && c.dueDate < todayStr;
+            return (
+              <div
+                key={c.id}
+                onClick={() => onInspectItem && onInspectItem('cheque', c)}
+                className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs space-y-3 cursor-pointer hover:border-indigo-300 transition w-full max-w-full box-border"
+              >
+                {/* Header: Cheque Number, Bank, Type */}
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                  <div>
+                    <div className="font-mono font-bold text-blue-900 text-sm">#{c.chequeNumber}</div>
+                    <span className="text-[11px] text-slate-500 font-semibold">{c.bankName}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    <span
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                        c.type === 'receivable' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                      }`}
+                    >
+                      {c.type === 'receivable' ? 'ورقة قبض (وارد)' : 'ورقة دفع (صادر)'}
+                    </span>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        c.status === 'collected'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : c.status === 'under_collection'
+                          ? 'bg-blue-100 text-blue-800'
+                          : c.status === 'bounced'
+                          ? 'bg-rose-100 text-rose-800'
+                          : c.status === 'endorsed'
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {c.status === 'collected'
+                        ? 'محصل بالبنك'
+                        : c.status === 'under_collection'
+                        ? 'تحت التحصيل'
+                        : c.status === 'bounced'
+                        ? 'مرتد ومرفوض'
+                        : c.status === 'endorsed'
+                        ? 'مظهر لمورد'
+                        : 'مستلم بالحافظة'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Drawer / Beneficiary Info */}
+                <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 space-y-1 text-xs">
+                  <span className="text-[10px] text-slate-400 block">
+                    {c.type === 'receivable' ? 'الساحب (المصدر):' : 'المستفيد:'}
+                  </span>
+                  <div className="font-bold text-slate-900 text-sm break-words">
+                    {c.type === 'receivable' ? c.drawerName : c.beneficiaryName}
+                  </div>
+                  {c.endorsedToSupplier && (
+                    <span className="text-[11px] text-purple-700 block font-semibold">
+                      مظهر إلى: {c.endorsedToSupplier}
+                    </span>
+                  )}
+                </div>
+
+                {/* Amount and Dates */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-[10px] text-slate-400 block">مبلغ الشيك:</span>
+                    <span className="font-mono font-black text-slate-900 text-sm">
+                      {(c.amount || 0).toLocaleString()} {currency}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-[10px] text-slate-400 block">تاريخ الاستحقاق:</span>
+                    <span className={`font-mono font-bold text-xs ${isOverdue ? 'text-rose-600 font-black' : 'text-slate-800'}`}>
+                      {c.dueDate} {isOverdue && '⚠️ متأخر'}
+                    </span>
+                  </div>
+
+                  <div className="col-span-2 bg-slate-50 p-2 rounded-xl border border-slate-100 text-[11px] flex justify-between text-slate-500 font-mono">
+                    <span>تاريخ التحرير:</span>
+                    <span className="font-bold text-slate-700">{c.issueDate}</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-3 gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
+                  {c.status !== 'collected' ? (
+                    <button
+                      onClick={() => setActionCheque(c)}
+                      className="min-h-[44px] bg-[#1a237e] hover:bg-[#0d47a1] active:bg-[#082a63] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                    >
+                      ⚡ إجراءات الشيك
+                    </button>
+                  ) : (
+                    <div className="min-h-[44px] bg-emerald-50 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-center">
+                      ✅ مكتمل ومحصل
+                    </div>
+                  )}
+                  <button
+                    onClick={() => onInspectItem && onInspectItem('cheque', c)}
+                    className="min-h-[44px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    🔍 معاينة
+                  </button>
+                  <button
+                    onClick={() => printChequeVoucher(c, appData)}
+                    className="min-h-[44px] bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+                    title="طباعة إشعار استلام / صرف الشيك المعتمد"
+                  >
+                    🖨️ إشعار
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Cheques Table (>= md) */}
+      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">

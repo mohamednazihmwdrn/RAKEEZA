@@ -2347,7 +2347,48 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
               </div>
             </div>
 
-            <div className="overflow-x-auto max-h-[300px] border border-slate-200 rounded-2xl">
+            {/* Mobile Voucher Items (< sm) */}
+            <div className="block sm:hidden space-y-2 max-h-[300px] overflow-y-auto">
+              {selectedVoucher.items.map((item, idx) => (
+                <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="text-slate-800">{item.itemName}</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                        item.varianceType === 'shortage'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}
+                    >
+                      {item.reason}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 text-center bg-white p-1.5 rounded-lg border border-slate-200 text-[11px] font-mono">
+                    <div>
+                      <span className="text-slate-400 block text-[9px]">دفتري</span>
+                      <span>{item.bookQtyBefore}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9px]">مسواة</span>
+                      <span className={item.varianceType === 'shortage' ? 'text-rose-700 font-bold' : 'text-blue-700 font-bold'}>
+                        {item.adjustedQty > 0 ? `+${item.adjustedQty}` : item.adjustedQty}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9px]">جديد</span>
+                      <span className="text-emerald-700 font-bold">{item.newStockQty}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-600 pt-1">
+                    <span>التكلفة: {item.unitCost.toFixed(2)} ج.م</span>
+                    <span className="font-bold text-slate-900">الإجمالي: {item.totalAmount.toFixed(2)} ج.م</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Voucher Items Table (>= sm) */}
+            <div className="hidden sm:block overflow-x-auto max-h-[300px] border border-slate-200 rounded-2xl">
               <table className="w-full text-right text-xs">
                 <thead className="bg-slate-100 text-slate-700 sticky top-0">
                   <tr>
@@ -2439,7 +2480,8 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
               </p>
             </div>
 
-            <table className="w-full text-right text-xs border border-slate-300">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs border border-slate-300">
               <thead className="bg-slate-100 border-b border-slate-300">
                 <tr>
                   <th className="p-2 border-l border-slate-300">م</th>
@@ -2467,6 +2509,7 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
                 ))}
               </tbody>
             </table>
+            </div>
 
             <div className="grid grid-cols-3 gap-4 pt-6 text-center font-bold text-slate-800">
               <div>

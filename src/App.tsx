@@ -60,6 +60,7 @@ import {
   AuthSessionResponse,
 } from './services/cloudApi';
 import { realtimeSync } from './services/realtimeSync';
+import { offlineSyncManager } from './services/offlineSyncManager';
 import { AlertTriangle, KeyRound } from 'lucide-react';
 
 export default function App() {
@@ -108,11 +109,55 @@ export default function App() {
     setAppData(newData);
     saveAppData(newData);
     if (session?.company?.id) {
-      saveTenantDataCloud(newData, session.company.id, actionInfo).catch((err) => {
-        console.warn('Cloud sync error:', err);
-      });
+      offlineSyncManager.setCompanyId(session.company.id);
+
+      if (!navigator.onLine) {
+        // Queue offline mutation for auto-sync on reconnection
+        offlineSyncManager.queueMutation(session.company.id, newData, {
+          action: actionInfo?.action,
+          module: actionInfo?.module,
+          details: actionInfo?.details,
+          userCode: session.user?.code,
+        });
+      } else {
+        // ⚡ Broadcast instantly to Google Cloud Firestore listeners on all devices
+        realtimeSync.broadcastChange(session.company.id, newData, {
+          action: actionInfo?.action,
+          module: actionInfo?.module,
+          details: actionInfo?.details,
+          userCode: session.user?.code,
+        });
+
+        saveTenantDataCloud(newData, session.company.id, actionInfo).catch((err) => {
+          console.warn('Cloud sync note, queued for offline auto-sync:', err);
+          offlineSyncManager.queueMutation(session.company.id, newData, {
+            action: actionInfo?.action,
+            module: actionInfo?.module,
+            details: actionInfo?.details,
+            userCode: session.user?.code,
+          });
+        });
+      }
     }
   };
+
+  // ⚡ Offline-First Auto Sync listener
+  useEffect(() => {
+    if (!session?.company?.id) return;
+    offlineSyncManager.setCompanyId(session.company.id);
+
+    let prevOnline = navigator.onLine;
+    const unsub = offlineSyncManager.subscribe((st) => {
+      if (!prevOnline && st.isOnline) {
+        showToast('⚡ تم استعادة الاتصال بنجاح وجاري مزامنة العمليات المحفوظة مع السحابة...', 'success');
+      } else if (prevOnline && !st.isOnline) {
+        showToast('📴 انقطع الاتصال بالإنترنت - يتم حفظ جميع عملياتك محلياً بشكل آمن وستتم المزامنة تلقائياً فور عودة الإنترنت', 'warning');
+      }
+      prevOnline = st.isOnline;
+    });
+
+    return () => unsub();
+  }, [session?.company?.id]);
 
   // 🔄 Real-time Instant Synchronization between Manager (Code 1) and Users (Code 2+)
   useEffect(() => {

@@ -714,17 +714,19 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
           </button>
           <button
             onClick={handlePrintPurchasesList}
-            className="min-h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1 shadow-xs"
+            className="min-h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
             title="طباعة سجل فواتير المشتريات"
           >
-            🖨️ طباعة السجل
+            <span>🖨️</span>
+            <span>طباعة السجل</span>
           </button>
           <button
             onClick={handleExportPurchasesExcel}
-            className="min-h-[42px] bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1 shadow-xs"
+            className="min-h-[42px] bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
             title="تصدير المشتريات إلى Excel"
           >
-            📊 Excel
+            <span>📊</span>
+            <span>تصدير Excel</span>
           </button>
         </div>
         <div className="w-full sm:w-auto min-w-[220px]">

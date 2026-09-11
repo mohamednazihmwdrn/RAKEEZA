@@ -763,8 +763,118 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
               </div>
             </div>
 
-            {/* Companies Table */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            {/* Companies Section */}
+            {/* Mobile Companies Cards (< md) */}
+            <div className="block md:hidden space-y-3">
+              {filteredCompanies.map((c) => (
+                <div key={c.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl text-xs">
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2.5">
+                    <div>
+                      <div className="font-bold text-white text-base">{c.name}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-amber-400 font-bold">
+                          {c.code}
+                        </span>
+                        <span className="text-[10px] text-slate-400">{c.activity}</span>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                        c.status === 'active'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : c.status === 'trial'
+                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                          : c.status === 'suspended'
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      }`}
+                    >
+                      ● {c.status === 'active' ? 'نشطة' : c.status === 'trial' ? 'تجربة' : c.status === 'suspended' ? 'معلقة' : 'منتهية'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-[11px]">
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">الخطة:</span>
+                      <span className="font-bold text-slate-200">{c.planName}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">الانتهاء:</span>
+                      <span className="font-mono text-slate-300">{c.trialExpiresAt || c.subscriptionExpiresAt || 'دائم'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">المدير:</span>
+                      <span className="text-slate-200 font-medium">{c.adminName} ({c.phone})</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">المستخدمين:</span>
+                      <span className="font-mono text-slate-300">{c.usersCount || 1} / {c.limits.maxUsers}</span>
+                    </div>
+                  </div>
+
+                  {/* Actions Grid */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      onClick={() => {
+                        setSelectedCompany(c);
+                        setIsSupportModalOpen(true);
+                      }}
+                      className="min-h-[40px] bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"
+                    >
+                      <span>🛠️</span>
+                      <span>دخول دعم</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSelectedCompany(c);
+                        setIsExportModalOpen(true);
+                      }}
+                      className="min-h-[40px] bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-1"
+                    >
+                      <span>💾</span>
+                      <span>تصدير</span>
+                    </button>
+
+                    {c.status === 'active' || c.status === 'trial' ? (
+                      <button
+                        onClick={() => handleStatusChange(c.id, 'suspended')}
+                        className="min-h-[40px] bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-800/60 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1"
+                      >
+                        <span>⏸️</span>
+                        <span>تعليق الحساب</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleStatusChange(c.id, 'active')}
+                        className="min-h-[40px] bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1"
+                      >
+                        <span>▶️</span>
+                        <span>تنشيط الحساب</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCompanyToDelete(c);
+                        setDeleteConfirmText('');
+                        setDeleteError('');
+                        setIsDeleteModalOpen(true);
+                      }}
+                      className="min-h-[40px] bg-rose-950/80 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-800/80 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"
+                    >
+                      <span>🗑️</span>
+                      <span>حذف الشركة</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Companies Table (>= md) */}
+            <div className="hidden md:block bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-right text-xs">
                   <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
@@ -1049,44 +1159,72 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
                   لا توجد عمليات تصدير مسجلة حتى الآن. ستظهر هنا كافة سجلات التصدير لأغراض الرقابة والأمان.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs">
-                    <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
-                      <tr>
-                        <th className="p-3">التاريخ والوقت</th>
-                        <th className="p-3">المستخدم / الدور</th>
-                        <th className="p-3">الشركة</th>
-                        <th className="p-3">نوع التصدير</th>
-                        <th className="p-3">اسم الملف</th>
-                        <th className="p-3">الحجم والسجلات</th>
-                        <th className="p-3">الحالة</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800">
-                      {exportAuditLogs.map((log) => (
-                        <tr key={log.id} className="hover:bg-slate-800/40">
-                          <td className="p-3 font-mono text-slate-400">{log.timestamp}</td>
-                          <td className="p-3 font-semibold text-white">{log.exportedBy}</td>
-                          <td className="p-3 text-slate-300">{log.companyName}</td>
-                          <td className="p-3">
-                            <span className="bg-slate-800 px-2 py-0.5 rounded text-[11px] font-mono text-amber-300">
-                              {log.exportType}
-                            </span>
-                          </td>
-                          <td className="p-3 font-mono text-[11px] text-slate-300 truncate max-w-[200px]">
-                            {log.fileName}
-                          </td>
-                          <td className="p-3 font-mono text-slate-400">
-                            {log.fileSize} ({log.recordsCount || 0} سجل)
-                          </td>
-                          <td className="p-3">
-                            <span className="text-emerald-400 font-bold">✓ ناجح</span>
-                          </td>
+                <>
+                  {/* Mobile Export Logs (< md) */}
+                  <div className="block md:hidden space-y-2.5">
+                    {exportAuditLogs.map((log) => (
+                      <div key={log.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
+                          <span className="font-semibold text-white">{log.exportedBy}</span>
+                          <span className="font-mono text-slate-500 text-[11px]">{log.timestamp}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-slate-300 font-bold">{log.companyName}</span>
+                          <span className="bg-slate-800 px-2 py-0.5 rounded text-[10px] font-mono text-amber-300">
+                            {log.exportType}
+                          </span>
+                        </div>
+                        <div className="font-mono text-[11px] text-slate-400 truncate">
+                          {log.fileName}
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] pt-1 text-slate-500">
+                          <span>{log.fileSize} ({log.recordsCount || 0} سجل)</span>
+                          <span className="text-emerald-400 font-bold">✓ ناجح</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Export Logs Table (>= md) */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-right text-xs">
+                      <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+                        <tr>
+                          <th className="p-3">التاريخ والوقت</th>
+                          <th className="p-3">المستخدم / الدور</th>
+                          <th className="p-3">الشركة</th>
+                          <th className="p-3">نوع التصدير</th>
+                          <th className="p-3">اسم الملف</th>
+                          <th className="p-3">الحجم والسجلات</th>
+                          <th className="p-3">الحالة</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800">
+                        {exportAuditLogs.map((log) => (
+                          <tr key={log.id} className="hover:bg-slate-800/40">
+                            <td className="p-3 font-mono text-slate-400">{log.timestamp}</td>
+                            <td className="p-3 font-semibold text-white">{log.exportedBy}</td>
+                            <td className="p-3 text-slate-300">{log.companyName}</td>
+                            <td className="p-3">
+                              <span className="bg-slate-800 px-2 py-0.5 rounded text-[11px] font-mono text-amber-300">
+                                {log.exportType}
+                              </span>
+                            </td>
+                            <td className="p-3 font-mono text-[11px] text-slate-300 truncate max-w-[200px]">
+                              {log.fileName}
+                            </td>
+                            <td className="p-3 font-mono text-slate-400">
+                              {log.fileSize} ({log.recordsCount || 0} سجل)
+                            </td>
+                            <td className="p-3">
+                              <span className="text-emerald-400 font-bold">✓ ناجح</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -1286,7 +1424,39 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
               <h3 className="text-sm font-black text-white">
                 سجل أرقام الهواتف والأجهزة المسجلة في التجربة المجانية ({trialRegistry.length})
               </h3>
-              <div className="overflow-x-auto">
+
+              {/* Mobile Trial Registry Cards (< md) */}
+              <div className="block md:hidden space-y-2.5">
+                {trialRegistry.map((tr) => (
+                  <div key={tr.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
+                      <span className="font-mono font-bold text-amber-300">{tr.phone}</span>
+                      <span
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                          tr.status === 'active'
+                            ? 'bg-blue-950 text-blue-300'
+                            : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        {tr.status === 'active' ? 'نشطة حالياً' : 'مستنفدة'}
+                      </span>
+                    </div>
+                    <div className="text-white font-semibold">{tr.companyName}</div>
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                      <span>البدء: {tr.trialStartedAt}</span>
+                      <span>الانتهاء: {tr.trialExpiresAt}</span>
+                    </div>
+                    <div className="pt-1">
+                      <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                        ✓ تم التحقق بنجاح OTP
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Trial Registry Table (>= md) */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-right text-xs">
                   <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
                     <tr>
@@ -1344,34 +1514,59 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
                   لم يتم تنفيذ جلسات دخول دعم فني حتى الآن. يتم تسجيل كل جلسة دخول للمالك تلقائياً هنا مع السبب والوقت.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs">
-                    <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
-                      <tr>
-                        <th className="p-3">معرف الجلسة</th>
-                        <th className="p-3">المشرف المنفذ</th>
-                        <th className="p-3">الشركة المستهدفة</th>
-                        <th className="p-3">سبب الدعم الفني</th>
-                        <th className="p-3">وقت البدء</th>
-                        <th className="p-3">الحالة</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800">
-                      {supportSessions.map((s) => (
-                        <tr key={s.id} className="hover:bg-slate-800/40">
-                          <td className="p-3 font-mono text-slate-400">{s.id}</td>
-                          <td className="p-3 font-semibold text-white">{s.ownerName}</td>
-                          <td className="p-3 text-slate-300">{s.companyName}</td>
-                          <td className="p-3 text-amber-300">{s.reason}</td>
-                          <td className="p-3 font-mono text-slate-400">{s.startedAt}</td>
-                          <td className="p-3">
-                            <span className="text-emerald-400 font-bold">✓ مكتملة ومؤمنة</span>
-                          </td>
+                <>
+                  {/* Mobile Support Sessions Cards (< md) */}
+                  <div className="block md:hidden space-y-2.5">
+                    {supportSessions.map((s) => (
+                      <div key={s.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
+                          <span className="font-semibold text-white">{s.ownerName}</span>
+                          <span className="font-mono text-slate-500 text-[11px]">{s.startedAt}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-slate-300 font-bold">{s.companyName}</span>
+                          <span className="text-emerald-400 font-bold text-[11px]">✓ مكتملة ومؤمنة</span>
+                        </div>
+                        <div className="text-amber-300 text-[11px]">
+                          السبب: {s.reason}
+                        </div>
+                        <div className="text-[10px] font-mono text-slate-500">
+                          المعرف: {s.id}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Support Sessions Table (>= md) */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-right text-xs">
+                      <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+                        <tr>
+                          <th className="p-3">معرف الجلسة</th>
+                          <th className="p-3">المشرف المنفذ</th>
+                          <th className="p-3">الشركة المستهدفة</th>
+                          <th className="p-3">سبب الدعم الفني</th>
+                          <th className="p-3">وقت البدء</th>
+                          <th className="p-3">الحالة</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800">
+                        {supportSessions.map((s) => (
+                          <tr key={s.id} className="hover:bg-slate-800/40">
+                            <td className="p-3 font-mono text-slate-400">{s.id}</td>
+                            <td className="p-3 font-semibold text-white">{s.ownerName}</td>
+                            <td className="p-3 text-slate-300">{s.companyName}</td>
+                            <td className="p-3 text-amber-300">{s.reason}</td>
+                            <td className="p-3 font-mono text-slate-400">{s.startedAt}</td>
+                            <td className="p-3">
+                              <span className="text-emerald-400 font-bold">✓ مكتملة ومؤمنة</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </div>

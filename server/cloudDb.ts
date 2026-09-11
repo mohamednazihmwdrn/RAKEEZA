@@ -1466,14 +1466,30 @@ export function deleteCompanyCloud(companyId: string): {
 
 /**
  * 🧹 Clean Entire System: Clears all movements, transactions, invoices, journals, and balances
- * across all tenants so everything is clean and ready for real, new data.
+ * safely, preserving real user accounts, existing headers, and authentic tax data.
  */
-export function cleanEntireSystemCloud(): { success: boolean; message: string; affectedCompaniesCount: number } {
+export function cleanEntireSystemCloud(
+  targetCompanyId?: string,
+  onlyDemoData: boolean = false
+): { success: boolean; message: string; affectedCompaniesCount: number } {
   const db = getCloudDatabase();
   let affectedCount = 0;
 
+  // Demo company IDs that were pre-seeded as trial/samples
+  const demoCompanyIds = new Set(['COMP-000001', 'COMP-000002', 'COMP-000003']);
+
   if (db.tenantsData) {
-    for (const [, tenantData] of Object.entries(db.tenantsData)) {
+    for (const [compId, tenantData] of Object.entries(db.tenantsData)) {
+      // If a specific company is requested, only clean that company
+      if (targetCompanyId && compId !== targetCompanyId) {
+        continue;
+      }
+
+      // If onlyDemoData is requested, never wipe data belonging to real registered user companies
+      if (onlyDemoData && !demoCompanyIds.has(compId)) {
+        continue;
+      }
+
       affectedCount++;
       // Clean all transactional and movement data
       tenantData.salesInvoices = [];

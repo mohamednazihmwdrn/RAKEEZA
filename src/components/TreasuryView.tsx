@@ -528,8 +528,41 @@ export const TreasuryView: React.FC<TreasuryViewProps> = ({ appData, onUpdateDat
               </div>
             </div>
 
-            {/* 4. Table */}
-            <div className="table-wrapper my-4 overflow-x-auto">
+            {/* 4. Cash Matrix: Mobile Cards (< md) */}
+            <div className="block md:hidden print:hidden space-y-3 my-4">
+              {matrixData.cashData.map((item, idx) => {
+                let rowSum = 0;
+                return (
+                  <div key={idx} className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 text-xs space-y-2">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 font-bold">
+                      <span className="text-slate-900">{item.location}</span>
+                      <span className="font-mono text-[#1a237e]">
+                        {formatEnNumber(methods.reduce((acc, m) => acc + (item.amounts[m] || 0), 0))} EGP
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                      {methods.map((m) => {
+                        const val = item.amounts[m] || 0;
+                        if (val === 0) return null;
+                        return (
+                          <div key={m} className="bg-white p-1.5 rounded border border-slate-100 flex justify-between items-center">
+                            <span className="text-slate-500">{m}:</span>
+                            <span className="font-mono font-bold text-slate-800">{formatEnNumber(val)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="bg-indigo-50 border border-indigo-200 p-3 rounded-xl flex justify-between items-center font-bold text-xs">
+                <span className="text-indigo-900">الإجمالي العام:</span>
+                <span className="font-mono font-black text-indigo-700 text-sm">{formatEnNumber(grandTotal)} EGP</span>
+              </div>
+            </div>
+
+            {/* 4. Desktop / Print Table (>= md or print) */}
+            <div className="table-wrapper my-4 hidden md:block print:block overflow-x-auto">
               <table className="w-full text-center border-collapse">
                 <thead>
                   <tr className="bg-slate-200 text-slate-900 text-xs font-bold">
@@ -720,7 +753,75 @@ export const TreasuryView: React.FC<TreasuryViewProps> = ({ appData, onUpdateDat
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Responsive Cards (< md) */}
+        <div className="block md:hidden space-y-3">
+          {filteredTransactions.length === 0 ? (
+            <div className="bg-white rounded-2xl p-6 text-center text-gray-400 border border-slate-200">
+              <span className="text-3xl block mb-2">💸</span>
+              <p className="font-bold text-sm text-slate-700">لا توجد حركات نقدية مطابقة لفلاتر البحث</p>
+            </div>
+          ) : (
+            filteredTransactions
+              .slice()
+              .reverse()
+              .map((t) => {
+                const isIn = t.type === 'receive' || t.type === 'deposit';
+                return (
+                  <div
+                    key={t.id}
+                    className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3 w-full max-w-full box-border"
+                  >
+                    {/* Header: ID, Date, Method */}
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-slate-400">#{t.id}</span>
+                        <span className="text-xs font-mono text-slate-500">{t.date}</span>
+                      </div>
+                      <span className="bg-slate-100 text-slate-800 px-2.5 py-0.5 rounded-lg text-xs font-bold">
+                        {getMethodName(t.method)}
+                      </span>
+                    </div>
+
+                    {/* Type and Amount */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        {isIn ? (
+                          <span className="inline-flex items-center gap-1 text-[#2e7d32] bg-green-50 px-2.5 py-1 rounded-lg text-xs font-bold border border-green-200">
+                            🟢 إيداع / تحصيل
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[#c62828] bg-red-50 px-2.5 py-1 rounded-lg text-xs font-bold border border-red-200">
+                            🔴 سحب / صرف
+                          </span>
+                        )}
+                      </div>
+                      <div className={`font-mono font-black text-lg ${isIn ? 'text-[#2e7d32]' : 'text-[#c62828]'}`}>
+                        {isIn ? '+' : '-'}{t.amount.toFixed(2)} ج.م
+                      </div>
+                    </div>
+
+                    {/* Note & Delete */}
+                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between gap-2 text-xs">
+                      <div className="text-slate-700 break-words flex-1 font-medium">
+                        {t.note ? `📝 ${t.note}` : 'بدون بيان'}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteTransaction(t.id)}
+                        className="min-h-[40px] px-3 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 rounded-xl text-xs font-bold cursor-pointer transition shrink-0 flex items-center gap-1"
+                        title="حذف الحركة النقدية"
+                      >
+                        <span>🗑️</span>
+                        <span>حذف</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+          )}
+        </div>
+
+        {/* Desktop Transactions Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-right text-xs md:text-sm">
             <thead>
               <tr className="bg-[#1a237e] text-white">

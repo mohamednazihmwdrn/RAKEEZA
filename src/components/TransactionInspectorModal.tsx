@@ -492,7 +492,29 @@ export const TransactionInspectorModal: React.FC<TransactionInspectorModalProps>
                   <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1.5">
                     <span>📦 بنود وأصناف العملية ({data.items.length})</span>
                   </h4>
-                  <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-xs">
+                  {/* Mobile Items Cards (< md) */}
+                  <div className="block md:hidden space-y-2">
+                    {data.items.map((it: any, idx: number) => (
+                      <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-bold text-slate-800 break-words">{it.name}</span>
+                          <span className="font-black text-slate-900 font-mono text-sm shrink-0">
+                            {Number(it.total).toLocaleString()} {currency}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-500 text-[11px] pt-1 border-t border-slate-200">
+                          <span>الكمية: <strong className="text-slate-800 font-mono">{it.qty}</strong></span>
+                          <span>السعر: <strong className="text-slate-800 font-mono">{Number(it.price).toLocaleString()}</strong></span>
+                          {it.discount > 0 && (
+                            <span className="text-rose-600 font-bold">خصم: {it.discount}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Items Table (>= md) */}
+                  <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 shadow-xs">
                     <table className="w-full text-right text-xs">
                       <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                         <tr>

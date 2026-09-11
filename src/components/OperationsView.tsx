@@ -411,7 +411,32 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                   {totalSalesVal.toFixed(2)} ج.م
                 </span>
               </h4>
-              <div className="overflow-x-auto max-h-[300px]">
+              {/* Mobile Today Sales Cards (< sm) */}
+              <div className="block sm:hidden space-y-2 max-h-[300px] overflow-y-auto">
+                {salesToday.length === 0 ? (
+                  <div className="p-4 text-center text-slate-400 text-xs">
+                    لا توجد فواتير مبيعات مسجلة اليوم
+                  </div>
+                ) : (
+                  salesToday.map((inv) => (
+                    <div key={inv.id} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-slate-800">#{inv.id}</span>
+                        <span className="font-mono font-bold text-emerald-700">{inv.total.toFixed(2)} ج.م</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span className="truncate max-w-[150px]">{inv.customerName}</span>
+                        <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-semibold">
+                          {inv.type === 'nagdi' ? 'نقدي' : 'آجل'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop Today Sales Table (>= sm) */}
+              <div className="hidden sm:block overflow-x-auto max-h-[300px]">
                 <table className="w-full text-right text-xs">
                   <thead className="bg-slate-100 text-slate-700 sticky top-0">
                     <tr>
@@ -457,16 +482,33 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                   {totalPurchasesVal.toFixed(2)} ج.م
                 </span>
               </h4>
-              <div className="overflow-x-auto max-h-[300px]">
+              {/* Mobile Today Purchases Cards (< sm) */}
+              <div className="block sm:hidden space-y-2 max-h-[300px] overflow-y-auto">
+                {purchasesToday.length === 0 ? (
+                  <div className="p-4 text-center text-slate-400 text-xs">
+                    لا توجد فواتير مشتريات مسجلة اليوم
+                  </div>
+                ) : (
+                  purchasesToday.map((inv) => (
+                    <div key={inv.id} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-slate-800">#{inv.id}</span>
+                        <span className="font-mono font-bold text-rose-700">{inv.total.toFixed(2)} ج.م</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span className="truncate max-w-[150px]">{inv.supplierName}</span>
+                        <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-semibold">
+                          {inv.type === 'nagdi' ? 'نقدي' : 'آجل'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop Today Purchases Table (>= sm) */}
+              <div className="hidden sm:block overflow-x-auto max-h-[300px]">
                 <table className="w-full text-right text-xs">
-                  <thead className="bg-slate-100 text-slate-700 sticky top-0">
-                    <tr>
-                      <th className="p-2.5">رقم</th>
-                      <th className="p-2.5">المورد</th>
-                      <th className="p-2.5">النوع</th>
-                      <th className="p-2.5">الإجمالي</th>
-                    </tr>
-                  </thead>
                   <tbody className="divide-y divide-slate-100">
                     {purchasesToday.length === 0 ? (
                       <tr>
@@ -512,7 +554,70 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Journal Entries Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {(!appData.journalEntries || appData.journalEntries.length === 0) ? (
+              <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-slate-200">
+                لا توجد قيود يومية مسجلة بعد. يمكنك تسجيل قيد جديد عبر الزر أعلاه.
+              </div>
+            ) : (
+              appData.journalEntries.map((entry) => {
+                const totalVal = entry.lines.reduce((s, l) => s + (l.debit || 0), 0);
+                return (
+                  <div key={entry.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                      <span className="font-mono font-bold text-indigo-900 text-sm">{entry.entryNumber}</span>
+                      <span className="font-mono text-slate-500">{entry.date}</span>
+                      <span className="text-[11px] bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">
+                        {entry.source === 'manual' ? 'قيد يدوي' : entry.source}
+                      </span>
+                    </div>
+
+                    <div className="font-semibold text-slate-900 break-words leading-relaxed">
+                      {entry.description}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-lg border border-slate-200">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">إجمالي القيد:</span>
+                        <span className="font-mono font-bold text-emerald-700 text-sm">
+                          {totalVal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">المحرر:</span>
+                        <span className="text-slate-700 font-medium truncate block">{entry.createdBy}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 pt-1">
+                      <button
+                        onClick={() => setSelectedJournal(entry)}
+                        className="min-h-[42px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold transition flex items-center justify-center gap-1"
+                      >
+                        👁️ عرض
+                      </button>
+                      <button
+                        onClick={() => handleOpenEditJournal(entry)}
+                        className="min-h-[42px] bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold transition flex items-center justify-center gap-1"
+                      >
+                        ✏️ تعديل
+                      </button>
+                      <button
+                        onClick={() => handleDeleteJournal(entry.id)}
+                        className="min-h-[42px] bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-bold transition flex items-center justify-center gap-1"
+                      >
+                        🗑️ حذف
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Journal Entries Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
               <thead className="bg-[#1a237e] text-white">
                 <tr>
@@ -620,7 +725,67 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Trial Balance Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {appData.accounts
+              .filter((a) => !a.isParent)
+              .map((acc) => {
+                let d = 0;
+                let c = 0;
+                if (acc.code === '1101') d = appData.cashBox?.drawer || 0;
+                if (acc.code === '1102') d = appData.cashBox?.vodafone || 0;
+                if (acc.code === '1103') d = appData.cashBox?.instapay || 0;
+                if (acc.code === '1104') d = appData.cashBox?.bank || 0;
+                if (acc.code === '1105') d = totalReceivables;
+                if (acc.code === '1106') d = totalInventoryVal;
+                if (acc.code === '2101') c = totalPayables;
+                if (acc.code === '4101') c = allSales;
+                if (acc.code === '5101') d = totalCOGS;
+                if (acc.code === '5204') d = operatingExpenses;
+
+                const bal = (acc.type === 'asset' || acc.type === 'expense') ? d - c : c - d;
+
+                return (
+                  <div key={acc.code} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-indigo-900 bg-white border border-slate-200 px-2 py-0.5 rounded text-xs">
+                          {acc.code}
+                        </span>
+                        <span className="font-bold text-slate-900">{acc.name}</span>
+                      </div>
+                      <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">
+                        {acc.type}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 bg-white p-2 rounded-lg border border-slate-200 text-center">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">مدين:</span>
+                        <span className="font-mono font-semibold text-emerald-700">
+                          {d > 0 ? d.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">دائن:</span>
+                        <span className="font-mono font-semibold text-rose-700">
+                          {c > 0 ? c.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">الرصيد:</span>
+                        <span className="font-mono font-bold text-slate-900">
+                          {bal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+
+          {/* Desktop Trial Balance Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
               <thead className="bg-[#1a237e] text-white">
                 <tr>
@@ -1072,26 +1237,49 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
               <div><strong>المصدر:</strong> {selectedJournal.source}</div>
             </div>
 
-            <table className="w-full text-right text-xs">
-              <thead className="bg-[#1a237e] text-white">
-                <tr>
-                  <th className="p-2.5 rounded-r-lg">كود الحساب</th>
-                  <th className="p-2.5">اسم الحساب</th>
-                  <th className="p-2.5">مدين</th>
-                  <th className="p-2.5 rounded-l-lg">دائن</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {selectedJournal.lines.map((l, i) => (
-                  <tr key={i}>
-                    <td className="p-2.5 font-mono font-bold">{l.accountCode}</td>
-                    <td className="p-2.5">{l.accountName}</td>
-                    <td className="p-2.5 font-mono font-bold text-emerald-700">{l.debit > 0 ? l.debit.toFixed(2) : '-'}</td>
-                    <td className="p-2.5 font-mono font-bold text-rose-700">{l.credit > 0 ? l.credit.toFixed(2) : '-'}</td>
+            {/* Mobile Modal Lines Cards (< sm) */}
+            <div className="block sm:hidden space-y-2">
+              {selectedJournal.lines.map((l, i) => (
+                <div key={i} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-indigo-900">{l.accountCode}</span>
+                    <span className="text-slate-800 font-semibold">{l.accountName}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-[11px]">
+                    <span className="font-mono text-emerald-700 font-bold">
+                      مدين: {l.debit > 0 ? `${l.debit.toFixed(2)} ج.م` : '-'}
+                    </span>
+                    <span className="font-mono text-rose-700 font-bold">
+                      دائن: {l.credit > 0 ? `${l.credit.toFixed(2)} ج.م` : '-'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Modal Lines Table (>= sm) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-right text-xs">
+                <thead className="bg-[#1a237e] text-white">
+                  <tr>
+                    <th className="p-2.5 rounded-r-lg">كود الحساب</th>
+                    <th className="p-2.5">اسم الحساب</th>
+                    <th className="p-2.5">مدين</th>
+                    <th className="p-2.5 rounded-l-lg">دائن</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {selectedJournal.lines.map((l, i) => (
+                    <tr key={i}>
+                      <td className="p-2.5 font-mono font-bold">{l.accountCode}</td>
+                      <td className="p-2.5">{l.accountName}</td>
+                      <td className="p-2.5 font-mono font-bold text-emerald-700">{l.debit > 0 ? l.debit.toFixed(2) : '-'}</td>
+                      <td className="p-2.5 font-mono font-bold text-rose-700">{l.credit > 0 ? l.credit.toFixed(2) : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </Modal>

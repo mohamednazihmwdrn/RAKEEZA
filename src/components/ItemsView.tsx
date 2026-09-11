@@ -434,7 +434,64 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
               <span className="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full">🔴 مرتجع</span>
             </div>
           </div>
-          <table className="w-full text-right text-xs md:text-sm">
+
+          {/* Mobile Movements Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {filteredItems.map((item) => {
+              const moves = item.movements || [];
+              const recentMoves = moves.slice(-3).reverse();
+              return (
+                <div key={item.id} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-2">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="font-bold text-[#1a237e] text-sm">{item.name}</span>
+                    <span className="font-mono font-bold bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-slate-800">
+                      رصيد: {item.quantity}
+                    </span>
+                  </div>
+                  <div className="text-slate-500 font-medium">إجمالي الحركات: {moves.length} حركة</div>
+                  <div className="space-y-1.5 pt-1">
+                    {recentMoves.length === 0 ? (
+                      <span className="text-slate-400 text-[11px]">لا توجد حركات مسجلة</span>
+                    ) : (
+                      recentMoves.map((m, idx) => {
+                        const isCashSale = m.note?.includes('نقدي') && m.type === 'sale';
+                        const isCreditSale = m.note?.includes('آجل') && m.type === 'sale';
+                        const isReturn = m.type?.includes('return');
+                        const isPurchase = m.type === 'purchase';
+                        return (
+                          <div key={idx} className="flex items-center justify-between text-[11px] bg-white p-2 rounded-xl border border-slate-200">
+                            <span className="font-mono text-slate-500">{m.date}</span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded-md font-bold text-[10px] ${
+                                isCashSale
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : isCreditSale
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : isPurchase
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : isReturn
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              {m.note || m.type}
+                            </span>
+                            <span className="font-mono font-bold">
+                              {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Movements Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-right text-xs md:text-sm">
             <thead>
               <tr className="bg-[#1a237e] text-white">
                 <th className="p-3 rounded-r-lg">اسم الصنف</th>
@@ -504,21 +561,33 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
             </tbody>
           </table>
         </div>
+        </div>
       )}
 
       {subPage === 'inventory' && (
         <div className="bg-white rounded-2xl p-4 shadow-sm space-y-4">
           <h4 className="font-bold text-[#1a237e]">تقييم وإجمالي المخزون</h4>
-          <div className="overflow-x-auto">
+          {/* Mobile Inventory Valuation Cards (< md) */}
+          <div className="block md:hidden space-y-2.5">
+            {filteredItems.map((item) => (
+              <div key={item.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
+                <div className="flex items-center justify-between font-bold">
+                  <span className="text-slate-900">{item.name}</span>
+                  <span className="text-[#2e7d32] font-mono">
+                    {((item.quantity || 0) * (item.purchasePrice || 0)).toFixed(2)} ج.م
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <span>الكمية: <strong className="font-mono text-slate-800">{item.quantity}</strong></span>
+                  <span>سعر الشراء: <strong className="font-mono text-slate-800">{item.purchasePrice.toFixed(2)} ج.م</strong></span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Inventory Valuation Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
-              <thead>
-                <tr className="bg-[#1a237e] text-white">
-                  <th className="p-3 rounded-r-lg">الصنف</th>
-                  <th className="p-3">الكمية</th>
-                  <th className="p-3">سعر الشراء</th>
-                  <th className="p-3 rounded-l-lg">إجمالي التكلفة</th>
-                </tr>
-              </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredItems.map((item) => (
                   <tr key={item.id}>
@@ -544,9 +613,57 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
       )}
 
       {subPage === 'physical_inventory' && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm overflow-x-auto space-y-3">
+        <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
           <h4 className="font-bold text-[#1a237e]">إدخال الجرد الفعلي للمخازن</h4>
-          <table className="w-full text-right text-xs md:text-sm">
+
+          {/* Mobile Physical Inventory Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {filteredItems.map((item) => {
+              const currentPhysical = physicalCounts[item.id] ?? item.quantity;
+              const diff = currentPhysical - item.quantity;
+              return (
+                <div key={item.id} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-2">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="text-slate-900 text-sm">{item.name}</span>
+                    <span
+                      className={`font-mono font-bold px-2 py-0.5 rounded-lg text-xs ${
+                        diff < 0
+                          ? 'bg-rose-100 text-rose-800'
+                          : diff > 0
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      الفارق: {diff > 0 ? `+${diff}` : diff}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-slate-500">
+                      المسجلة: <strong className="font-mono text-slate-800">{item.quantity}</strong>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-600 font-semibold text-[11px]">الفعلية:</span>
+                      <input
+                        type="number"
+                        value={currentPhysical}
+                        onChange={(e) =>
+                          setPhysicalCounts({
+                            ...physicalCounts,
+                            [item.id]: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        className="w-24 p-1.5 bg-white border-2 border-slate-200 rounded-lg text-center font-mono font-bold focus:border-[#1a237e] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Physical Inventory Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-right text-xs md:text-sm">
             <thead>
               <tr className="bg-[#1a237e] text-white">
                 <th className="p-3 rounded-r-lg">الصنف</th>
@@ -589,23 +706,35 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
             </tbody>
           </table>
         </div>
+        </div>
       )}
 
       {subPage === 'inventory_settlement' && (
         <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
           <h4 className="font-bold text-[#1a237e]">تقرير مطابقة وتسوية الجرد</h4>
           <p className="text-gray-500 text-xs">حالة مطابقة أرصدة الدفتر مع الأرصدة الفعلية في المخازن</p>
-          <div className="overflow-x-auto">
+          {/* Mobile Settlement Cards (< md) */}
+          <div className="block md:hidden space-y-2.5">
+            {filteredItems.map((item) => (
+              <div key={item.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
+                <div className="flex items-center justify-between font-bold">
+                  <span className="text-slate-900">{item.name}</span>
+                  <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[11px] font-bold">
+                    ⚪ مطابق
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <span>الدفترية: <strong className="font-mono text-slate-800">{item.quantity}</strong></span>
+                  <span>الفعلية: <strong className="font-mono text-slate-800">{item.quantity}</strong></span>
+                  <span>الفارق: <strong className="font-mono text-slate-800">0</strong></span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Settlement Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
-              <thead>
-                <tr className="bg-[#1a237e] text-white">
-                  <th className="p-3 rounded-r-lg">الصنف</th>
-                  <th className="p-3">الكمية الدفترية</th>
-                  <th className="p-3">الكمية الفعلية</th>
-                  <th className="p-3">الفارق</th>
-                  <th className="p-3 rounded-l-lg">الحالة</th>
-                </tr>
-              </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredItems.map((item) => (
                   <tr key={item.id}>

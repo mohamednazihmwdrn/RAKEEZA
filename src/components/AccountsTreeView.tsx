@@ -902,8 +902,56 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
             </div>
           </div>
 
-          {/* Movement Table */}
-          <div className="overflow-x-auto">
+          {/* Movement Cards for Mobile (< md) */}
+          <div className="block md:hidden space-y-2.5">
+            {((appData.journalEntries || []).flatMap((entry) =>
+              entry.lines
+                .filter((l) => l.accountCode === selectedAccCode)
+                .map((line, idx) => ({ entry, line, idx }))
+            ).length === 0) ? (
+              <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl">
+                لا توجد حركات مقيدة على هذا الحساب
+              </div>
+            ) : (
+              (appData.journalEntries || []).flatMap((entry) =>
+                entry.lines
+                  .filter((l) => l.accountCode === selectedAccCode)
+                  .map((line, idx) => (
+                    <div key={`${entry.id}-${idx}`} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5">
+                        <span className="font-bold text-indigo-900 font-mono">{entry.entryNumber}</span>
+                        <span className="text-slate-500 font-mono">{entry.date}</span>
+                        <span className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600">
+                          {line.costCenter || 'الرئيسي'}
+                        </span>
+                      </div>
+
+                      <div className="text-slate-800 font-medium break-words">
+                        {line.note || entry.description}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 bg-white p-2 rounded-lg border border-slate-200 text-center">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">مدين:</span>
+                          <span className="font-mono font-bold text-emerald-700">
+                            {line.debit > 0 ? `${line.debit.toFixed(2)} ج.م` : '-'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">دائن:</span>
+                          <span className="font-mono font-bold text-rose-700">
+                            {line.credit > 0 ? `${line.credit.toFixed(2)} ج.م` : '-'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+              )
+            )}
+          </div>
+
+          {/* Desktop Movement Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
               <thead className="bg-[#1a237e] text-white">
                 <tr>

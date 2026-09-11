@@ -531,6 +531,26 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
       updatedData.nextQuoteId = currentNextQuoteId;
       onUpdateData(updatedData);
 
+      // Multi-Tenant Cloud Sync: Send order to server marketplace endpoint to route directly to each company's cloud database
+      try {
+        fetch('/api/marketplace/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName: customerName.trim(),
+            customerPhone: customerPhone.trim(),
+            deliveryAddress: deliveryAddress.trim(),
+            orderNotes: orderNotes.trim(),
+            items: cartItemsList.map((c) => ({
+              companyId: getVendorForItem(c.item).id,
+              item: c.item,
+              qty: c.qty,
+              price: c.price,
+            })),
+          }),
+        }).catch((e) => console.warn('Cloud marketplace order sync warning:', e));
+      } catch {}
+
       // Play alert chime if enabled
       if (config.soundAlertEnabled !== false) {
         playOrderAlertChime();

@@ -233,8 +233,66 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
         </div>
       </div>
 
-      {/* Audit Log Table */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      {/* Audit Log Container: Responsive Cards on Mobile & Table on Desktop */}
+      {/* Mobile Cards View (< md) */}
+      <div className="block md:hidden space-y-3">
+        {filteredLogs.length === 0 ? (
+          <div className="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200">
+            <span className="text-3xl block mb-2">📜</span>
+            <p className="font-bold text-sm text-slate-700">لا توجد سجلات تطابق معايير البحث</p>
+          </div>
+        ) : (
+          filteredLogs.map((log) => {
+            const code = getUserCode(log);
+            const isManager = code === 1 || code === '1' || log.userRole === 'admin' || log.userRole === 'company_admin' || log.userName.includes('مدير');
+
+            return (
+              <div
+                key={log.id}
+                className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2.5 w-full max-w-full box-border"
+              >
+                {/* Header: Timestamp and Action */}
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                  <span className="font-mono text-xs text-slate-500 font-medium">🕒 {log.timestamp}</span>
+                  <div>{getActionBadge(log.action)}</div>
+                </div>
+
+                {/* User & Module Info */}
+                <div className="flex items-center justify-between gap-2 text-xs flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {isManager ? (
+                      <span className="inline-flex items-center gap-1 bg-amber-100 border border-amber-300 text-amber-900 text-[11px] px-2 py-0.5 rounded-full font-bold shadow-2xs">
+                        <span>👑</span> كود 1 (المدير)
+                      </span>
+                    ) : code !== undefined && code !== null ? (
+                      <span className="inline-flex items-center gap-1 bg-indigo-100 border border-indigo-200 text-indigo-900 text-[11px] px-2 py-0.5 rounded-full font-bold">
+                        <span>👤</span> كود {code}
+                      </span>
+                    ) : (
+                      <span className="bg-slate-100 text-slate-600 text-[11px] px-2 py-0.5 rounded-full font-medium">
+                        مستخدم
+                      </span>
+                    )}
+                    <span className="font-bold text-slate-900">{log.userName}</span>
+                  </div>
+
+                  <span className="font-semibold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded-md text-xs border border-indigo-100">
+                    📂 {log.module}
+                  </span>
+                </div>
+
+                {/* Event Details */}
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs text-slate-700 font-medium leading-relaxed break-words">
+                  {log.details}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Audit Log Table (>= md) */}
+      <div className="hidden md:block bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs md:text-sm">
             <thead className="bg-[#1a237e] text-white">

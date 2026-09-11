@@ -724,8 +724,123 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
             </div>
           )}
 
-          {/* Products Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+          {/* Products List Section */}
+          {/* Mobile Products Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {filteredProducts.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200">
+                لا توجد أصناف مطابقة للبحث أو الفلتر المختار
+              </div>
+            ) : (
+              filteredProducts.map((item) => {
+                const normal = item.normalSellingPrice || item.salePrice || 0;
+                const wholesale = item.wholesaleSellingPrice || item.wholesalePrice || 0;
+                const cost = item.purchasePrice || 0;
+                const normMargin = calculateProfitMargin(normal, cost);
+                const wholMargin = calculateProfitMargin(wholesale, cost);
+                const hasCash = normal > 0;
+                const hasWholesale = wholesale > 0;
+                const isSelected = selectedProductIds.includes(item.id);
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-white rounded-2xl p-4 border space-y-3 shadow-xs transition ${
+                      isSelected ? 'border-indigo-500 bg-indigo-50/20' : 'border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectProduct(item.id)}
+                          className="mt-1 cursor-pointer rounded h-4 w-4 text-indigo-600 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-900 text-sm">{item.name}</div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                            <span className="font-mono">{item.code || '-'}</span>
+                            <span>•</span>
+                            <span>{item.category || 'عام'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        {hasCash && hasWholesale ? (
+                          <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                            🟢 مكتمل
+                          </span>
+                        ) : hasCash ? (
+                          <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                            🟡 ينقصه جملة
+                          </span>
+                        ) : hasWholesale ? (
+                          <span className="bg-orange-100 text-orange-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                            🟠 ينقصه نقدي
+                          </span>
+                        ) : (
+                          <span className="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                            🔴 بدون سعر
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-xl text-center text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">التكلفة</span>
+                        <span className="font-mono font-bold text-slate-700">{cost.toFixed(2)}</span>
+                      </div>
+                      <div className="bg-emerald-50/60 rounded-lg p-1">
+                        <span className="text-[10px] text-emerald-800 font-bold block">سعر النقدي</span>
+                        <span className="font-mono font-black text-emerald-700 text-xs">
+                          {hasCash ? `${normal.toFixed(2)}` : 'غير محدد'}
+                        </span>
+                        {hasCash && (
+                          <span className="text-[9px] text-emerald-600 block">+{normMargin.marginPercent}%</span>
+                        )}
+                      </div>
+                      <div className="bg-blue-50/60 rounded-lg p-1">
+                        <span className="text-[10px] text-blue-800 font-bold block">سعر الجملة</span>
+                        <span className="font-mono font-black text-blue-700 text-xs">
+                          {hasWholesale ? `${wholesale.toFixed(2)}` : 'غير محدد'}
+                        </span>
+                        {hasWholesale && (
+                          <span className="text-[9px] text-blue-600 block">+{wholMargin.marginPercent}%</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
+                      <span className="text-[10px] text-slate-400">
+                        {item.lastPriceUpdate ? `تحديث: ${item.lastPriceUpdate}` : ''}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleOpenEdit(item)}
+                          className="min-h-[38px] bg-[#1a237e] hover:bg-[#0d47a1] text-white px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1"
+                        >
+                          <span>✏️</span> تسعير
+                        </button>
+                        <button
+                          onClick={() => setHistoryItem(item)}
+                          className="min-h-[38px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs transition"
+                          title="عرض سجل تاريخ أسعار هذا الصنف"
+                        >
+                          📜 السجل
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Products Table (>= md) */}
+          <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm border-collapse">
               <thead>
                 <tr className="bg-[#1a237e] text-white">
@@ -1041,7 +1156,45 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+          {/* Price History Section */}
+          {/* Mobile Price History Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {filteredHistories.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200">
+                لا توجد سجلات تعديل أسعار مسجلة حتى الآن
+              </div>
+            ) : (
+              filteredHistories.map((h, idx) => (
+                <div key={h.id} className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5 shadow-xs text-xs">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                    <span className="font-bold text-[#1a237e] text-sm truncate">{h.productName}</span>
+                    <span className="font-mono text-slate-500 text-[11px]">{h.date} {h.time}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-xl text-[11px]">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">النقدي (سابق ← جديد):</span>
+                      <span className="font-mono text-slate-400 line-through mr-1">{h.oldNormalPrice.toFixed(2)}</span>
+                      <span className="font-mono font-bold text-emerald-700">{h.newNormalPrice.toFixed(2)} ج.م</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">الجملة (سابق ← جديد):</span>
+                      <span className="font-mono text-slate-400 line-through mr-1">{h.oldWholesalePrice.toFixed(2)}</span>
+                      <span className="font-mono font-bold text-blue-700">{h.newWholesalePrice.toFixed(2)} ج.م</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                    <span>بواسطة: <strong>{h.changedBy}</strong></span>
+                    {h.reason && <span className="italic text-slate-400 truncate max-w-[150px]">{h.reason}</span>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Price History Table (>= md) */}
+          <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm border-collapse">
               <thead>
                 <tr className="bg-[#1a237e] text-white">
@@ -1342,7 +1495,33 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
       >
         {historyItem && (
           <div className="space-y-4 text-xs sm:text-sm">
-            <div className="border border-slate-200 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
+            {/* Mobile Modal History Cards (< sm) */}
+            <div className="block sm:hidden space-y-2 max-h-80 overflow-y-auto">
+              {syncedData.priceHistories?.filter((h) => h.productId === historyItem.id).length === 0 ? (
+                <div className="text-center p-6 text-slate-400 bg-slate-50 rounded-xl">
+                  لا توجد تغييرات سابقة مسجلة لهذا الصنف
+                </div>
+              ) : (
+                syncedData.priceHistories
+                  ?.filter((h) => h.productId === historyItem.id)
+                  .map((h) => (
+                    <div key={h.id} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1">
+                      <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                        <span className="font-mono">{h.date} {h.time}</span>
+                        <span>{h.changedBy}</span>
+                      </div>
+                      <div className="flex items-center justify-between font-mono text-xs">
+                        <span className="text-emerald-800 font-bold">نقدي: {h.oldNormalPrice} ← {h.newNormalPrice}</span>
+                        <span className="text-blue-800 font-bold">جملة: {h.oldWholesalePrice} ← {h.newWholesalePrice}</span>
+                      </div>
+                      {h.reason && <div className="text-[10px] text-slate-400 italic">{h.reason}</div>}
+                    </div>
+                  ))
+              )}
+            </div>
+
+            {/* Desktop Modal History Table (>= sm) */}
+            <div className="hidden sm:block border border-slate-200 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
               <table className="w-full text-right text-xs">
                 <thead className="bg-slate-100 text-slate-700">
                   <tr>

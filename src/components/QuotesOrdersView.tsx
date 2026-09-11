@@ -1109,8 +1109,195 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
             </div>
           )}
 
-          {/* Documents Table */}
-          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+          {/* Mobile Responsive Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {filteredAndSortedList.length === 0 ? (
+              <div className="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200">
+                <span className="text-3xl block mb-2">📭</span>
+                <p className="font-bold text-sm text-slate-700">لا توجد مستندات مطابقة لمعايير البحث الحالية</p>
+                <button
+                  onClick={openCreateModal}
+                  className="mt-3 w-full min-h-[44px] bg-[#1a237e] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs"
+                >
+                  ➕ إنشاء مستند جديد الآن
+                </button>
+              </div>
+            ) : (
+              filteredAndSortedList.map((q) => {
+                const isConverted = q.status === 'converted';
+                const isDraft = q.status === 'draft';
+                const isCancelled = q.status === 'cancelled';
+                const isOnline = q.status === 'online_order' || q.source === 'online_catalog';
+                const docCode = q.orderReference
+                  ? q.orderReference
+                  : q.type === 'sale_quote'
+                  ? `QUO-${String(q.id).padStart(4, '0')}`
+                  : `PO-${String(q.id).padStart(4, '0')}`;
+
+                return (
+                  <div
+                    key={q.id}
+                    className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs space-y-3 w-full max-w-full box-border"
+                  >
+                    {/* Card Header: Doc Number & Status */}
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="bg-indigo-50 border border-indigo-200 text-indigo-900 font-mono font-bold px-2.5 py-1 rounded-lg text-xs">
+                          {docCode}
+                        </span>
+                        <span className="text-[11px] font-mono text-slate-500">{q.date}</span>
+                      </div>
+                      <div>
+                        {isConverted ? (
+                          <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] px-2.5 py-0.5 rounded-full font-bold">
+                            <span>✅</span>
+                            <span>فاتورة #{q.convertedInvoiceId}</span>
+                          </span>
+                        ) : isOnline ? (
+                          <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 border border-amber-300 text-[11px] px-2.5 py-0.5 rounded-full font-black animate-pulse">
+                            <span>🛍️</span>
+                            <span>طلب كتالوج</span>
+                          </span>
+                        ) : isDraft ? (
+                          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] px-2.5 py-0.5 rounded-full font-bold">
+                            <span>📝</span>
+                            <span>مسودة</span>
+                          </span>
+                        ) : isCancelled ? (
+                          <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 text-[11px] px-2.5 py-0.5 rounded-full font-bold">
+                            <span>🚫</span>
+                            <span>ملغي</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-[11px] px-2.5 py-0.5 rounded-full font-bold">
+                            <span>⏳</span>
+                            <span>ساري</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Client / Supplier Info */}
+                    <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 space-y-1.5 text-xs">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-[11px] text-slate-400 block mb-0.5">
+                            {activeTab === 'sale_quote' ? 'العميل المستهدف:' : 'المورد المعتمد:'}
+                          </span>
+                          <span className="font-bold text-slate-900 text-sm break-words">{q.clientName}</span>
+                        </div>
+                        {isOnline && (
+                          <span className="bg-amber-400 text-slate-950 text-[10px] px-2 py-0.5 rounded-md font-black shrink-0">
+                            متجر ذاتي
+                          </span>
+                        )}
+                      </div>
+
+                      {q.phone && (
+                        <div className="flex items-center gap-1.5 text-slate-600 font-mono">
+                          <span>📞</span>
+                          <span dir="ltr">{q.phone}</span>
+                        </div>
+                      )}
+
+                      {q.customerAddress && (
+                        <div className="text-[11px] text-slate-500 break-words">
+                          📍 {q.customerAddress}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Key Details Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <span className="text-[10px] text-slate-400 block">الإجمالي النهائي:</span>
+                        <span className="font-mono font-bold text-emerald-700 text-sm">
+                          {(q.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} {currencySymbol}
+                        </span>
+                      </div>
+
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <span className="text-[10px] text-slate-400 block">الأصناف:</span>
+                        <span className="font-bold text-slate-800">
+                          {q.items?.length || 0} صنف
+                        </span>
+                      </div>
+
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <span className="text-[10px] text-slate-400 block">المحرر / المندوب:</span>
+                        <span className="font-semibold text-slate-700 truncate block">
+                          {(q as any).salesRep || q.createdBy || (isOnline ? 'طلب متجر ذاتي' : 'مدير النظام')}
+                        </span>
+                      </div>
+
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <span className="text-[10px] text-slate-400 block">الصلاحية حتى:</span>
+                        <span className="font-mono font-bold text-rose-600 text-xs">
+                          {q.validUntil || 'غير محدد'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons Grid with 44px min-height */}
+                    <div className="grid grid-cols-3 gap-1.5 pt-1">
+                      <button
+                        onClick={() => {
+                          setSelectedQuote(q);
+                          setActiveModal('view');
+                        }}
+                        className="min-h-[44px] bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+                      >
+                        👁️ عرض
+                      </button>
+                      <button
+                        onClick={() => openEditModal(q)}
+                        className="min-h-[44px] bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-900 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+                      >
+                        ✏️ تعديل
+                      </button>
+                      <button
+                        onClick={() => printQuotationWindow(q, appData, appData.settings, showToast)}
+                        className="min-h-[44px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+                      >
+                        🖨️ طباعة
+                      </button>
+                      {!isConverted && (
+                        <button
+                          onClick={() => {
+                            setQuoteToConvert(q);
+                            setConvertInvoiceType('nagdi');
+                            setConvertPaymentMethod('drawer');
+                            setActiveModal('convert');
+                          }}
+                          className="col-span-3 min-h-[44px] bg-[#2e7d32] hover:bg-[#1b5e20] active:bg-[#124116] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-xs"
+                        >
+                          ⚡ تحويل إلى فاتورة رسمية بنقرة واحدة
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDuplicateQuote(q)}
+                        className="min-h-[44px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+                      >
+                        📑 نسخ
+                      </button>
+                      <button
+                        onClick={() => {
+                          setQuoteToDelete(q);
+                          setActiveModal('delete');
+                        }}
+                        className="min-h-[44px] col-span-2 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+                      >
+                        🗑️ حذف المستند
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Documents Table (Desktop >= md) */}
+          <div className="hidden md:block overflow-x-auto border border-slate-200 rounded-xl">
             <table className="w-full text-right text-xs md:text-sm">
               <thead className="bg-[#1a237e] text-white">
                 <tr>
@@ -1705,8 +1892,65 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
             </div>
           </div>
 
-          {/* Section 3: Interactive Items Table (Directly Editable) */}
-          <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+          {/* Section 3: Interactive Items (Directly Editable) */}
+          {/* Mobile Cards for Added Items (< sm) */}
+          <div className="block sm:hidden space-y-2">
+            {items.length === 0 ? (
+              <div className="p-4 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
+                لم يتم إضافة أصناف إلى المستند بعد. استخدم الصندوق أعلاه لإضافة الأصناف.
+              </div>
+            ) : (
+              items.map((it, idx) => (
+                <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs">{it.name}</div>
+                      {it.notes && <div className="text-[11px] text-slate-500 mt-0.5">{it.notes}</div>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveItem(idx)}
+                      className="text-rose-600 hover:text-rose-800 p-1 rounded-lg text-sm font-bold cursor-pointer"
+                      title="حذف هذا الصنف"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <label className="text-[10px] text-slate-500 block mb-0.5 font-bold">الكمية</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={it.qty}
+                        onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
+                        className="w-full p-1.5 border border-slate-300 rounded-lg text-center font-mono font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-500 block mb-0.5 font-bold">السعر (ج.م)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={it.price}
+                        onChange={(e) => handleUpdateItemPrice(idx, e.target.value)}
+                        className="w-full p-1.5 border border-slate-300 rounded-lg text-center font-mono font-bold text-indigo-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-500 block mb-0.5 font-bold">الإجمالي</label>
+                      <div className="p-1.5 bg-white border border-slate-200 rounded-lg text-center font-mono font-bold text-emerald-700">
+                        {(it.total || it.qty * it.price).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table (>= sm) */}
+          <div className="hidden sm:block border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-100 text-slate-800">
                 <tr>
@@ -1977,7 +2221,25 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
             </div>
 
             {/* Items Table */}
-            <div className="border border-slate-200 rounded-2xl overflow-hidden">
+            {/* Mobile Cards for Items (< sm) */}
+            <div className="block sm:hidden space-y-2">
+              {selectedQuote.items?.map((it, idx) => (
+                <div key={idx} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-900 block truncate">{it.name}</span>
+                    <span className="text-[11px] text-slate-500 font-mono">
+                      الكمية: {it.qty} × {(it.price || 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="font-mono font-bold text-emerald-700 text-xs shrink-0">
+                    {(it.total || it.qty * it.price).toFixed(2)} {currencySymbol}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table (>= sm) */}
+            <div className="hidden sm:block border border-slate-200 rounded-2xl overflow-hidden">
               <table className="w-full text-right text-xs">
                 <thead className="bg-[#1a237e] text-white">
                   <tr>

@@ -582,8 +582,175 @@ export const CatalogManagerView: React.FC<CatalogManagerViewProps> = ({
         </div>
       </div>
 
-      {/* Items Management Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      {/* Items Management Section */}
+      {/* Mobile Responsive Cards (< md) */}
+      <div className="block md:hidden space-y-3">
+        {filteredItems.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500">
+            <div className="text-4xl mb-2">🛍️</div>
+            <div className="font-bold text-slate-700">لا توجد منتجات مطابقة لخيارات البحث أو التصفية</div>
+            <p className="text-xs text-slate-400 mt-1">
+              يمكنك تعديل البحث أو الضغط على "إضافة منتج جديد للكتالوج" لإدراج أصناف جديدة.
+            </p>
+          </div>
+        ) : (
+          filteredItems.map((item) => {
+            const isPublished = item.showInCatalog !== false;
+            const isDiscounted = (item.catalogDiscountPrice || 0) > 0;
+            const currentCatalogPrice =
+              item.catalogPrice !== undefined ? item.catalogPrice : item.salePrice;
+
+            return (
+              <div
+                key={item.id}
+                className={`bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3 transition ${
+                  !isPublished ? 'opacity-70 bg-slate-50/60' : ''
+                }`}
+              >
+                {/* Header: Image, Name, Category, Featured Star */}
+                <div className="flex items-start justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-xl overflow-hidden shrink-0">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        '📦'
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-black text-slate-900 text-sm truncate flex items-center gap-1.5">
+                        <span className="truncate">{item.name}</span>
+                        {item.catalogBadge && (
+                          <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-1.5 py-0.5 rounded shrink-0">
+                            {item.catalogBadge}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <span>{item.category || 'عام'}</span>
+                        <span>•</span>
+                        <span className="font-mono">{item.code || '-'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateItemField(item.id, 'catalogFeatured', !item.catalogFeatured)}
+                      className={`text-2xl transition cursor-pointer p-1 rounded-lg ${
+                        item.catalogFeatured ? 'text-amber-500 scale-110' : 'text-slate-300 hover:text-amber-400'
+                      }`}
+                      title={item.catalogFeatured ? 'منتج مميز' : 'تمييز المنتج'}
+                    >
+                      ★
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePublish(item)}
+                      className={`min-h-[38px] px-3 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                        isPublished ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {isPublished ? '✅ معروض' : '🚫 مخفي'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Stock & Retail Info */}
+                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">المخزون الحالي:</span>
+                    <span
+                      className={`font-black text-xs px-2 py-0.5 rounded-md inline-block mt-0.5 ${
+                        (item.quantity || 0) > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                      }`}
+                    >
+                      {item.quantity || 0} {item.unit || 'قطعة'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">سعر المحل (ERP):</span>
+                    <span className="font-bold text-slate-700 text-xs block mt-0.5">
+                      {Number(item.salePrice || 0).toFixed(2)} ج.م
+                    </span>
+                  </div>
+                </div>
+
+                {/* Price Inputs Grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-amber-50/60 p-2 rounded-xl border border-amber-200">
+                    <label className="block text-[10px] font-bold text-amber-900 mb-1">
+                      سعر الويب سايت (ج.م)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={currentCatalogPrice}
+                      onChange={(e) =>
+                        handleUpdateItemField(item.id, 'catalogPrice', parseFloat(e.target.value) || 0)
+                      }
+                      className="w-full text-center font-black bg-white border border-amber-300 rounded-lg p-1.5 text-xs text-amber-950 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="bg-rose-50/60 p-2 rounded-xl border border-rose-200">
+                    <label className="block text-[10px] font-bold text-rose-900 mb-1">
+                      سعر العرض/الخصم
+                    </label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={item.catalogDiscountPrice || ''}
+                      onChange={(e) =>
+                        handleUpdateItemField(item.id, 'catalogDiscountPrice', parseFloat(e.target.value) || 0)
+                      }
+                      className="w-full text-center font-black bg-white border border-rose-300 rounded-lg p-1.5 text-xs text-rose-950 focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                      placeholder="0 (بدون خصم)"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      سعر الجملة للكتالوج
+                    </label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={item.catalogWholesalePrice || item.wholesalePrice || ''}
+                      onChange={(e) =>
+                        handleUpdateItemField(item.id, 'catalogWholesalePrice', parseFloat(e.target.value) || 0)
+                      }
+                      className="w-full text-center font-bold bg-white border border-slate-300 rounded-lg p-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      شارة العرض (Badge)
+                    </label>
+                    <input
+                      type="text"
+                      value={item.catalogBadge || ''}
+                      onChange={(e) => handleUpdateItemField(item.id, 'catalogBadge', e.target.value)}
+                      className="w-full text-center text-xs bg-white border border-slate-300 rounded-lg p-1.5 text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      placeholder="مثال: خصم خاص"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Items Management Table (>= md) */}
+      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs md:text-sm border-collapse">
             <thead className="bg-slate-100 text-slate-700 font-black border-b border-slate-200 select-none">

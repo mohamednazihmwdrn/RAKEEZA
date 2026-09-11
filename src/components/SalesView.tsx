@@ -5,6 +5,9 @@ import { printInvoiceWindow } from '../utils/printInvoice';
 import { InvoiceCardTemplate } from './InvoiceCardTemplate';
 import { getProductActivePrice } from '../utils/priceService';
 import { InvoiceItemModal } from './InvoiceItemModal';
+import { exportToExcel } from '../utils/excelExport';
+import { openUnifiedPrintWindow } from '../utils/printUnified';
+import { TableActionButtons } from './TableActionButtons';
 
 interface SalesViewProps {
   appData: AppData;
@@ -733,6 +736,91 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
     }
   };
 
+  // Print Sales Invoices List
+  const handlePrintSalesList = () => {
+    const list = appData.salesInvoices || [];
+    const totalAmount = list.reduce((sum, i) => sum + (i.total || 0), 0);
+    const totalPaid = list.reduce((sum, i) => sum + (i.paidAmount || 0), 0);
+    const totalRemaining = totalAmount - totalPaid;
+
+    openUnifiedPrintWindow(
+      {
+        reportTitle: 'سجل فواتير المبيعات والإيرادات',
+        subTitle: 'كشف المبيعات المعتمد',
+        serial: 'SALES-REP',
+        branch: 'إدارة المبيعات',
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+        kpis: [
+          { title: 'عدد الفواتير', value: `${list.length} فاتورة` },
+          { title: 'إجمالي المبيعات', value: `${totalAmount.toFixed(2)} ج.م` },
+          { title: 'إجمالي المحصل', value: `${totalPaid.toFixed(2)} ج.م` },
+          { title: 'المتبقي ذمم عملاء', value: `${totalRemaining.toFixed(2)} ج.م` },
+        ],
+        columns: ['#', 'التاريخ', 'العميل', 'النوع', 'الإجمالي', 'المحصل', 'المتبقي'],
+        rows: list.map((inv) => [
+          `#${inv.id}`,
+          inv.date,
+          inv.clientName,
+          inv.type === 'return_nagdi' || inv.type === 'return_ajel'
+            ? 'مرتجع'
+            : inv.type === 'nagdi'
+            ? 'نقدي'
+            : 'آجل',
+          `${inv.total.toFixed(2)} ج.م`,
+          `${(inv.paidAmount || 0).toFixed(2)} ج.م`,
+          `${(inv.total - (inv.paidAmount || 0)).toFixed(2)} ج.م`,
+        ]),
+        summary: [
+          { label: 'إجمالي قيمة المبيعات', value: `${totalAmount.toFixed(2)} ج.م`, isTotal: true },
+          { label: 'إجمالي المبالغ المحصلة', value: `${totalPaid.toFixed(2)} ج.م` },
+          { label: 'إجمالي المتبقي على العملاء', value: `${totalRemaining.toFixed(2)} ج.م` },
+        ],
+        footerNote: 'تم استخراج سجل المبيعات من النظام المحاسبي المعتمد',
+      },
+      appData.settings,
+      showToast
+    );
+  };
+
+  // Export Sales to Excel
+  const handleExportSalesExcel = () => {
+    const list = appData.salesInvoices || [];
+    exportToExcel({
+      filename: `سجل_فواتير_المبيعات_${new Date().toISOString().split('T')[0]}`,
+      sheetName: 'المبيعات',
+      data: list,
+      columns: [
+        { header: 'رقم الفاتورة', key: 'id', width: 14 },
+        { header: 'التاريخ', key: 'date', width: 14 },
+        { header: 'اسم العميل', key: 'clientName', width: 26 },
+        {
+          header: 'نوع الفاتورة',
+          getValue: (item: SaleInvoice) =>
+            item.type === 'return_nagdi' || item.type === 'return_ajel'
+              ? 'مرتجع مبيعات'
+              : item.type === 'nagdi'
+              ? 'نقدي'
+              : 'آجل',
+          width: 16,
+        },
+        { header: 'طريقة الدفع', key: 'paymentMethod', width: 14 },
+        { header: 'إجمالي الفاتورة', key: 'total', width: 16, isCurrency: true },
+        { header: 'المبلغ المسدد', key: 'paidAmount', width: 16, isCurrency: true },
+        {
+          header: 'المتبقي',
+          getValue: (item: SaleInvoice) => (item.total - (item.paidAmount || 0)).toFixed(2),
+          width: 16,
+          isCurrency: true,
+        },
+        { header: 'الملاحظات', key: 'notes', width: 30 },
+      ],
+      companyName: appData.settings?.companyName,
+      reportTitle: 'سجل فواتير المبيعات والتوريدات',
+    });
+    showToast('تم تصدير سجل المبيعات إلى ملف Excel بنجاح', 'success');
+  };
+
   return (
     <div className="space-y-4">
       {/* Action Bar */}
@@ -762,6 +850,12 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
           >
             ↩ مرتجع أجل
           </button>
+          <TableActionButtons
+            onPrint={handlePrintSalesList}
+            onExportExcel={handleExportSalesExcel}
+            printTitle="طباعة سجل فواتير المبيعات"
+            exportTitle="تصدير المبيعات إلى Excel"
+          />
         </div>
         <div className="w-full sm:w-auto min-w-[220px]">
           <input

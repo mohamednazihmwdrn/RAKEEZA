@@ -454,7 +454,51 @@ export const BranchesView: React.FC<BranchesViewProps> = ({
             </p>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Transfers Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {(!appData.stockTransfers || appData.stockTransfers.length === 0) ? (
+              <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-slate-200">
+                لا توجد أذون تحويلات مسجلة بعد. اضغط على الزر أعلاه لإنشاء إذن تحويل.
+              </div>
+            ) : (
+              appData.stockTransfers.map((t) => (
+                <div key={t.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                    <span className="font-mono font-bold text-indigo-900">#TR-{t.id}</span>
+                    <span className="font-mono text-slate-500">{t.date}</span>
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">
+                      ✅ مكتمل
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block mb-0.5">من فرع:</span>
+                      <span className="font-bold text-rose-700">📤 {t.fromBranch}</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="text-[10px] text-slate-400 block mb-0.5">إلى فرع:</span>
+                      <span className="font-bold text-emerald-700">📥 {t.toBranch}</span>
+                    </div>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-slate-200 space-y-1">
+                    <span className="text-[10px] text-slate-400 block">الأصناف المحولة:</span>
+                    {t.items.map((i, idx) => (
+                      <div key={idx} className="font-bold text-slate-900 flex justify-between">
+                        <span>{i.itemName}</span>
+                        <span className="font-mono text-indigo-700 font-bold">{i.qty} قطعة</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[11px] text-slate-500 text-left font-mono">
+                    المسؤول: {t.createdBy}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Transfers Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
               <thead className="bg-[#1a237e] text-white">
                 <tr>
@@ -515,7 +559,38 @@ export const BranchesView: React.FC<BranchesViewProps> = ({
             </p>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Stock Distribution Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {appData.items.map((item) => (
+              <div key={item.id} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
+                <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-2">
+                  <div>
+                    <span className="font-bold text-slate-900 text-sm block">{item.name}</span>
+                    <span className="font-mono text-[11px] text-slate-500">{item.barcode || item.id}</span>
+                  </div>
+                  <div className="text-left">
+                    <span className="text-[10px] text-slate-400 block">الإجمالي:</span>
+                    <span className="font-mono font-black text-emerald-800 text-sm">{item.quantity}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  {appData.branches.map((b) => {
+                    const qtyInBranch = item.branchStock?.[b.id] ?? (b.isMain ? item.quantity : 0);
+                    return (
+                      <div key={b.id} className="bg-white p-2 rounded-lg border border-slate-200 flex justify-between items-center">
+                        <span className="text-slate-600 truncate">{b.name}:</span>
+                        <span className="font-mono font-bold text-slate-900 mr-1">{qtyInBranch}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Stock Distribution Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
               <thead className="bg-[#1a237e] text-white">
                 <tr>

@@ -510,8 +510,126 @@ export const UsersView: React.FC<UsersViewProps> = ({ appData, onUpdateData, sho
         </div>
       </div>
 
-      {/* Users Cards / Table */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 overflow-x-auto">
+      {/* Users Responsive Cards (< md) */}
+      <div className="block md:hidden space-y-3">
+        {companyUsers.length === 0 ? (
+          <div className="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200">
+            <span className="text-3xl block mb-2">👥</span>
+            <p className="font-bold text-sm text-slate-700">لا يوجد مستخدمين مسجلين</p>
+          </div>
+        ) : (
+          companyUsers.map((u) => {
+            const isAdmin = u.role === 'admin' || u.role === 'company_admin';
+            const permsCount = u.permissions?.all
+              ? SYSTEM_PERMISSIONS.length
+              : Object.values(u.permissions || {}).filter(Boolean).length;
+
+            return (
+              <div
+                key={u.id}
+                className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs space-y-3 w-full max-w-full box-border"
+              >
+                {/* Header: Avatar, Name, ID & Status Toggle */}
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-sm shrink-0">
+                      {u.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                        <span className="truncate">{u.name}</span>
+                        {u.id === currentUser.id && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-amber-100 text-amber-800 font-semibold shrink-0">
+                            (أنت)
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-mono">ID: {u.id}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleToggleStatus(u)}
+                    disabled={u.id === currentUser.id}
+                    className={`min-h-[36px] px-3 py-1 rounded-xl text-xs font-bold cursor-pointer transition-all inline-flex items-center gap-1 shrink-0 ${
+                      u.status === 'disabled'
+                        ? 'bg-rose-100 text-rose-800 hover:bg-rose-200'
+                        : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                    }`}
+                    title="انقر لتبديل حالة الحساب بين نشط ومعطل"
+                  >
+                    {u.status === 'disabled' ? (
+                      <>
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>معطل</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>نشط</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-[10px] text-slate-400 block mb-0.5">اسم الدخول:</span>
+                    <span className="font-mono font-bold text-slate-800">{u.username}</span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-[10px] text-slate-400 block mb-0.5">الهاتف:</span>
+                    <span className="font-mono text-slate-700">{u.phone || '—'}</span>
+                  </div>
+
+                  <div className="col-span-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          isAdmin
+                            ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                            : 'bg-blue-100 text-blue-800 border border-blue-200'
+                        }`}
+                      >
+                        {isAdmin ? 'مدير عام الشركة' : 'مستخدم مصرح'}
+                      </span>
+                      <span className="text-[11px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-md font-medium">
+                        {isAdmin ? 'كامل الصلاحيات (37)' : `${permsCount} صلاحية مفعلة`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => handleOpenEditUserModal(u)}
+                    className="flex-1 min-h-[44px] bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>تعديل الصلاحيات والحساب</span>
+                  </button>
+                  {u.id !== currentUser.id && (
+                    <button
+                      onClick={() => handleDeleteUser(u.id, u.name)}
+                      className="min-h-[44px] px-3.5 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                      title="حذف المستخدم"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>حذف</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Users Desktop Table (>= md) */}
+      <div className="hidden md:block bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 overflow-x-auto">
         <table className="w-full text-right text-xs md:text-sm">
           <thead>
             <tr className="bg-slate-900 text-white">

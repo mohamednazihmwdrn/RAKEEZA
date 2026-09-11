@@ -370,8 +370,179 @@ async function startServer() {
   });
 
   // ----------------------------------------------------
-  // 5. Public Storefront / Customer Catalog APIs
+  // 5. Public Storefront / Customer Catalog & Unified Marketplace APIs
   // ----------------------------------------------------
+  app.get('/api/marketplace/catalog', (req, res) => {
+    try {
+      const db = getCloudDatabase();
+      const allCompanies = db.companies || [];
+      const tenantsData = db.tenantsData || {};
+
+      const publishedCompanies: any[] = [];
+      const allItems: any[] = [];
+
+      allCompanies.forEach((comp) => {
+        const tData: any = (tenantsData as any)[comp.id] || {};
+        const companyItems = (tData.items || []).filter((it: any) => it.showInCatalog !== false);
+
+        publishedCompanies.push({
+          id: comp.id,
+          code: comp.code || comp.id,
+          name: comp.name || tData.settings?.companyName,
+          tradeName: comp.tradeName || comp.name,
+          phone: comp.phone || tData.settings?.phone1,
+          whatsapp: comp.whatsapp || comp.phone || tData.settings?.phone1,
+          address: comp.address || tData.settings?.address,
+          currencySymbol: tData.settings?.currencySymbol || 'ج.م',
+          itemCount: companyItems.length,
+          catalogConfig: tData.catalogConfig || comp.catalogConfig || {},
+        });
+
+        companyItems.forEach((item: any) => {
+          allItems.push({
+            ...item,
+            companyId: comp.id,
+            companyName: comp.tradeName || comp.name,
+            companyPhone: comp.phone || tData.settings?.phone1,
+            currencySymbol: tData.settings?.currencySymbol || 'ج.م',
+          });
+        });
+      });
+
+      res.json({
+        success: true,
+        companies: publishedCompanies,
+        items: allItems,
+        marketplaceName: 'السوق الإلكتروني الموحد | RAKEEZA Market Hub',
+      });
+    } catch (err: any) {
+      console.error('Marketplace catalog fetch error:', err);
+      res.status(500).json({ success: false, error: 'حدث خطأ في تحميل بيانات السوق الموحد' });
+    }
+  });
+
+  app.post('/api/marketplace/order', (req, res) => {
+    try {
+      const { customerName, customerPhone, deliveryAddress, orderNotes, items } = req.body;
+
+      if (!customerName || !customerPhone || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ success: false, error: 'بيانات الطلب غير مكتملة' });
+      }
+
+      const db = getCloudDatabase();
+      const allCompanies = db.companies || [];
+
+      // Group items strictly by vendor companyId
+      const itemsByCompany: Record<string, any[]> = {};
+      items.forEach((cItem: any) => {
+        const cId = cItem.companyId || cItem.item?.companyId || 'COMP-000001';
+        if (!itemsByCompany[cId]) {
+          itemsByCompany[cId] = [];
+        }
+        itemsByCompany[cId].push(cItem);
+      });
+
+      const createdOrders: any[] = [];
+      const today = new Date().toISOString().split('T')[0];
+      const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+      Object.entries(itemsByCompany).forEach(([vCompanyId, vItems]) => {
+        const company = allCompanies.find((c) => c.id === vCompanyId || c.code === vCompanyId);
+        const targetId = company?.id || vCompanyId;
+        const tenantData: any = getTenantDataStrict(targetId) || { quotations: [], settings: {} };
+
+        const nextNum = (tenantData.quotations?.length || 0) + 1;
+        const orderRef = `ORD-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}${Math.floor(Math.random() * 90 + 10)}`;
+
+        const vendorInvoiceItems = vItems.map((it: any) => {
+          const itemObj = it.item || it;
+          const qty = Number(it.qty) || 1;
+          const price = Number(it.price) || Number(itemObj.price) || 0;
+          return {
+            itemId: itemObj.id || `item-${Date.now()}`,
+            name: itemObj.name || 'صنف',
+            qty,
+            price,
+            total: qty * price,
+            notes: itemObj.unit ? `الوحدة: ${itemObj.unit}` : undefined,
+          };
+        });
+
+        const vSubtotal = vendorInvoiceItems.reduce((sum: number, it: any) => sum + it.total, 0);
+
+        const newQuotation = {
+          id: `ord-web-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          type: 'sale_quote',
+          status: 'online_order',
+          source: 'online_catalog',
+          orderReference: orderRef,
+          clientName: customerName.trim(),
+          phone: customerPhone.trim(),
+          customerAddress: deliveryAddress?.trim() || undefined,
+          deliveryNotes: orderNotes?.trim() || undefined,
+          notes: `طلب أونلاين عبر السوق الإلكتروني الموحد لشركة (${company?.name || targetId}). ${
+            deliveryAddress ? `العنوان: ${deliveryAddress}. ` : ''
+          }${orderNotes ? `ملاحظات: ${orderNotes}` : ''}`,
+          date: today,
+          time: nowTime,
+          items: vendorInvoiceItems,
+          subtotal: vSubtotal,
+          discount: 0,
+          tax: 0,
+          total: vSubtotal,
+          createdBy: `العميل (السوق الإلكتروني الموحد)`,
+          companyId: targetId,
+          orderStatus: 'new',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        };
+
+        const updatedQuotations = [newQuotation, ...(tenantData.quotations || [])];
+        const actor = { id: 'web-customer', name: customerName.trim(), code: 'عميل أونلاين', role: 'customer' };
+        const actionInfo = {
+          action: 'طلب أونلاين جديد',
+          module: 'السوق الإلكتروني الموحد',
+          details: `استلام طلب توريد جديد #${orderRef} بقيمة ${vSubtotal.toFixed(2)}`,
+        };
+
+        saveTenantDataStrict(targetId, { quotations: updatedQuotations }, actor, actionInfo);
+
+        // Broadcast real-time SSE update so company cashiers/managers see and hear order alert immediately
+        const nextVer = (companyDataVersions.get(targetId) || 1) + 1;
+        companyDataVersions.set(targetId, nextVer);
+        broadcastSyncUpdate(targetId, {
+          type: 'REALTIME_SYNC',
+          companyId: targetId,
+          version: nextVer,
+          actorUser: actor,
+          actionInfo,
+          data: { quotations: updatedQuotations },
+          timestamp: new Date().toISOString(),
+        });
+
+        createdOrders.push({
+          orderReference: orderRef,
+          companyId: targetId,
+          companyName: company?.tradeName || company?.name || targetId,
+          companyPhone: company?.phone || tenantData.settings?.phone1 || '01029190615',
+          companyWhatsapp: company?.whatsapp || company?.phone || tenantData.settings?.phone1 || '01029190615',
+          itemsCount: vendorInvoiceItems.length,
+          total: vSubtotal,
+          items: vendorInvoiceItems,
+        });
+      });
+
+      res.json({
+        success: true,
+        message: 'تم تقسيم وتوجيه الطلب تلقائياً إلى الشركات المعنية بنجاح!',
+        orders: createdOrders,
+      });
+    } catch (err: any) {
+      console.error('Marketplace order error:', err);
+      res.status(500).json({ success: false, error: 'حدث خطأ في تسجيل وتوزيع الطلب' });
+    }
+  });
+
   app.get('/api/tenant/catalog/:companyId', (req, res) => {
     const { companyId } = req.params;
     const db = getCloudDatabase();
@@ -476,7 +647,8 @@ async function startServer() {
 
   app.post('/api/owner/system-cleanup', requireOwner, (req, res) => {
     try {
-      const result = cleanEntireSystemCloud();
+      const { companyId, onlyDemoData } = req.body || {};
+      const result = cleanEntireSystemCloud(companyId, onlyDemoData);
       res.json(result);
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message || 'فشل تنظيف وتصفير النظام' });

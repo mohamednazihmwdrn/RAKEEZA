@@ -518,7 +518,108 @@ export const BackupView: React.FC<BackupViewProps> = ({ appData, onUpdateData, s
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+          {/* Mobile Snapshots Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {backups.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-slate-400">
+                لا توجد نقاط استعادة محفوظة حتى الآن. سيتم توليدها تلقائياً أو يمكنك الضغط على "إنشاء نقطة الآن".
+              </div>
+            ) : (
+              backups.map((snap, idx) => {
+                const isAuto = snap.type === 'auto';
+                const isPre = snap.type === 'pre_restore';
+                const isExport = snap.type === 'file_export';
+
+                return (
+                  <div key={snap.id || idx} className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold ${
+                          isPre
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            : isAuto
+                            ? 'bg-blue-100 text-blue-900 border border-blue-200'
+                            : isExport
+                            ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                            : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                        }`}
+                      >
+                        {isPre ? '🛡️ قبل الاسترجاع' : isAuto ? '🤖 مجدولة آلياً' : isExport ? '📁 تصدير ملف' : '👤 يدوية'}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-500">
+                        {new Date(snap.date || Date.now()).toLocaleString('ar-EG', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+
+                    <div className="font-bold text-slate-900 text-sm">
+                      {snap.label || 'نسخة احتياطية لمنظومة RAKEEZA'}
+                    </div>
+
+                    {snap.dataPreview && (
+                      <div className="flex flex-wrap gap-1.5 text-[11px]">
+                        <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-medium">
+                          🧾 {snap.dataPreview.invoicesCount} فاتورة
+                        </span>
+                        <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-medium">
+                          👥 {snap.dataPreview.customersCount} عميل
+                        </span>
+                        <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-medium">
+                          📦 {snap.dataPreview.itemsCount} صنف
+                        </span>
+                        <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-medium">
+                          ⚖️ {snap.dataPreview.journalEntriesCount} قيد
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                      <span className="font-mono text-xs font-bold text-slate-600">
+                        {snap.sizeKB ? `${snap.sizeKB} KB` : ''}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleRestoreSnapshot(snap)}
+                          className="min-h-[40px] bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer"
+                          title="استعادة هذه النقطة"
+                        >
+                          <span>↩ استعادة</span>
+                        </button>
+                        {snap.code && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard?.writeText(snap.code || '').then(() => {
+                                showToast('تم نسخ الكود المشفر للحافظة', 'success');
+                              });
+                            }}
+                            className="min-h-[40px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
+                            title="نسخ كود Base64"
+                          >
+                            📋
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteBackup(idx)}
+                          className="min-h-[40px] px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition"
+                          title="حذف هذه النقطة"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Snapshots Table (>= md) */}
+          <div className="hidden md:block bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                 <tr>
