@@ -4,6 +4,7 @@ import { addAuditLog } from '../utils/storage';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { printBankReconciliationReportWindow } from '../utils/printBankReconciliationReport';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface BankReconciliationViewProps {
   appData: AppData;
@@ -177,18 +178,11 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
+          <TableActionButtons
+            onPrint={() => {
               printBankReconciliationReportWindow(appData, selectedBankId, undefined, showToast);
             }}
-            className="bg-[#1a237e] hover:bg-[#0d1642] text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
-            title="طباعة مذكرة التسوية البنكية والاعتماد الرسمية"
-          >
-            <span>🖨️</span>
-            <span>طباعة مذكرة التسوية والاعتماد</span>
-          </button>
-          <button
-            onClick={() => {
+            onExportExcel={() => {
               exportToExcel({
                 filename: `كشف_حركات_الحساب_البنكي_${selectedBank?.bankName || 'البنك'}_${new Date().toISOString().split('T')[0]}`,
                 sheetName: 'حركات كشف الحساب',
@@ -211,12 +205,9 @@ export const BankReconciliationView: React.FC<BankReconciliationViewProps> = ({
               });
               showToast('تم تصدير كشف الحساب البنكي إلى Excel بنجاح', 'success');
             }}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
-            title="تصدير كشف الحساب البنكي إلى Excel"
-          >
-            <span>📊</span>
-            <span>تصدير Excel</span>
-          </button>
+            printTitle="طباعة مذكرة التسوية والاعتماد البنكية"
+            exportTitle="تصدير كشف الحساب البنكي إلى Excel"
+          />
         </div>
       </div>
 

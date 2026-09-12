@@ -5,6 +5,7 @@ import { printStatementWindow, compileStatementData, formatEnNumber } from '../u
 import { exportElementToPdf } from '../utils/pdfExport';
 import { exportToExcel } from '../utils/excelExport';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
+import { TableActionButtons } from './TableActionButtons';
 
 interface AccountsViewProps {
   appData: AppData;
@@ -421,20 +422,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
               <span>👤</span> العملاء والشركات المشترية ({appData.customers.length})
             </h4>
             <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                onClick={handlePrintCustomers}
-                className="min-h-[36px] bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1"
-                title="طباعة دليل العملاء والأرصدة"
-              >
-                🖨️ طباعة
-              </button>
-              <button
-                onClick={handleExportCustomersExcel}
-                className="min-h-[36px] bg-[#2e7d32] hover:bg-[#1b5e20] text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1"
-                title="تصدير العملاء إلى Excel"
-              >
-                📊 Excel
-              </button>
+              <TableActionButtons
+                onPrint={handlePrintCustomers}
+                onExportExcel={handleExportCustomersExcel}
+                printTitle="طباعة دليل العملاء والأرصدة"
+                exportTitle="تصدير العملاء إلى Excel"
+              />
               <button
                 onClick={() => {
                   setName('');
@@ -619,20 +612,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
               <span>🏢</span> الموردين ({appData.suppliers.length})
             </h4>
             <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                onClick={handlePrintSuppliers}
-                className="min-h-[36px] bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1"
-                title="طباعة دليل الموردين والأرصدة"
-              >
-                🖨️ طباعة
-              </button>
-              <button
-                onClick={handleExportSuppliersExcel}
-                className="min-h-[36px] bg-[#2e7d32] hover:bg-[#1b5e20] text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1"
-                title="تصدير الموردين إلى Excel"
-              >
-                📊 Excel
-              </button>
+              <TableActionButtons
+                onPrint={handlePrintSuppliers}
+                onExportExcel={handleExportSuppliersExcel}
+                printTitle="طباعة دليل الموردين والأرصدة"
+                exportTitle="تصدير الموردين إلى Excel"
+              />
               <button
                 onClick={() => {
                   setName('');

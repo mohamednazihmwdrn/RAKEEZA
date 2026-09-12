@@ -18,6 +18,7 @@ export interface Settings {
   pageMargin?: number; // margin in mm (e.g. 0, 3, 5, 8, 10, 15)
   showLogoInPrint?: boolean;
   printerType?: 'standard' | 'thermal';
+  companyId?: string;
 }
 
 export interface CustomerRepresentative {
@@ -102,6 +103,8 @@ export interface Customer {
   address?: string;
   priceTier?: 'retail' | 'wholesale' | 'special';
   creditLimit?: number;
+  creditPeriodDays?: number;
+  paymentGracePeriodDays?: number;
   transactions?: any[];
   representatives?: CustomerRepresentative[];
   selectedRepId?: string;
@@ -134,6 +137,7 @@ export interface ItemMovement {
   date: string;
   type: 'sale' | 'purchase' | 'return_sale' | 'return_purchase' | 'adjustment' | 'transfer_in' | 'transfer_out';
   qty: number;
+  quantity?: number;
   price: number;
   total: number;
   note: string;
@@ -152,6 +156,8 @@ export interface Item {
   quantity: number;
   purchasePrice: number;
   salePrice: number;
+  price?: number;
+  costPrice?: number;
   wholesalePrice?: number;
   normalSellingPrice?: number; // Synced with salePrice (سعر البيع النقدي)
   wholesaleSellingPrice?: number; // Synced with wholesalePrice (سعر البيع بالجملة)
@@ -208,6 +214,7 @@ export interface SaleInvoice {
   customerAddress?: string;
   customerTaxNumber?: string;
   salesRep?: string;
+  salesRepId?: string;
   notes?: string;
   date: string;
   time?: string;
@@ -334,6 +341,7 @@ export interface SalesRep {
 export interface BankAccount {
   id: string;
   name: string;
+  bankName?: string;
   accountNumber: string;
   balance: number;
 }
@@ -351,10 +359,13 @@ export interface AutoBackupConfig {
 export interface BackupRecord {
   id?: string;
   date: string;
+  timestamp?: string;
   code?: string;
   label?: string;
   type?: 'auto' | 'manual' | 'pre_restore' | 'file_export';
   sizeKB?: number;
+  sizeKb?: number;
+  counts?: any;
   dataPreview?: {
     invoicesCount: number;
     purchasesCount: number;
@@ -422,9 +433,15 @@ export interface Branch {
 
 export interface StockTransfer {
   id: number;
+  transferNumber?: string;
   date: string;
   fromBranch: string;
   toBranch: string;
+  fromBranchName?: string;
+  toBranchName?: string;
+  itemId?: string;
+  itemName?: string;
+  quantity?: number;
   items: {
     itemId: string;
     itemName: string;
@@ -646,6 +663,8 @@ export interface CommissionRecord {
   repName: string;
   salesRepName?: string;
   invoiceId?: number;
+  invoiceNumber?: string;
+  invoiceAmount?: number;
   amount: number;
   commissionAmount?: number;
   rate: number;
@@ -653,6 +672,7 @@ export interface CommissionRecord {
   type: 'sale' | 'collection';
   status: 'pending' | 'paid';
   paidDate?: string;
+  paymentDate?: string;
   paidMethod?: 'drawer' | 'bank' | 'vodafone' | 'instapay';
 }
 
@@ -661,11 +681,11 @@ export interface BOMRawItem {
   itemId: string;
   itemName: string;
   unit: string;
-  qty: number;
+  qty?: number;
   quantity?: number;
-  unitCost: number;
+  unitCost?: number;
   estimatedCost?: number;
-  totalCost: number;
+  totalCost?: number;
 }
 
 export interface BOMIndirectCost {
@@ -684,6 +704,8 @@ export interface BOM {
   outputQuantity?: number;
   unit?: string;
   rawMaterials: BOMRawItem[];
+  items?: BOMRawItem[];
+  rawMaterialCost?: number;
   indirectCosts?: BOMIndirectCost[];
   laborCost?: number;
   overheadCost?: number;
@@ -1088,6 +1110,9 @@ export interface TenantCompany {
   storeSubscriptionPaid?: boolean;
   storeSubscriptionAmount?: number;
   storeSubscriptionPaidAt?: string;
+  ecommerceActive?: boolean;
+  ecommerceStatus?: 'active' | 'inactive' | 'pending';
+  isMarketplacePublished?: boolean;
   catalogConfig?: CatalogConfig;
 }
 

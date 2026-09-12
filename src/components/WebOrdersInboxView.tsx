@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { AppData, Quotation, SaleInvoice, InvoiceItem, TenantCompany } from '../types';
+import { AppData, Quotation, SaleInvoice, InvoiceItem, TenantCompany, CatalogConfig } from '../types';
 import { addAuditLog } from '../utils/storage';
 import { printWebOrderReceipt } from '../utils/printOrderReceipt';
+import { openUnifiedPrintWindow } from '../utils/printUnified';
+import { exportToExcel } from '../utils/excelExport';
 import { playOrderAlertChime } from '../utils/audioChime';
 import { DEFAULT_COMPANIES } from '../utils/multiTenantService';
+import { TableActionButtons } from './TableActionButtons';
 
 interface WebOrdersInboxViewProps {
   appData: AppData;
@@ -12,6 +15,15 @@ interface WebOrdersInboxViewProps {
   onNavigateToSales?: () => void;
   onInspectItem?: (type: string, data: any) => void;
 }
+
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  new: 'جديد / بانتظار التأكيد',
+  processing: 'قيد التجهيز في المخزن',
+  shipped: 'قيد التوصيل والشحن',
+  delivered: 'تم التسليم للعميل',
+  cancelled: 'تم إلغاء الطلب',
+  converted: 'تم تحويله لفاتورة مبيعات',
+};
 
 export const WebOrdersInboxView: React.FC<WebOrdersInboxViewProps> = ({
   appData,
@@ -51,7 +63,7 @@ export const WebOrdersInboxView: React.FC<WebOrdersInboxViewProps> = ({
   const [selectedOrder, setSelectedOrder] = useState<Quotation | null>(null);
 
   // Auto-Print & Sound preferences stored in catalogConfig
-  const config = useMemo(() => {
+  const config = useMemo<CatalogConfig>(() => {
     const tenantConfig = appData.companyCatalogConfigs?.[activeCompany.id];
     return (
       tenantConfig ||
@@ -59,14 +71,14 @@ export const WebOrdersInboxView: React.FC<WebOrdersInboxViewProps> = ({
       appData.catalogConfig || {
         enabled: true,
         autoPrintOrders: false,
-        printFormat: '80mm',
+        printFormat: '80mm' as const,
         soundAlertEnabled: true,
       }
     );
   }, [appData.companyCatalogConfigs, activeCompany, appData.catalogConfig]);
 
   const autoPrintEnabled = config.autoPrintOrders ?? false;
-  const printFormat = config.printFormat || '80mm';
+  const printFormat: '80mm' | 'a4' = (config.printFormat as '80mm' | 'a4') || '80mm';
   const soundEnabled = config.soundAlertEnabled ?? true;
 
   // Toggle Auto-Print
@@ -668,6 +680,59 @@ ${itemsSummary}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ابحث برقم الطلب أو العميل أو الهاتف..."
               className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none w-56 md:w-64"
+            />
+
+            <TableActionButtons
+              onPrint={() => {
+                openUnifiedPrintWindow(
+                  {
+                    title: 'سجل وحصر طلبات المتجر الإلكتروني والويب سايت',
+                    partyLabel: 'إجمالي الطلبات',
+                    partyName: `${webOrders.length} طلب وارد`,
+                    items: webOrders.map((o) => ({
+                      name: `${o.clientName || 'عميل المتجر'} (${o.orderReference || o.id})`,
+                      unit: o.orderStatus ? ORDER_STATUS_LABELS[o.orderStatus] || o.orderStatus : 'جديد',
+                      qty: o.items?.length || 0,
+                      price: 0,
+                      total: o.total,
+                      notes: `الهاتف: ${o.phone || '-'} | العنوان: ${o.customerAddress || '-'} | التاريخ: ${o.date}`,
+                    })),
+                    totals: [
+                      {
+                        label: 'إجمالي قيمة الطلبات:',
+                        value: webOrders.reduce((sum, o) => sum + (o.total || 0), 0),
+                        isBold: true,
+                        isHighlight: true,
+                      },
+                    ],
+                  },
+                  appData.settings,
+                  showToast
+                );
+              }}
+              onExportExcel={() => {
+                exportToExcel({
+                  filename: `طلبات_المتجر_الإلكتروني_${new Date().toISOString().split('T')[0]}`,
+                  sheetName: 'طلبات الويب سايت',
+                  data: webOrders,
+                  columns: [
+                    { header: 'رقم الطلب المرجعي', getValue: (o: any) => o.orderReference || `#${o.id}`, width: 18 },
+                    { header: 'تاريخ الطلب', key: 'date', width: 14 },
+                    { header: 'اسم العميل', getValue: (o: any) => o.clientName || 'عميل أونلاين', width: 25 },
+                    { header: 'رقم الهاتف', getValue: (o: any) => o.phone || '-', width: 16 },
+                    { header: 'عنوان التوصيل', getValue: (o: any) => o.customerAddress || '-', width: 30 },
+                    { header: 'عدد الأصناف', getValue: (o: any) => o.items?.length || 0, width: 14 },
+                    { header: 'إجمالي الطلب (ج.م)', getValue: (o: any) => (o.total || 0).toFixed(2), width: 18 },
+                    { header: 'حالة الطلب', getValue: (o: any) => o.orderStatus ? ORDER_STATUS_LABELS[o.orderStatus] || o.orderStatus : 'جديد', width: 20 },
+                    { header: 'ملاحظات التوصيل', getValue: (o: any) => o.deliveryNotes || '-', width: 25 },
+                  ],
+                  companyName: appData.settings?.companyName || 'المنظومة المحاسبية المعتمدة',
+                  reportTitle: 'سجل وحصر طلبات العملاء من المتجر والكتالوج الإلكتروني',
+                });
+                showToast('تم تصدير طلبات المتجر إلى Excel بنجاح', 'success');
+              }}
+              printTitle="طباعة سجل طلبات الويب سايت"
+              exportTitle="تصدير طلبات الويب سايت إلى Excel"
             />
           </div>
         </div>

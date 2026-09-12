@@ -1530,28 +1530,38 @@ export function cleanEntireSystemCloud(
         tenantData.bankAccounts = tenantData.bankAccounts.map((b) => ({ ...b, balance: 0 }));
       }
 
-      // Reset customer & supplier balances to 0
-      if (tenantData.customers) {
-        tenantData.customers = tenantData.customers.map((c) => ({
-          ...c,
-          balance: 0,
-        }));
-      }
-      if (tenantData.suppliers) {
-        tenantData.suppliers = tenantData.suppliers.map((s) => ({
-          ...s,
-          balance: 0,
-        }));
-      }
-
-      // Reset items stock and quantities to 0
-      if (tenantData.items) {
-        tenantData.items = tenantData.items.map((it) => ({
-          ...it,
-          quantity: 0,
-          stock: 0,
-          branchQuantities: {},
-        }));
+      // Reset customer & supplier data
+      if (!onlyDemoData) {
+        tenantData.customers = [];
+        tenantData.suppliers = [];
+        tenantData.items = [];
+        tenantData.employees = [];
+        tenantData.fixedAssets = [];
+        tenantData.depreciationLogs = [];
+        tenantData.boms = [];
+        tenantData.salesReps = [];
+        tenantData.backups = [];
+      } else {
+        if (tenantData.customers) {
+          tenantData.customers = tenantData.customers.map((c) => ({
+            ...c,
+            balance: 0,
+          }));
+        }
+        if (tenantData.suppliers) {
+          tenantData.suppliers = tenantData.suppliers.map((s) => ({
+            ...s,
+            balance: 0,
+          }));
+        }
+        if (tenantData.items) {
+          tenantData.items = tenantData.items.map((it) => ({
+            ...it,
+            quantity: 0,
+            stock: 0,
+            branchQuantities: {},
+          }));
+        }
       }
 
       // Reset general ledger tree debit/credit/balances

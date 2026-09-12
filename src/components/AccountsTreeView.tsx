@@ -275,9 +275,9 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
     const stData: StatementData = {
       company: {
         name: appData.settings?.companyName || 'المنظومة المحاسبية المعتمدة',
-        address: appData.settings?.companyAddress || 'المركز الرئيسي',
-        logoUrl: appData.settings?.companyLogo || '',
-        phones: appData.settings?.companyPhone ? [appData.settings.companyPhone] : ['01029190615'],
+        address: appData.settings?.address || 'المركز الرئيسي',
+        logoUrl: appData.settings?.logoUrl || appData.settings?.logo || '',
+        phones: appData.settings?.phone1 ? [appData.settings.phone1] : ['01029190615'],
       },
       accountCode: acc.code,
       accountName: acc.name,
@@ -305,9 +305,9 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
     });
 
     if (accountCode === '1101') {
-      totalDebit += appData.cashBox?.cash || 0;
+      totalDebit += appData.cashBox?.drawer || 0;
     } else if (accountCode === '1102') {
-      totalDebit += appData.cashBox?.vodafoneCash || 0;
+      totalDebit += appData.cashBox?.vodafone || 0;
     } else if (accountCode === '1103') {
       totalDebit += appData.cashBox?.instapay || 0;
     } else if (accountCode === '1104') {

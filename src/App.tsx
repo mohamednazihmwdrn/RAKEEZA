@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AppData } from './types';
 import { loadAppData, saveAppData } from './utils/storage';
 import { Header } from './components/Header';
@@ -65,6 +65,12 @@ import { AlertTriangle, KeyRound } from 'lucide-react';
 
 export default function App() {
   const [appData, setAppData] = useState<AppData>(() => loadAppData());
+  const appDataRef = useRef<AppData>(appData);
+
+  useEffect(() => {
+    appDataRef.current = appData;
+  }, [appData]);
+
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isShareCatalogOpen, setIsShareCatalogOpen] = useState<boolean>(false);
@@ -174,8 +180,34 @@ export default function App() {
       currentUserCode: currentCode,
       currentUserName: currentName,
       onDataUpdated: (incomingData, meta) => {
-        setAppData(incomingData);
-        saveAppData(incomingData);
+        if (!incomingData || typeof incomingData !== 'object') return;
+        setAppData((prev) => {
+          const merged: AppData = {
+            ...prev,
+            ...incomingData,
+            settings: { ...prev.settings, ...(incomingData.settings || {}) },
+            advancedSettings: incomingData.advancedSettings || prev.advancedSettings || {
+              categories: ['أجهزة كمبيوتر', 'طابعات ومعدات', 'شاشات', 'إكسسوارات', 'شبكات وكاميرات'],
+              itemGroups: ['إلكترونيات', 'مكتبية', 'أجهزة ذكية'],
+              units: ['جهاز', 'قطعة', 'طقم', 'علبة', 'كرتونة', 'متر'],
+            },
+            branches: incomingData.branches || prev.branches || [],
+            costCenters: incomingData.costCenters || prev.costCenters || [],
+            accounts: incomingData.accounts || prev.accounts || [],
+            users: incomingData.users || prev.users || [],
+            customers: incomingData.customers || prev.customers || [],
+            suppliers: incomingData.suppliers || prev.suppliers || [],
+            items: incomingData.items || prev.items || [],
+            salesInvoices: incomingData.salesInvoices || prev.salesInvoices || [],
+            purchaseInvoices: incomingData.purchaseInvoices || prev.purchaseInvoices || [],
+            cashTransactions: incomingData.cashTransactions || prev.cashTransactions || [],
+            journalEntries: incomingData.journalEntries || prev.journalEntries || [],
+            cashBox: incomingData.cashBox || prev.cashBox || { drawer: 0, vodafone: 0, instapay: 0, bank: 0 },
+            bankAccounts: incomingData.bankAccounts || prev.bankAccounts || [],
+          };
+          saveAppData(merged);
+          return merged;
+        });
         if (meta?.actorCode && meta.actorCode !== currentCode) {
           const actionMsg = meta.actionInfo?.details || 'تعديل وتحديث بيانات المنظومة';
           showToast(
@@ -350,17 +382,18 @@ export default function App() {
   // 🤖 Automated Scheduled Background Backup Engine (Auto-Backup Scheduler)
   useEffect(() => {
     const backupIntervalTimer = setInterval(() => {
-      const config = appData.autoBackupConfig;
+      const currentData = appDataRef.current;
+      const config = currentData.autoBackupConfig;
       if (!config || !config.enabled) return;
 
       if (shouldTriggerAutoBackup(config)) {
-        // Generate automatic system snapshot
-        const newSnapshot = createSystemSnapshot(appData, '🤖 نسخة احتياطية مجدولة آلياً', 'auto');
-        const maxKeep = config.maxSnapshotsToKeep || 15;
-        const newBackups = [newSnapshot, ...(appData.backups || [])].slice(0, maxKeep);
+        // Generate automatic system snapshot (ultra-lean)
+        const newSnapshot = createSystemSnapshot(currentData, '🤖 نسخة احتياطية مجدولة آلياً', 'auto');
+        const maxKeep = Math.min(config.maxSnapshotsToKeep || 5, 5);
+        const newBackups = [newSnapshot, ...(currentData.backups || [])].slice(0, maxKeep);
 
         const updatedData: AppData = {
-          ...appData,
+          ...currentData,
           backups: newBackups,
           autoBackupConfig: {
             ...config,
@@ -370,7 +403,7 @@ export default function App() {
 
         // If user configured auto file download
         if (config.autoDownloadFile) {
-          downloadBackupJsonFile(appData);
+          downloadBackupJsonFile(currentData);
         }
 
         saveAppData(updatedData);
@@ -380,10 +413,10 @@ export default function App() {
           showToast('🛡️ تم حفظ نسخة احتياطية تلقائية من بيانات النظام في المتصفح', 'info');
         }
       }
-    }, 30000); // Checks every 30 seconds
+    }, 60000); // Stable check once every minute
 
     return () => clearInterval(backupIntervalTimer);
-  }, [appData]);
+  }, []);
 
   const handleNavigate = (page: string, pushHistory = true) => {
     if (page === currentPage) return;

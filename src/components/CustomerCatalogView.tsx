@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { AppData, Item, Quotation, InvoiceItem } from '../types';
+import { AppData, Item, Quotation, InvoiceItem, TenantCompany } from '../types';
 import { addAuditLog } from '../utils/storage';
 import { printWebOrderReceipt } from '../utils/printOrderReceipt';
 import { playOrderAlertChime } from '../utils/audioChime';
@@ -71,12 +71,13 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
       const found = companies.find((c) => c.id === appData.companyId);
       if (found) return found;
     }
-    return companies[0] || {
+    return companies[0] || ({
       id: 'COMP-000001',
       code: 'RKZ-001',
       name: appData.settings.companyName || 'شركة ركيزة للمحاسبة والتجارة RAKEEZA',
       phone: appData.settings.phone1 || '01029190615',
-    };
+      status: 'active',
+    } as TenantCompany);
   }, [selectedVendorCompanyId, matchedCompany, appData.companyId, companies, appData.settings]);
 
   // Check store activation status (1000 EGP subscription)

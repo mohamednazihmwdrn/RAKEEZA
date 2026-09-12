@@ -3,6 +3,7 @@ import { AppData, SalesRepresentative, CommissionRecord, Customer } from '../typ
 import { addAuditLog } from '../utils/storage';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface SalesRepsCommissionsViewProps {
   appData: AppData;
@@ -64,14 +65,15 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
   const handlePayCommission = (record: CommissionRecord) => {
     if (record.status === 'paid') return;
 
-    let updated = {
+    const commAmt = record.commissionAmount ?? record.amount ?? 0;
+    let updated: AppData = {
       ...appData,
-      commissionRecords: appData.commissionRecords.map((c) =>
+      commissionRecords: (appData.commissionRecords || []).map((c) =>
         c.id === record.id ? { ...c, status: 'paid' as const, paymentDate: new Date().toISOString().substring(0, 10) } : c
       ),
       cashBox: {
         ...appData.cashBox,
-        drawer: Math.max(0, appData.cashBox.drawer - record.commissionAmount),
+        drawer: Math.max(0, appData.cashBox.drawer - commAmt),
       },
     };
 
@@ -79,7 +81,7 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
       updated,
       'create',
       'العمولات والمبيعات',
-      `تم صرف وتسوية عمولة للمندوب ${record.salesRepName} بمبلغ ${record.commissionAmount} ${currency}.`
+      `تم صرف وتسوية عمولة للمندوب ${record.salesRepName || record.repName} بمبلغ ${commAmt} ${currency}.`
     );
 
     onUpdateData(updated);
@@ -183,66 +185,150 @@ export const SalesRepsCommissionsView: React.FC<SalesRepsCommissionsViewProps> =
           >
             <span>➕ إضافة مندوب مبيعات</span>
           </button>
-          <button
-            onClick={() => {
-              openUnifiedPrintWindow(
-                {
-                  title: 'تقرير أداء مندوبي المبيعات والعمولات المستحقة',
-                  items: repsWithMetrics.map((r) => ({
-                    name: `${r.name} (${r.code})`,
-                    unit: `${r.commissionRate}% عمولة`,
-                    qty: r.invoicesCount,
-                    price: r.totalSales,
-                    total: r.totalCommissionEarned,
-                    notes: `المحقق: ${r.achievementRate}% من التارجت | المعلق: ${r.pendingCommission} ${currency}`,
-                  })),
-                  totals: [
-                    {
-                      label: 'إجمالي مبيعات المندوبين:',
-                      value: repsWithMetrics.reduce((a, b) => a + b.totalSales, 0),
-                    },
-                    {
-                      label: 'إجمالي العمولات المستحقة:',
-                      value: repsWithMetrics.reduce((a, b) => a + b.totalCommissionEarned, 0),
-                      isBold: true,
-                      isHighlight: true,
-                    },
+          <TableActionButtons
+            onPrint={() => {
+              if (activeTab === 'commissions') {
+                openUnifiedPrintWindow(
+                  {
+                    title: 'سجل حركات وعمولات مندوبي المبيعات',
+                    partyLabel: 'إجمالي السجلات',
+                    partyName: `${commissions.length} حركة عمولة`,
+                    items: commissions.map((c) => ({
+                      name: `${c.salesRepName} (فاتورة #${c.invoiceNumber})`,
+                      unit: `${c.rate}% عمولة`,
+                      qty: 1,
+                      price: c.invoiceAmount,
+                      total: c.commissionAmount,
+                      notes: `الحالة: ${c.status === 'paid' ? 'تم الصرف والتسوية' : 'مستحق ومعلق'} | التاريخ: ${c.paymentDate || '-'}`,
+                    })),
+                    totals: [
+                      {
+                        label: 'إجمالي العمولات:',
+                        value: commissions.reduce((a, b) => a + (b.commissionAmount || 0), 0),
+                        isBold: true,
+                        isHighlight: true,
+                      },
+                    ],
+                  },
+                  appData.settings,
+                  showToast
+                );
+              } else if (activeTab === 'credit_limits') {
+                openUnifiedPrintWindow(
+                  {
+                    title: 'تقرير حدود وسقوف ائتمان العملاء وفترات السداد',
+                    partyLabel: 'عدد العملاء',
+                    partyName: `${customers.length} عميل`,
+                    items: customers.map((c) => ({
+                      name: c.name,
+                      unit: `${c.creditPeriodDays || 0} يوم سداد`,
+                      qty: 1,
+                      price: c.creditLimit || 0,
+                      total: c.balance || 0,
+                      notes: `الحد: ${(c.creditLimit || 0).toLocaleString()} | المديونية: ${(c.balance || 0).toLocaleString()} ${currency}`,
+                    })),
+                    totals: [
+                      {
+                        label: 'إجمالي أرصدة مديونيات العملاء:',
+                        value: customers.reduce((a, b) => a + (b.balance || 0), 0),
+                        isBold: true,
+                        isHighlight: true,
+                      },
+                    ],
+                  },
+                  appData.settings,
+                  showToast
+                );
+              } else {
+                openUnifiedPrintWindow(
+                  {
+                    title: 'تقرير أداء مندوبي المبيعات والعمولات المستحقة',
+                    items: repsWithMetrics.map((r) => ({
+                      name: `${r.name} (${r.code})`,
+                      unit: `${r.commissionRate}% عمولة`,
+                      qty: r.invoicesCount,
+                      price: r.totalSales,
+                      total: r.totalCommissionEarned,
+                      notes: `المحقق: ${r.achievementRate}% من التارجت | المعلق: ${r.pendingCommission} ${currency}`,
+                    })),
+                    totals: [
+                      {
+                        label: 'إجمالي مبيعات المندوبين:',
+                        value: repsWithMetrics.reduce((a, b) => a + b.totalSales, 0),
+                      },
+                      {
+                        label: 'إجمالي العمولات المستحقة:',
+                        value: repsWithMetrics.reduce((a, b) => a + b.totalCommissionEarned, 0),
+                        isBold: true,
+                        isHighlight: true,
+                      },
+                    ],
+                  },
+                  appData.settings,
+                  showToast
+                );
+              }
+            }}
+            onExportExcel={() => {
+              if (activeTab === 'commissions') {
+                exportToExcel({
+                  filename: `سجل_عمولات_المندوبين_${new Date().toISOString().split('T')[0]}`,
+                  sheetName: 'سجل العمولات',
+                  data: commissions,
+                  columns: [
+                    { header: 'اسم المندوب', key: 'salesRepName', width: 25 },
+                    { header: 'رقم الفاتورة', key: 'invoiceNumber', width: 16 },
+                    { header: 'قيمة الفاتورة (ج.م)', getValue: (c: any) => (c.invoiceAmount || 0).toFixed(2), width: 18 },
+                    { header: 'نسبة العمولة', getValue: (c: any) => `${c.rate}%`, width: 14 },
+                    { header: 'مبلغ العمولة المستحق (ج.م)', getValue: (c: any) => (c.commissionAmount || 0).toFixed(2), width: 20 },
+                    { header: 'حالة الصرف', getValue: (c: any) => c.status === 'paid' ? 'تم الصرف' : 'مستحق ومعلق', width: 16 },
+                    { header: 'تاريخ الصرف', getValue: (c: any) => c.paymentDate || '-', width: 16 },
                   ],
-                },
-                appData.settings,
-                showToast
-              );
+                  companyName: appData.settings?.companyName || 'المنظومة المحاسبية المعتمدة',
+                  reportTitle: 'سجل عمولات مبيعات المندوبين وحالة التسوية المالية',
+                });
+                showToast('تم تصدير سجل العمولات إلى Excel بنجاح', 'success');
+              } else if (activeTab === 'credit_limits') {
+                exportToExcel({
+                  filename: `حدود_ائتمان_العملاء_${new Date().toISOString().split('T')[0]}`,
+                  sheetName: 'حدود الائتمان',
+                  data: customers,
+                  columns: [
+                    { header: 'اسم العميل', key: 'name', width: 25 },
+                    { header: 'رقم الهاتف', key: 'phone', width: 16 },
+                    { header: 'سقف الائتمان المسموح (ج.م)', getValue: (c: any) => (c.creditLimit || 0).toFixed(2), width: 22 },
+                    { header: 'الرصيد الحالي / المديونية (ج.م)', getValue: (c: any) => (c.balance || 0).toFixed(2), width: 22 },
+                    { header: 'فترة الائتمان (أيام)', getValue: (c: any) => c.creditPeriodDays || 0, width: 18 },
+                  ],
+                  companyName: appData.settings?.companyName || 'المنظومة المحاسبية المعتمدة',
+                  reportTitle: 'كشف حدود وسقوف ائتمان العملاء وفترات السداد',
+                });
+                showToast('تم تصدير حدود ائتمان العملاء إلى Excel بنجاح', 'success');
+              } else {
+                exportToExcel({
+                  filename: `تقرير_مندوبي_المبيعات_${new Date().toISOString().split('T')[0]}`,
+                  sheetName: 'مندوبو المبيعات والعمولات',
+                  data: repsWithMetrics,
+                  columns: [
+                    { header: 'كود المندوب', key: 'code', width: 14 },
+                    { header: 'اسم المندوب', key: 'name', width: 25 },
+                    { header: 'رقم الهاتف', key: 'phone', width: 16 },
+                    { header: 'نسبة/قيمة العمولة', getValue: (r: any) => `${r.commissionRate}%`, width: 16 },
+                    { header: 'المبيعات المستهدفة (التارجت)', getValue: (r: any) => (r.targetSales || 0).toFixed(2), width: 22 },
+                    { header: 'إجمالي المبيعات المحققة', getValue: (r: any) => (r.totalSales || 0).toFixed(2), width: 22 },
+                    { header: 'نسبة تحقيق التارجت', getValue: (r: any) => `${r.achievementRate}%`, width: 18 },
+                    { header: 'إجمالي العمولات المكتسبة', getValue: (r: any) => (r.totalCommissionEarned || 0).toFixed(2), width: 22 },
+                    { header: 'العمولات المعلقة/غير المسددة', getValue: (r: any) => (r.pendingCommission || 0).toFixed(2), width: 22 },
+                  ],
+                  companyName: appData.settings?.companyName || 'المنظومة المحاسبية المعتمدة',
+                  reportTitle: 'تقرير أداء مندوبي المبيعات ونسب تحقيق التارجت والعمولات المستحقة',
+                });
+                showToast('تم تصدير تقرير المندوبين والعمولات إلى Excel بنجاح', 'success');
+              }
             }}
-            className="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-          >
-            <span>🖨️ طباعة تقرير العمولات</span>
-          </button>
-          <button
-            onClick={() => {
-              exportToExcel({
-                filename: `تقرير_مندوبي_المبيعات_${new Date().toISOString().split('T')[0]}`,
-                sheetName: 'مندوبو المبيعات والعمولات',
-                data: repsWithMetrics,
-                columns: [
-                  { header: 'كود المندوب', key: 'code', width: 14 },
-                  { header: 'اسم المندوب', key: 'name', width: 25 },
-                  { header: 'رقم الهاتف', key: 'phone', width: 16 },
-                  { header: 'نسبة/قيمة العمولة', getValue: (r: any) => `${r.commissionRate}%`, width: 16 },
-                  { header: 'المبيعات المستهدفة (التارجت)', getValue: (r: any) => (r.targetSales || 0).toFixed(2), width: 22 },
-                  { header: 'إجمالي المبيعات المحققة', getValue: (r: any) => (r.totalSales || 0).toFixed(2), width: 22 },
-                  { header: 'نسبة تحقيق التارجت', getValue: (r: any) => `${r.achievementRate}%`, width: 18 },
-                  { header: 'إجمالي العمولات المكتسبة', getValue: (r: any) => (r.totalCommissionEarned || 0).toFixed(2), width: 22 },
-                  { header: 'العمولات المعلقة/غير المسددة', getValue: (r: any) => (r.pendingCommission || 0).toFixed(2), width: 22 },
-                ],
-                companyName: appData.settings?.companyName || 'المنظومة المحاسبية المعتمدة',
-                reportTitle: 'تقرير أداء مندوبي المبيعات ونسب تحقيق التارجت والعمولات المستحقة',
-              });
-              showToast('تم تصدير تقرير المندوبين والعمولات إلى Excel بنجاح', 'success');
-            }}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-          >
-            <span>📊 تصدير Excel</span>
-          </button>
+            printTitle={activeTab === 'commissions' ? 'طباعة سجل العمولات' : activeTab === 'credit_limits' ? 'طباعة حدود الائتمان' : 'طباعة تقرير المندوبين'}
+            exportTitle={activeTab === 'commissions' ? 'تصدير سجل العمولات إلى Excel' : activeTab === 'credit_limits' ? 'تصدير حدود الائتمان إلى Excel' : 'تصدير تقرير المندوبين إلى Excel'}
+          />
         </div>
       </div>
 

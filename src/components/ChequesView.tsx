@@ -4,6 +4,7 @@ import { addAuditLog } from '../utils/storage';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { printChequesReport, printChequeVoucher } from '../utils/printChequesReport';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface ChequesViewProps {
   appData: AppData;
@@ -216,8 +217,8 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
           >
             <span>➕ تسجيل شيك جديد</span>
           </button>
-          <button
-            onClick={() => {
+          <TableActionButtons
+            onPrint={() => {
               printChequesReport(
                 {
                   cheques: filteredCheques,
@@ -228,13 +229,7 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
                 appData
               );
             }}
-            className="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-            title="طباعة التقرير المعتمد للشيكات وأوراق القبض والدفع"
-          >
-            <span>🖨️ طباعة التقرير المعتمد</span>
-          </button>
-          <button
-            onClick={() => {
+            onExportExcel={() => {
               exportToExcel({
                 filename: `سجل_الشيكات_${new Date().toISOString().split('T')[0]}`,
                 sheetName: 'الشيكات والأوراق المالية',
@@ -263,11 +258,9 @@ export const ChequesView: React.FC<ChequesViewProps> = ({
               });
               showToast('تم تصدير سجل الشيكات إلى Excel بنجاح', 'success');
             }}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-            title="تصدير سجل الشيكات إلى Excel"
-          >
-            <span>📊 تصدير Excel</span>
-          </button>
+            printTitle="طباعة سجل حركة الشيكات المعتمد"
+            exportTitle="تصدير سجل الشيكات إلى Excel"
+          />
         </div>
       </div>
 

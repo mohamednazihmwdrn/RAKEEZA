@@ -10,6 +10,7 @@ import { addAuditLog } from '../utils/storage';
 import { printAnnualClosing } from '../utils/printInventoryAdjustment';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface YearEndClosingViewProps {
   appData: AppData;
@@ -989,8 +990,9 @@ export const YearEndClosingView: React.FC<YearEndClosingViewProps> = ({
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
+              <TableActionButtons
+                printLabel="طباعة السجل"
+                onPrint={() => {
                   const closings = appData.fiscalClosings || [];
                   openUnifiedPrintWindow(
                     {
@@ -1018,12 +1020,7 @@ export const YearEndClosingView: React.FC<YearEndClosingViewProps> = ({
                     showToast
                   );
                 }}
-                className="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-              >
-                <span>🖨️ طباعة الأرشيف</span>
-              </button>
-              <button
-                onClick={() => {
+                onExportExcel={() => {
                   exportToExcel({
                     filename: `أرشيف_الإقفالات_السنوية_${new Date().toISOString().split('T')[0]}`,
                     sheetName: 'الإقفالات السنوية',
@@ -1045,10 +1042,7 @@ export const YearEndClosingView: React.FC<YearEndClosingViewProps> = ({
                   });
                   showToast('تم تصدير سجل الإقفالات إلى Excel بنجاح', 'success');
                 }}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-              >
-                <span>📊 تصدير Excel</span>
-              </button>
+              />
             </div>
           </div>
 

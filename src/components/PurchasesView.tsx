@@ -6,11 +6,13 @@ import { InvoiceCardTemplate } from './InvoiceCardTemplate';
 import { exportToExcel } from '../utils/excelExport';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { InvoiceItemModal } from './InvoiceItemModal';
+import { TableActionButtons } from './TableActionButtons';
 
 interface PurchasesViewProps {
   appData: AppData;
   onUpdateData: (newData: AppData, actionInfo?: { action?: string; module?: string; details?: string }) => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
+  onInspectItem?: (type: string, data: any) => void;
 }
 
 export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateData, showToast }) => {
@@ -576,7 +578,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
   };
 
   const handlePrintInvoice = (inv: PurchaseInvoice) => {
-    printInvoiceWindow(inv, false, appData.settings || {}, showToast);
+    printInvoiceWindow(inv, false, appData.settings, showToast);
   };
 
   // Print Purchases List
@@ -712,22 +714,12 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ appData, onUpdateD
           >
             ↩ مرتجع أجل
           </button>
-          <button
-            onClick={handlePrintPurchasesList}
-            className="min-h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
-            title="طباعة سجل فواتير المشتريات"
-          >
-            <span>🖨️</span>
-            <span>طباعة السجل</span>
-          </button>
-          <button
-            onClick={handleExportPurchasesExcel}
-            className="min-h-[42px] bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
-            title="تصدير المشتريات إلى Excel"
-          >
-            <span>📊</span>
-            <span>تصدير Excel</span>
-          </button>
+          <TableActionButtons
+            onPrint={handlePrintPurchasesList}
+            onExportExcel={handleExportPurchasesExcel}
+            printTitle="طباعة سجل فواتير المشتريات"
+            exportTitle="تصدير المشتريات إلى Excel"
+          />
         </div>
         <div className="w-full sm:w-auto min-w-[220px]">
           <input

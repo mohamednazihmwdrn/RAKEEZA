@@ -705,7 +705,7 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
   };
 
   const handlePrintInvoice = (inv: SaleInvoice) => {
-    printInvoiceWindow(inv, true, appData.settings || {}, showToast);
+    printInvoiceWindow(inv, true, appData.settings, showToast);
   };
 
   const getMethodLabel = (m: string) => {
@@ -761,7 +761,7 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
         rows: list.map((inv) => [
           `#${inv.id}`,
           inv.date,
-          inv.clientName,
+          inv.customerName,
           inv.type === 'return_nagdi' || inv.type === 'return_ajel'
             ? 'مرتجع'
             : inv.type === 'nagdi'

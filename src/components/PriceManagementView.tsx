@@ -3,6 +3,7 @@ import { AppData, Item, ProductPrice, PriceHistoryRecord } from '../types';
 import { Modal } from './Modal';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 import {
   calculateProfitMargin,
   updateProductPrice,
@@ -510,18 +511,11 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={handlePrintPriceList}
-            className="bg-white/15 hover:bg-white/25 text-white text-xs px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-1.5 cursor-pointer border border-white/20"
-          >
-            <span>🖨️</span> طباعة القائمة
-          </button>
-          <button
-            onClick={handleExportExcel}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-          >
-            <span>📊</span> تصدير Excel
-          </button>
+          <TableActionButtons
+            onPrint={handlePrintPriceList}
+            onExportExcel={handleExportExcel}
+            printLabel="طباعة السجل"
+          />
         </div>
       </div>
 

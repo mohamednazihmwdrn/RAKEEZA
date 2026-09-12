@@ -15,11 +15,14 @@ export function createSystemSnapshot(
   };
 
   const jsonStr = JSON.stringify(dataForSnapshot);
+  // Only generate base64 code if explicitly needed, auto-snapshots store jsonStr directly
   let base64Code = '';
-  try {
-    base64Code = btoa(unescape(encodeURIComponent(jsonStr)));
-  } catch (e) {
-    base64Code = '';
+  if (type !== 'auto') {
+    try {
+      base64Code = btoa(unescape(encodeURIComponent(jsonStr)));
+    } catch {
+      base64Code = '';
+    }
   }
 
   const sizeKB = Math.round((new Blob([jsonStr]).size / 1024) * 10) / 10;

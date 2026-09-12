@@ -7,6 +7,9 @@ import {
   getStorageDiagnostics,
 } from '../utils/autoBackup';
 import { addAuditLog } from '../utils/storage';
+import { openUnifiedPrintWindow } from '../utils/printUnified';
+import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface BackupViewProps {
   appData: AppData;
@@ -508,7 +511,56 @@ export const BackupView: React.FC<BackupViewProps> = ({ appData, onUpdateData, s
                 يمكنك معاينة تفاصيل أي نقطة والرجوع إليها بضغطة زر واحدة (1-Click Rollback) في حال وقوع أي خطأ.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center flex-wrap gap-2">
+              <TableActionButtons
+                printLabel="طباعة السجل"
+                onPrint={() => {
+                  openUnifiedPrintWindow(
+                    {
+                      title: 'سجل نقاط الاستعادة والنسخ الاحتياطي للنظام',
+                      partyLabel: 'إجمالي النقاط',
+                      partyName: `${backups.length} نقطة استعادة`,
+                      items: backups.map((snap) => ({
+                        name: `${snap.label || 'نقطة استعادة'} (${snap.id || '-'})`,
+                        unit: snap.type === 'auto' ? 'تلقائي' : snap.type === 'pre_restore' ? 'أمان قبل الاسترجاع' : 'يدوي',
+                        qty: 1,
+                        price: 0,
+                        total: 0,
+                        notes: `التاريخ: ${snap.timestamp || '-'} | الحجم: ${snap.sizeKb || 0} KB | فواتير: ${snap.counts?.invoices || 0} | أصناف: ${snap.counts?.items || 0} | قيود: ${snap.counts?.journal || 0}`,
+                      })),
+                      totals: [
+                        {
+                          label: 'إجمالي نقاط الاستعادة المحفوظة:',
+                          value: backups.length,
+                          isBold: true,
+                        },
+                      ],
+                    },
+                    appData.settings,
+                    showToast
+                  );
+                }}
+                onExportExcel={() => {
+                  exportToExcel({
+                    filename: `سجل_نقاط_الاستعادة_${new Date().toISOString().split('T')[0]}`,
+                    sheetName: 'نقاط الاستعادة',
+                    data: backups,
+                    columns: [
+                      { header: 'معرف النقطة', key: 'id', width: 22 },
+                      { header: 'اسم / وصف النقطة', key: 'label', width: 25 },
+                      { header: 'النوع', getValue: (s: any) => s.type === 'auto' ? 'تلقائي مجدول' : s.type === 'pre_restore' ? 'أمان تلقائي' : 'يدوي', width: 16 },
+                      { header: 'التاريخ والوقت', key: 'timestamp', width: 22 },
+                      { header: 'الحجم التقريبي (KB)', key: 'sizeKb', width: 18 },
+                      { header: 'عدد الفواتير', getValue: (s: any) => s.counts?.invoices || 0, width: 14 },
+                      { header: 'عدد الأصناف', getValue: (s: any) => s.counts?.items || 0, width: 14 },
+                      { header: 'عدد القيود', getValue: (s: any) => s.counts?.journal || 0, width: 14 },
+                    ],
+                    companyName: appData.settings?.companyName || 'المنظومة المحاسبية المعتمدة',
+                    reportTitle: 'سجل وأرشيف نقاط الاستعادة والنسخ الاحتياطية',
+                  });
+                  showToast('تم تصدير سجل نقاط الاستعادة إلى Excel بنجاح', 'success');
+                }}
+              />
               <button
                 onClick={() => handleCreateSnapshot('نقطة يدوية')}
                 className="bg-[#1a237e] text-white px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-[#0d47a1] transition cursor-pointer"

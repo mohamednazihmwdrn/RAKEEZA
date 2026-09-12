@@ -1128,7 +1128,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ pageId, onNavigate, on
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() =>
-                    printInvoiceWindow(activeSaleInvoice!, true, appData.settings || {}, showToast)
+                    printInvoiceWindow(activeSaleInvoice!, true, appData.settings, showToast)
                   }
                   className="bg-[#1a237e] hover:bg-[#0d47a1] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs"
                 >
@@ -1260,7 +1260,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ pageId, onNavigate, on
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() =>
-                    printInvoiceWindow(activePurchaseInvoice!, false, appData.settings || {}, showToast)
+                    printInvoiceWindow(activePurchaseInvoice!, false, appData.settings, showToast)
                   }
                   className="bg-[#1a237e] hover:bg-[#0d47a1] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs"
                 >

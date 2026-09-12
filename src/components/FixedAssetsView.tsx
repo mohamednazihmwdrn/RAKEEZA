@@ -3,6 +3,7 @@ import { AppData, FixedAsset, DepreciationLog, JournalEntry } from '../types';
 import { addAuditLog } from '../utils/storage';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface FixedAssetsViewProps {
   appData: AppData;
@@ -233,8 +234,8 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
           >
             <span>⚡ احتساب وإثبات الإهلاك الدوري</span>
           </button>
-          <button
-            onClick={() => {
+          <TableActionButtons
+            onPrint={() => {
               openUnifiedPrintWindow(
                 {
                   title: 'تقرير وحصر الأصول الثابتة والقيمة الدفترية',
@@ -257,12 +258,7 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
                 showToast
               );
             }}
-            className="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-          >
-            <span>🖨️ طباعة سجل الأصول</span>
-          </button>
-          <button
-            onClick={() => {
+            onExportExcel={() => {
               exportToExcel({
                 filename: `سجل_الأصول_الثابتة_${new Date().toISOString().split('T')[0]}`,
                 sheetName: 'الأصول الثابتة',
@@ -287,10 +283,9 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
               });
               showToast('تم تصدير سجل الأصول الثابتة إلى Excel بنجاح', 'success');
             }}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-          >
-            <span>📊 تصدير Excel</span>
-          </button>
+            printTitle="طباعة سجل وحصر الأصول الثابتة"
+            exportTitle="تصدير سجل الأصول إلى Excel"
+          />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { AppData, BOM, ProductionOrder, JournalEntry } from '../types';
 import { addAuditLog } from '../utils/storage';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface ManufacturingViewProps {
   appData: AppData;
@@ -272,8 +273,8 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => {
+          <TableActionButtons
+            onPrint={() => {
               if (activeTab === 'orders') {
                 openUnifiedPrintWindow(
                   {
@@ -327,12 +328,7 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                 );
               }
             }}
-            className="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-          >
-            <span>🖨️ طباعة</span>
-          </button>
-          <button
-            onClick={() => {
+            onExportExcel={() => {
               if (activeTab === 'orders') {
                 exportToExcel({
                   filename: `أوامر_الإنتاج_والتشغيل_${new Date().toISOString().split('T')[0]}`,
@@ -378,10 +374,9 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                 showToast('تم تصدير معادلات التكوين إلى Excel بنجاح', 'success');
               }
             }}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-          >
-            <span>📊 تصدير Excel</span>
-          </button>
+            printTitle={activeTab === 'orders' ? 'طباعة سجل أوامر الإنتاج' : 'طباعة دليل معادلات التكوين'}
+            exportTitle={activeTab === 'orders' ? 'تصدير أوامر الإنتاج إلى Excel' : 'تصدير معادلات التكوين إلى Excel'}
+          />
           <button
             onClick={() => {
               setBomName('');
@@ -750,7 +745,7 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                   <option value="">➕ إضافة خامة من المخزن...</option>
                   {inventoryItems.map((it) => (
                     <option key={it.id} value={it.id}>
-                      {it.name} (رصيده: {it.quantity} | تكلفة: {it.costPrice || it.salePrice * 0.7} {currency})
+                      {it.name} (رصيده: {it.quantity} | تكلفة: {it.purchasePrice || it.salePrice * 0.7} {currency})
                     </option>
                   ))}
                 </select>

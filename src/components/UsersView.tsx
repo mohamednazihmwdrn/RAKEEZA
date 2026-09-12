@@ -3,6 +3,7 @@ import { AppData, User, UserRole } from '../types';
 import { Modal } from './Modal';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 import {
   Shield,
   UserPlus,
@@ -486,20 +487,11 @@ export const UsersView: React.FC<UsersViewProps> = ({ appData, onUpdateData, sho
         </div>
 
         <div className="flex items-center flex-wrap gap-2">
-          <button
-            onClick={handlePrintUsers}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold cursor-pointer flex items-center gap-1.5 transition-colors"
-            title="طباعة دليل المستخدمين"
-          >
-            <span>🖨️ طباعة</span>
-          </button>
-          <button
-            onClick={handleExportUsersExcel}
-            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold cursor-pointer flex items-center gap-1.5 transition-colors"
-            title="تصدير إلى Excel"
-          >
-            <span>📊 تصدير Excel</span>
-          </button>
+          <TableActionButtons
+            onPrint={handlePrintUsers}
+            onExportExcel={handleExportUsersExcel}
+            printLabel="طباعة السجل"
+          />
           <button
             onClick={handleOpenNewUserModal}
             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold cursor-pointer flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition-all"

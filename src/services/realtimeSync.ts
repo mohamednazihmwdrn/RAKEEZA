@@ -85,6 +85,9 @@ export class RealtimeSyncService {
     currentUserId?: string,
     initialVersion: number = 1
   ) {
+    // 🛡️ Always destroy prior connections and intervals first to prevent memory leaks and duplicate timers
+    this.destroy();
+
     if (typeof optionsOrCompanyId === 'object') {
       const opts = optionsOrCompanyId;
       this.companyId = opts.companyId || 'COMP-000001';
@@ -331,10 +334,15 @@ export class RealtimeSyncService {
   private startPollingFallback() {
     if (this.pollTimer) clearInterval(this.pollTimer);
 
-    // Fallback polling
+    // Dynamic, battery- and memory-friendly polling fallback
     this.pollTimer = setInterval(async () => {
       const token = getStoredToken();
       if (!token) return;
+
+      // If already connected to Firestore real-time listener, keep polling very light (15s)
+      if (this.isConnected && Date.now() % 15000 >= 5000) {
+        return;
+      }
 
       try {
         const res = await fetch(`/api/tenant/sync-check?version=${this.currentVersion}`, {
@@ -357,10 +365,18 @@ export class RealtimeSyncService {
           }
         }
       } catch {}
-    }, 4000);
+    }, 6000);
   }
 
   private handleIncomingSync(payload: RealtimeSyncEvent) {
+    // 🛡️ Prevent infinite echo loop if this browser tab just emitted this exact change within 3s
+    const myDeviceId = this.getDeviceId();
+    const isSelfModified = (payload.data as any)?.lastModifiedDeviceId === myDeviceId;
+    const timeSinceOurPush = Date.now() - this.lastLocalPushTimestamp;
+    if (isSelfModified && timeSinceOurPush < 3000) {
+      return;
+    }
+
     if (payload.version && payload.version > this.currentVersion) {
       this.currentVersion = payload.version;
     }

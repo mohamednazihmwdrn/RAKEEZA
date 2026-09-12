@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppData, AuditLog } from '../types';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface AuditTrailViewProps {
   appData: AppData;
@@ -90,11 +91,11 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="bg-white/10 px-3 py-1.5 rounded-xl text-xs font-mono">
+          <div className="bg-white/10 px-3 py-1.5 rounded-xl text-xs font-mono text-white">
             إجمالي السجلات: <strong>{filteredLogs.length}</strong> حركة
           </div>
-          <button
-            onClick={() => {
+          <TableActionButtons
+            onPrint={() => {
               openUnifiedPrintWindow(
                 {
                   title: 'تقرير سجل التدقيق الرقابي وحركات النظام (Audit Trail)',
@@ -121,12 +122,7 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
                 showToast
               );
             }}
-            className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-          >
-            <span>🖨️ طباعة السجل</span>
-          </button>
-          <button
-            onClick={() => {
+            onExportExcel={() => {
               exportToExcel({
                 filename: `سجل_التدقيق_الرقابي_${new Date().toISOString().split('T')[0]}`,
                 sheetName: 'سجل التدقيق الرقابي',
@@ -144,10 +140,9 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
               });
               showToast('تم تصدير سجل التدقيق إلى Excel بنجاح', 'success');
             }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-          >
-            <span>📊 تصدير Excel</span>
-          </button>
+            printTitle="طباعة سجل التدقيق الرقابي"
+            exportTitle="تصدير سجل التدقيق إلى Excel"
+          />
         </div>
       </div>
 

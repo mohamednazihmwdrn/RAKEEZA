@@ -4,6 +4,7 @@ import { Modal } from './Modal';
 import { InventoryStocktakingView } from './InventoryStocktakingView';
 import { exportToExcel } from '../utils/excelExport';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
+import { TableActionButtons } from './TableActionButtons';
 
 interface ItemsViewProps {
   appData: AppData;
@@ -233,20 +234,12 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
               >
                 ➕ إضافة صنف جديد
               </button>
-              <button
-                onClick={handlePrintItems}
-                className="min-h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
-                title="طباعة تقرير جرد الأصناف والمخزون"
-              >
-                🖨️ طباعة الأصناف
-              </button>
-              <button
-                onClick={handleExportItemsExcel}
-                className="min-h-[42px] bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
-                title="تصدير كشف الأصناف إلى Excel"
-              >
-                📊 تصدير Excel
-              </button>
+              <TableActionButtons
+                onPrint={handlePrintItems}
+                onExportExcel={handleExportItemsExcel}
+                printTitle="طباعة سجل الأصناف والمخزون"
+                exportTitle="تصدير كشف الأصناف إلى Excel"
+              />
               {onShareCatalog && (
                 <button
                   type="button"

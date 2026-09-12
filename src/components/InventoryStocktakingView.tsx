@@ -13,6 +13,8 @@ import { addAuditLog } from '../utils/storage';
 import { printStocktakeSession, printSettlementVoucher } from '../utils/printInventoryAdjustment';
 import { printGoodsIssueNote } from '../utils/printGoodsIssueNote';
 import { exportToExcel } from '../utils/excelExport';
+import { openUnifiedPrintWindow } from '../utils/printUnified';
+import { TableActionButtons } from './TableActionButtons';
 
 interface InventoryStocktakingViewProps {
   appData: AppData;
@@ -1252,14 +1254,9 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
                     >
                       💾 حفظ كمسودة
                     </button>
-                    <button
-                      onClick={() => setIsPrintModalOpen(true)}
-                      className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1"
-                    >
-                      🖨️ طباعة استمارة الجرد
-                    </button>
-                    <button
-                      onClick={() => {
+                    <TableActionButtons
+                      onPrint={() => setIsPrintModalOpen(true)}
+                      onExportExcel={() => {
                         exportToExcel({
                           filename: `استمارة_جرد_${currentSession.sessionNumber}_${currentSession.date}`,
                           sheetName: 'أصناف الجرد الفعلي',
@@ -1284,10 +1281,9 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
                         });
                         showToast('تم تصدير بيانات جلسة الجرد إلى Excel بنجاح', 'success');
                       }}
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1"
-                    >
-                      📊 تصدير Excel
-                    </button>
+                      printTitle="طباعة استمارة الجرد الفعلي"
+                      exportTitle="تصدير بيانات الجرد إلى Excel"
+                    />
                     {currentSession.status !== 'approved_settled' && (
                       <button
                         onClick={() => handleApproveAndSettle(currentSession)}
@@ -1754,6 +1750,59 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
                   جميع سندات التسوية المعتمدة مع ربطها التلقائي بقيود اليومية المزدوجة وتاريخ الاعتماد.
                 </p>
               </div>
+              <TableActionButtons
+                onPrint={() => {
+                  const adjustments = appData.inventoryAdjustments || [];
+                  openUnifiedPrintWindow(
+                    {
+                      title: 'سجل وحصر سندات تسوية المخزون والقيود الآلية',
+                      partyLabel: 'إجمالي السندات',
+                      partyName: `${adjustments.length} سند تسوية`,
+                      items: adjustments.map((v) => ({
+                        name: `${v.voucherNumber} (جلسة: ${v.stocktakeSessionNumber || '-'})`,
+                        unit: v.branchName || 'الرئيسي',
+                        qty: v.items?.length || 0,
+                        price: 0,
+                        total: v.netAdjustmentAmount,
+                        notes: `التاريخ: ${v.date} | قيد رقم: ${v.journalEntryId || '-'} | عجز: -${v.totalShortageAmount.toFixed(2)} | زيادة: +${v.totalSurplusAmount.toFixed(2)}`,
+                      })),
+                      totals: [
+                        {
+                          label: 'صافي أثر التسويات:',
+                          value: adjustments.reduce((sum, v) => sum + (v.netAdjustmentAmount || 0), 0),
+                          isBold: true,
+                          isHighlight: true,
+                        },
+                      ],
+                    },
+                    appData.settings,
+                    showToast
+                  );
+                }}
+                onExportExcel={() => {
+                  const adjustments = appData.inventoryAdjustments || [];
+                  exportToExcel({
+                    filename: `سندات_تسوية_المخزون_${new Date().toISOString().split('T')[0]}`,
+                    sheetName: 'سندات التسوية',
+                    data: adjustments,
+                    columns: [
+                      { header: 'رقم السند', key: 'voucherNumber', width: 16 },
+                      { header: 'التاريخ', key: 'date', width: 14 },
+                      { header: 'رقم جلسة الجرد', getValue: (v) => v.stocktakeSessionNumber || '-', width: 16 },
+                      { header: 'الفرع', getValue: (v) => v.branchName || 'المخزن الرئيسي', width: 18 },
+                      { header: 'رقم قيد اليومية', getValue: (v) => v.journalEntryId ? `JV-${v.journalEntryId}` : '-', width: 16 },
+                      { header: 'إجمالي العجز (ج.م)', getValue: (v) => v.totalShortageAmount.toFixed(2), width: 18 },
+                      { header: 'إجمالي الزيادة (ج.م)', getValue: (v) => v.totalSurplusAmount.toFixed(2), width: 18 },
+                      { header: 'صافي التسوية (ج.م)', getValue: (v) => v.netAdjustmentAmount.toFixed(2), width: 18 },
+                    ],
+                    companyName: appData.settings?.companyName || 'المنظومة المحاسبية المعتمدة',
+                    reportTitle: 'سجل سندات تسوية فروقات الجرد المخزني',
+                  });
+                  showToast('تم تصدير سجل سندات التسوية إلى Excel بنجاح', 'success');
+                }}
+                printTitle="طباعة سجل سندات التسوية"
+                exportTitle="تصدير سندات التسوية إلى Excel"
+              />
             </div>
 
             {/* Mobile Vouchers Cards */}
@@ -1991,13 +2040,84 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleOpenNewIssueModal}
                 className="bg-[#0288d1] hover:bg-[#0277bd] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer"
               >
-                <span>➕</span> إنشاء إذن صرف مخزني جديد
+                <span>➕</span> إنشاء إذن صرف جديد
               </button>
+              <TableActionButtons
+                onPrint={() => {
+                  const filteredGoodsIssues = (appData.goodsIssueVouchers || []).filter((v) => {
+                    if (!issueSearchTerm.trim()) return true;
+                    const term = issueSearchTerm.toLowerCase();
+                    return (
+                      v.voucherNumber.toLowerCase().includes(term) ||
+                      v.recipientName.toLowerCase().includes(term) ||
+                      v.purposeReason.toLowerCase().includes(term) ||
+                      v.items.some((i) => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term)))
+                    );
+                  });
+                  openUnifiedPrintWindow(
+                    {
+                      title: 'سجل وحصر أذونات الصرف المخزني',
+                      partyLabel: 'إجمالي الأذونات',
+                      partyName: `${filteredGoodsIssues.length} إذن صرف`,
+                      items: filteredGoodsIssues.map((issue) => ({
+                        name: `${issue.recipientName} (${issue.voucherNumber})`,
+                        unit: issue.sourceBranchName || 'الرئيسي',
+                        qty: issue.totalQty,
+                        price: issue.totalQty > 0 ? issue.totalCost / issue.totalQty : 0,
+                        total: issue.totalCost,
+                        notes: `الغرض: ${issue.purposeReason} | التاريخ: ${issue.date}`,
+                      })),
+                      totals: [
+                        {
+                          label: 'إجمالي تكلفة المنصرف:',
+                          value: filteredGoodsIssues.reduce((sum, v) => sum + (v.totalCost || 0), 0),
+                          isBold: true,
+                          isHighlight: true,
+                        },
+                      ],
+                    },
+                    appData.settings,
+                    showToast
+                  );
+                }}
+                onExportExcel={() => {
+                  const filteredGoodsIssues = (appData.goodsIssueVouchers || []).filter((v) => {
+                    if (!issueSearchTerm.trim()) return true;
+                    const term = issueSearchTerm.toLowerCase();
+                    return (
+                      v.voucherNumber.toLowerCase().includes(term) ||
+                      v.recipientName.toLowerCase().includes(term) ||
+                      v.purposeReason.toLowerCase().includes(term) ||
+                      v.items.some((i) => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term)))
+                    );
+                  });
+                  exportToExcel({
+                    filename: `سجل_أذونات_الصرف_المخزني_${new Date().toISOString().split('T')[0]}`,
+                    sheetName: 'أذونات الصرف',
+                    data: filteredGoodsIssues,
+                    columns: [
+                      { header: 'رقم الإذن', key: 'voucherNumber', width: 16 },
+                      { header: 'التاريخ', key: 'date', width: 14 },
+                      { header: 'المخزن المصدر', getValue: (v) => v.sourceBranchName || 'المخزن الرئيسي', width: 20 },
+                      { header: 'الجهة المستلمة', key: 'recipientName', width: 25 },
+                      { header: 'الغرض / سبب الصرف', key: 'purposeReason', width: 30 },
+                      { header: 'إجمالي الكمية', key: 'totalQty', width: 14 },
+                      { header: 'إجمالي التكلفة (ج.م)', getValue: (v) => v.totalCost.toFixed(2), width: 18 },
+                      { header: 'الحالة', getValue: (v) => v.status === 'approved' ? 'معتمد ومخصوم' : 'مسودة قيد الفحص', width: 18 },
+                    ],
+                    companyName: appData.settings?.companyName || 'المنظومة المحاسبية المعتمدة',
+                    reportTitle: 'سجل وحصر أذونات الصرف المخزني المنفذة',
+                  });
+                  showToast('تم تصدير سجل أذونات الصرف إلى Excel بنجاح', 'success');
+                }}
+                printTitle="طباعة سجل أذونات الصرف"
+                exportTitle="تصدير أذونات الصرف إلى Excel"
+              />
             </div>
           </div>
 

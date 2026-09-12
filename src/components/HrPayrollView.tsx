@@ -3,6 +3,7 @@ import { AppData, Employee, PayrollSlip, EmployeeAdvance, JournalEntry } from '.
 import { addAuditLog } from '../utils/storage';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface HrPayrollViewProps {
   appData: AppData;
@@ -354,8 +355,8 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
               >
                 <span>⚡ إنشاء مسير الشهر آلياً بنقرة واحدة</span>
               </button>
-              <button
-                onClick={() => {
+              <TableActionButtons
+                onPrint={() => {
                   openUnifiedPrintWindow(
                     {
                       title: `كشف مسير الرواتب الإجمالي لشهر ${selectedMonth}`,
@@ -382,12 +383,7 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                     showToast
                   );
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-              >
-                <span>🖨️ طباعة كشف المسير</span>
-              </button>
-              <button
-                onClick={() => {
+                onExportExcel={() => {
                   exportToExcel({
                     filename: `مسير_رواتب_${selectedMonth}_${new Date().toISOString().split('T')[0]}`,
                     sheetName: `مسير رواتب ${selectedMonth}`,
@@ -412,10 +408,9 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                   });
                   showToast('تم تصدير كشف مسير الرواتب إلى Excel بنجاح', 'success');
                 }}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-              >
-                <span>📊 تصدير Excel</span>
-              </button>
+                printTitle="طباعة كشف مسير الرواتب"
+                exportTitle="تصدير كشف الرواتب إلى Excel"
+              />
             </div>
           </div>
 
@@ -585,8 +580,8 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
           <div className="flex flex-wrap justify-between items-center gap-3 bg-white p-3.5 rounded-2xl border border-slate-200">
             <span className="text-xs font-bold text-slate-600">قائمة وسجل العاملين بالمنشأة ({employees.length} موظف)</span>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
+              <TableActionButtons
+                onPrint={() => {
                   openUnifiedPrintWindow(
                     {
                       title: 'دليل وبيانات العاملين والموظفين بالمنشأة',
@@ -614,12 +609,7 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                     showToast
                   );
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-              >
-                <span>🖨️ طباعة دليل الموظفين</span>
-              </button>
-              <button
-                onClick={() => {
+                onExportExcel={() => {
                   exportToExcel({
                     filename: `سجل_الموظفين_${new Date().toISOString().split('T')[0]}`,
                     sheetName: 'دليل الموظفين',
@@ -642,10 +632,9 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
                   });
                   showToast('تم تصدير سجل الموظفين إلى Excel بنجاح', 'success');
                 }}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-              >
-                <span>📊 تصدير Excel</span>
-              </button>
+                printTitle="طباعة دليل وسجل الموظفين"
+                exportTitle="تصدير سجل الموظفين إلى Excel"
+              />
               <button
                 onClick={() => {
                   setEditingEmpId(null);

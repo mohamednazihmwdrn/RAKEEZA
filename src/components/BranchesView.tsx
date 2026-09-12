@@ -4,6 +4,7 @@ import { Modal } from './Modal';
 import { addAuditLog } from '../utils/storage';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface BranchesViewProps {
   appData: AppData;
@@ -208,8 +209,9 @@ export const BranchesView: React.FC<BranchesViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => {
+          <TableActionButtons
+            printLabel="طباعة السجل"
+            onPrint={() => {
               if (activeTab === 'branches') {
                 openUnifiedPrintWindow(
                   {
@@ -290,12 +292,7 @@ export const BranchesView: React.FC<BranchesViewProps> = ({
                 );
               }
             }}
-            className="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center gap-1 shadow-sm"
-          >
-            <span>🖨️ طباعة</span>
-          </button>
-          <button
-            onClick={() => {
+            onExportExcel={() => {
               if (activeTab === 'branches') {
                 exportToExcel({
                   filename: `دليل_الفروع_والمخازن_${new Date().toISOString().split('T')[0]}`,
@@ -356,10 +353,7 @@ export const BranchesView: React.FC<BranchesViewProps> = ({
                 showToast('تم تصدير أرصدة المخزون إلى Excel بنجاح', 'success');
               }
             }}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center gap-1 shadow-sm"
-          >
-            <span>📊 تصدير Excel</span>
-          </button>
+          />
           {activeTab === 'branches' && (
             <button
               onClick={() => setIsAddBranchModalOpen(true)}

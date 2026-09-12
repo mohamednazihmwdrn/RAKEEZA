@@ -357,8 +357,31 @@ export function loadAppData(): AppData {
 export function saveAppData(data: AppData): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.error('Failed to save data:', e);
+  } catch (e: any) {
+    console.warn('Storage quota warning, performing defensive cache pruning:', e);
+    try {
+      // 1. Prune heavy backups and remove redundant base64 strings
+      const trimmedBackups = (data.backups || []).slice(0, 3).map((b) => ({
+        ...b,
+        code: '', // remove redundant base64
+      }));
+      // 2. Trim audit logs to latest 100
+      const trimmedAudit = (data.auditLogs || []).slice(0, 100);
+      const prunedData: AppData = {
+        ...data,
+        backups: trimmedBackups,
+        auditLogs: trimmedAudit,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(prunedData));
+    } catch (e2) {
+      try {
+        // Fallback: save without backups to guarantee core ERP state is always persisted
+        const strippedData = { ...data, backups: [], auditLogs: (data.auditLogs || []).slice(0, 50) };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(strippedData));
+      } catch (e3) {
+        console.error('Critical localStorage save failure:', e3);
+      }
+    }
   }
 }
 

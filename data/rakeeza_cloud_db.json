@@ -1332,12 +1332,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-clean-1789033421995",
-          "timestamp": "2026-09-10 09:43:41",
-          "userName": "مالك المنظومة (Owner System Reset)",
+          "id": "log-purge-1789196660230",
+          "timestamp": "2026-09-12 07:04:20",
+          "userName": "مالك المنظومة (System Purge)",
           "action": "system_cleanup",
           "module": "إدارة النظام",
-          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
+          "details": "تم تفريغ وتنظيف قاعدة البيانات بالكامل وتصفير جميع القيود والعمليات والمبالغ بنجاح."
         }
       ],
       "eInvoiceConfig": {
@@ -2075,12 +2075,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-clean-1789033421995",
-          "timestamp": "2026-09-10 09:43:41",
-          "userName": "مالك المنظومة (Owner System Reset)",
+          "id": "log-purge-1789196660231",
+          "timestamp": "2026-09-12 07:04:20",
+          "userName": "مالك المنظومة (System Purge)",
           "action": "system_cleanup",
           "module": "إدارة النظام",
-          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
+          "details": "تم تفريغ وتنظيف قاعدة البيانات بالكامل وتصفير جميع القيود والعمليات والمبالغ بنجاح."
         }
       ],
       "eInvoiceConfig": {
@@ -2803,12 +2803,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-clean-1789033421995",
-          "timestamp": "2026-09-10 09:43:41",
-          "userName": "مالك المنظومة (Owner System Reset)",
+          "id": "log-purge-1789196660231",
+          "timestamp": "2026-09-12 07:04:20",
+          "userName": "مالك المنظومة (System Purge)",
           "action": "system_cleanup",
           "module": "إدارة النظام",
-          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
+          "details": "تم تفريغ وتنظيف قاعدة البيانات بالكامل وتصفير جميع القيود والعمليات والمبالغ بنجاح."
         }
       ],
       "eInvoiceConfig": {
@@ -3532,12 +3532,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-clean-1789033421995",
-          "timestamp": "2026-09-10 09:43:41",
-          "userName": "مالك المنظومة (Owner System Reset)",
+          "id": "log-purge-1789196660231",
+          "timestamp": "2026-09-12 07:04:20",
+          "userName": "مالك المنظومة (System Purge)",
           "action": "system_cleanup",
           "module": "إدارة النظام",
-          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
+          "details": "تم تفريغ وتنظيف قاعدة البيانات بالكامل وتصفير جميع القيود والعمليات والمبالغ بنجاح."
         }
       ],
       "eInvoiceConfig": {
@@ -4261,12 +4261,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-clean-1789033421995",
-          "timestamp": "2026-09-10 09:43:41",
-          "userName": "مالك المنظومة (Owner System Reset)",
+          "id": "log-purge-1789196660231",
+          "timestamp": "2026-09-12 07:04:20",
+          "userName": "مالك المنظومة (System Purge)",
           "action": "system_cleanup",
           "module": "إدارة النظام",
-          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
+          "details": "تم تفريغ وتنظيف قاعدة البيانات بالكامل وتصفير جميع القيود والعمليات والمبالغ بنجاح."
         }
       ],
       "eInvoiceConfig": {
@@ -4990,12 +4990,12 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
-          "id": "log-clean-1789033421995",
-          "timestamp": "2026-09-10 09:43:41",
-          "userName": "مالك المنظومة (Owner System Reset)",
+          "id": "log-purge-1789196660231",
+          "timestamp": "2026-09-12 07:04:20",
+          "userName": "مالك المنظومة (System Purge)",
           "action": "system_cleanup",
           "module": "إدارة النظام",
-          "details": "تم تنظيف النظام وتصفير كافة الحركات والمبالغ المسجلة بنجاح لبدء العمليات الجديدة."
+          "details": "تم تفريغ وتنظيف قاعدة البيانات بالكامل وتصفير جميع القيود والعمليات والمبالغ بنجاح."
         }
       ],
       "eInvoiceConfig": {

@@ -13,6 +13,8 @@ import { Modal } from './Modal';
 import { addAuditLog } from '../utils/storage';
 import { printQuotationWindow } from '../utils/printQuotation';
 import { exportToExcel } from '../utils/excelExport';
+import { openUnifiedPrintWindow } from '../utils/printUnified';
+import { TableActionButtons } from './TableActionButtons';
 import { tafqeetArabic } from '../utils/tafqeet';
 
 interface QuotesOrdersViewProps {
@@ -610,7 +612,7 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
         updatedData.cashTransactions.push({
           id: updatedData.nextCashId++,
           date: today,
-          type: 'payment',
+          type: 'pay',
           method: convertPaymentMethod,
           amount: quoteToConvert.total,
           note: `سداد فاتورة شراء نقدي #${purchId} (محولة من أمر شراء #${quoteToConvert.id})`,
@@ -834,8 +836,40 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
+          <TableActionButtons
+            onPrint={() => {
+              const isPO = activeTab === 'purchase_order';
+              const totalVal = filteredAndSortedList.reduce((sum, q) => sum + (q.total || 0), 0);
+              openUnifiedPrintWindow(
+                {
+                  reportTitle: isPO ? 'سجل وحصر أوامر الشراء للموردين' : 'سجل وحصر عروض أسعار المبيعات للعملاء',
+                  subTitle: isPO ? 'أوامر التوريد والشراء الصادرة' : 'عروض الأسعار المعتمدة للعملاء',
+                  serial: isPO ? 'PO-LIST' : 'QT-LIST',
+                  date: new Date().toISOString().split('T')[0],
+                  kpis: [
+                    { title: 'إجمالي السجلات', value: `${filteredAndSortedList.length}` },
+                    { title: 'إجمالي القيمة الإجمالية', value: `${totalVal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م` },
+                  ],
+                  columns: ['#', 'الرقم المرجعي', 'التاريخ', isPO ? 'اسم المورد' : 'اسم العميل', 'عدد البنود', 'الصافي', 'الحالة'],
+                  rows: filteredAndSortedList.map((q, idx) => [
+                    idx + 1,
+                    q.id,
+                    q.date,
+                    q.clientName,
+                    q.items?.length || 0,
+                    `${(q.total || 0).toFixed(2)} ج.م`,
+                    q.status === 'converted' ? (isPO ? 'تم التحويل لمشتريات' : 'تم التحويل لمبيعات') : q.status === 'sent' ? 'ساري' : q.status === 'draft' ? 'مسودة' : 'ملغي',
+                  ]),
+                  summary: [
+                    { label: 'إجمالي قيمة السجلات المعروضة', value: `${totalVal.toFixed(2)} ج.م`, isTotal: true },
+                  ],
+                  footerNote: 'تم استخراج السجل واعتماده من المنظومة المحاسبية',
+                },
+                appData.settings,
+                showToast
+              );
+            }}
+            onExportExcel={() => {
               const isPO = activeTab === 'purchase_order';
               exportToExcel({
                 filename: `${isPO ? 'أوامر_شراء_الموردين' : 'عروض_أسعار_العملاء'}_${new Date().toISOString().split('T')[0]}`,
@@ -863,12 +897,9 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
               });
               showToast(`تم تصدير ${isPO ? 'أوامر الشراء' : 'عروض الأسعار'} إلى Excel بنجاح`, 'success');
             }}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-98"
-            title="تصدير القائمة المعروضة إلى ملف Excel"
-          >
-            <span>📊</span>
-            <span>تصدير Excel</span>
-          </button>
+            printTitle={activeTab === 'purchase_order' ? 'طباعة سجل أوامر الشراء' : 'طباعة سجل عروض الأسعار'}
+            exportTitle={activeTab === 'purchase_order' ? 'تصدير أوامر الشراء إلى Excel' : 'تصدير عروض الأسعار إلى Excel'}
+          />
           {onShareCatalog && (
             <button
               type="button"

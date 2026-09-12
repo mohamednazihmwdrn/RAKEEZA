@@ -7,11 +7,13 @@ import { printShiftReportWindow } from '../utils/printShiftReport';
 import { printCashBalancesReportWindow } from '../utils/printCashBalancesReport';
 import { printDailyTransactionsReportWindow } from '../utils/printDailyTransactionsReport';
 import { exportToExcel } from '../utils/excelExport';
+import { TableActionButtons } from './TableActionButtons';
 
 interface CashViewProps {
   appData: AppData;
   onUpdateData: (newData: AppData) => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
+  onInspectItem?: (type: string, data: any) => void;
 }
 
 export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showToast }) => {
@@ -424,18 +426,11 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
             <span>📊</span>
             <span>الأرصدة ووسائل الدفع</span>
           </button>
-          <button
-            onClick={() => {
+          <TableActionButtons
+            onPrint={() => {
               printDailyTransactionsReportWindow(appData, undefined, undefined, showToast);
             }}
-            className="min-h-[42px] bg-[#1a237e] hover:bg-[#0d1642] active:bg-black text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs flex-1 sm:flex-initial"
-            title="طباعة تقرير حركة العمليات اليومية والتسويات"
-          >
-            <span>📑</span>
-            <span>حركة العمليات اليومية</span>
-          </button>
-          <button
-            onClick={() => {
+            onExportExcel={() => {
               exportToExcel({
                 filename: `حركة_الخزينة_والسندات_${new Date().toISOString().split('T')[0]}`,
                 sheetName: 'سندات الخزينة',
@@ -466,12 +461,9 @@ export const CashView: React.FC<CashViewProps> = ({ appData, onUpdateData, showT
               });
               showToast('تم تصدير سجل الخزينة إلى Excel بنجاح', 'success');
             }}
-            className="min-h-[42px] bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs flex-1 sm:flex-initial"
-            title="تصدير حركات الخزينة إلى Excel"
-          >
-            <span>📊</span>
-            <span>تصدير Excel</span>
-          </button>
+            printTitle="طباعة سجل حركة العمليات والسندات"
+            exportTitle="تصدير حركات الخزينة إلى Excel"
+          />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
