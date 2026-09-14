@@ -415,6 +415,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 الميزانية العمومية
               </div>
               <div
+                onClick={() => onNavigate('monthly_profit_report')}
+                className={`min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+                  activePage === 'monthly_profit_report' ? 'text-amber-300 font-bold bg-white/10' : 'text-emerald-300 hover:text-white'
+                }`}
+              >
+                <span>💰 تقرير الأرباح وتكلفة المبيعات (COGS)</span>
+                <span className="bg-emerald-500 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black">جديد</span>
+              </div>
+              <div
                 onClick={() => onNavigate('year_end_closing')}
                 className="min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 text-amber-300 hover:text-amber-200 font-bold flex justify-between items-center"
               >

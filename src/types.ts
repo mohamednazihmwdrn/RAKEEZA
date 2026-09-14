@@ -76,8 +76,11 @@ export type SystemModuleKey =
 
 export interface User {
   id: string;
+  uid?: string; // معرف فريد مشتق ومربوط بالشركة لمنع تسريب البيانات
   code?: string | number; // كود المستخدم داخل الشركة (كود 1 للمدير، كود 2، 3...)
+  userCode?: string | number; // كود المستخدم الصريح
   companyId?: string;
+  companyCode?: string;
   name: string;
   username: string;
   password?: string;
@@ -89,6 +92,7 @@ export interface User {
   permissions?: Record<string, boolean | Partial<ActionPermissions>>;
   allowedBranches?: string[];
   allowedWarehouses?: string[];
+  branchId?: string;
   lastLogin?: string;
   createdAt?: string;
 }
@@ -1067,8 +1071,10 @@ export interface SubscriptionPlan {
 
 export interface TenantCompany {
   id: string; // e.g. COMP-000001
+  uid?: string; // معرف فريد مشتق لعزل بيانات الشركة في السحابة
   tenantId?: string; // e.g. TENANT-8829-AF1
-  code?: string; // e.g. RKZ-001
+  code?: string; // e.g. 101 or RKZ-001
+  companyCode?: string; // كود الشركة الصريح
   name: string;
   tradeName?: string;
   activity?: string;

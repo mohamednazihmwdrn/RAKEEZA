@@ -157,11 +157,12 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
         id: `item-${Date.now()}`,
         name: bom.finishedProductName,
         quantity: order.targetQuantity,
+        purchasePrice: Math.round(totalProductionCost / order.targetQuantity),
         costPrice: Math.round(totalProductionCost / order.targetQuantity),
         salePrice: Math.round((totalProductionCost / order.targetQuantity) * 1.3),
         category: 'منتجات تامة الصنع',
         unit: bom.unit || 'قطعة',
-        minLimit: 5,
+        minStockAlert: 5,
       });
     }
 
@@ -248,13 +249,13 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
       createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
     };
 
-    let updated = {
+    const updated: AppData = {
       ...appData,
-      productionOrders: [newOrder, ...appData.productionOrders],
+      productionOrders: [newOrder, ...(appData.productionOrders || [])],
       nextProductionOrderId: nextId + 1,
     };
-    updated = addAuditLog(updated, 'create', 'أوامر الإنتاج', `تم إصدار أمر تشغيل وإنتاج #${newOrder.orderNumber} للمنتج ${bom.finishedProductName}.`);
-    onUpdateData(updated);
+    const finalData = addAuditLog(updated, 'create', 'أوامر الإنتاج', `تم إصدار أمر تشغيل وإنتاج #${newOrder.orderNumber} للمنتج ${bom.finishedProductName}.`);
+    onUpdateData(finalData);
     showToast(`تم إنشاء أمر التشغيل #${newOrder.orderNumber} بنجاح`, 'success');
     setIsOrderModalOpen(false);
   };

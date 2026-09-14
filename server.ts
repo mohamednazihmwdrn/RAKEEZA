@@ -20,6 +20,8 @@ import {
   verifyOwnerSecret,
   requestEmailVerification,
   verifyEmailOtpAndRegister,
+  registerDeviceAndCompany,
+  getCompanyPublicInfo,
 } from './server/cloudDb';
 
 async function startServer() {
@@ -176,6 +178,36 @@ async function startServer() {
 
     if (!result.success) {
       return res.status(400).json(result);
+    }
+
+    res.json(result);
+  });
+
+  // 📱 Register Device & New Company (First-time binding)
+  app.post('/api/company/register-device', (req, res) => {
+    const { companyName, adminEmail, adminUsername, adminPassword, branchName } = req.body;
+    const result = registerDeviceAndCompany({
+      companyName,
+      adminEmail,
+      adminUsername,
+      adminPassword,
+      branchName,
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
+  });
+
+  // 🏢 Get Public Info (Company metadata, branches, isolated users) for Bound Device Login
+  app.get('/api/company/public-info', (req, res) => {
+    const query = (req.query.query as string) || (req.query.code as string) || (req.query.id as string) || '';
+    const result = getCompanyPublicInfo(query);
+
+    if (!result.success) {
+      return res.status(404).json(result);
     }
 
     res.json(result);

@@ -4,6 +4,7 @@ import { Modal } from './Modal';
 import { addAuditLog } from '../utils/storage';
 import { YearEndClosingView } from './YearEndClosingView';
 import { printDailyTransactionsReportWindow } from '../utils/printDailyTransactionsReport';
+import { MonthlyProfitReportView } from './MonthlyProfitReportView';
 import {
   exportTrialBalanceToExcel,
   exportIncomeStatementToExcel,
@@ -23,7 +24,7 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
   onUpdateData,
   showToast,
 }) => {
-  const [activeTab, setActiveTab] = useState<'operations' | 'journals' | 'trialBalance' | 'incomeStatement' | 'balanceSheet' | 'yearEndClosing'>(
+  const [activeTab, setActiveTab] = useState<'operations' | 'journals' | 'trialBalance' | 'incomeStatement' | 'balanceSheet' | 'monthlyProfit' | 'yearEndClosing'>(
     subPage === 'daily_entries'
       ? 'journals'
       : subPage === 'trial_balance'
@@ -32,6 +33,8 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
       ? 'incomeStatement'
       : subPage === 'balance_sheet'
       ? 'balanceSheet'
+      : subPage === 'monthly_profit_report'
+      ? 'monthlyProfit'
       : subPage === 'year_end_closing'
       ? 'yearEndClosing'
       : 'operations'
@@ -321,6 +324,16 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
             }`}
           >
             🏛️ الميزانية العمومية
+          </button>
+          <button
+            onClick={() => setActiveTab('monthlyProfit')}
+            className={`px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'monthlyProfit'
+                ? 'bg-emerald-700 text-white shadow-md'
+                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold border border-emerald-200'
+            }`}
+          >
+            💰 أرباح وتكلفة المبيعات (COGS)
           </button>
           <button
             onClick={() => setActiveTab('yearEndClosing')}
@@ -1045,6 +1058,13 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 5.5 Monthly Profit & COGS Report Tab */}
+      {activeTab === 'monthlyProfit' && (
+        <div className="pt-2">
+          <MonthlyProfitReportView appData={appData} />
         </div>
       )}
 

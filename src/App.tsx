@@ -42,6 +42,7 @@ import { CustomerCatalogView } from './components/CustomerCatalogView';
 import { ShareCatalogModal } from './components/ShareCatalogModal';
 import { CatalogManagerView } from './components/CatalogManagerView';
 import { WebOrdersInboxView } from './components/WebOrdersInboxView';
+import { MonthlyProfitReportView } from './components/MonthlyProfitReportView';
 import { printWebOrderReceipt } from './utils/printOrderReceipt';
 import { playOrderAlertChime } from './utils/audioChime';
 import {
@@ -57,6 +58,7 @@ import {
   logoutFromCloud,
   activateTenantLicenseCloud,
   verifyOwnerSecretApi,
+  verifyUserIdentityInFirebase,
   AuthSessionResponse,
 } from './services/cloudApi';
 import { realtimeSync } from './services/realtimeSync';
@@ -112,6 +114,69 @@ export default function App() {
         return;
       }
     }
+
+    // 🛡️ Automatic Inventory Stock Reversal on Invoice Deletion / Modification
+    if (appData.items && newData.items) {
+      // 1. Sales Invoices Stock Reversal (حذف أو تعديل فواتير المبيعات)
+      if (appData.salesInvoices && newData.salesInvoices) {
+        const deletedSales = appData.salesInvoices.filter(
+          (oldInv) => !newData.salesInvoices.some((nInv) => nInv.id === oldInv.id)
+        );
+        if (deletedSales.length > 0) {
+          deletedSales.forEach((delInv) => {
+            const isReturn = delInv.type?.startsWith('return_');
+            delInv.items?.forEach((invItem) => {
+              const currentItem = newData.items.find((i) => (invItem.itemId && i.id === invItem.itemId) || i.name.trim() === invItem.name.trim());
+              const oldItem = appData.items.find((i) => (invItem.itemId && i.id === invItem.itemId) || i.name.trim() === invItem.name.trim());
+              // If caller didn't adjust stock already (item quantity unchanged between old and new state)
+              if (currentItem && oldItem && currentItem.quantity === oldItem.quantity) {
+                const qtyToRestore = isReturn ? -invItem.qty : invItem.qty;
+                currentItem.quantity = (currentItem.quantity || 0) + qtyToRestore;
+                if (!currentItem.movements) currentItem.movements = [];
+                currentItem.movements.push({
+                  date: new Date().toISOString().split('T')[0],
+                  type: 'adjustment',
+                  qty: qtyToRestore,
+                  price: invItem.price,
+                  total: qtyToRestore * (invItem.price || 0),
+                  note: `استرجاع رصيد المخزن تلقائياً بعد حذف فاتورة المبيعات #${delInv.id}`,
+                });
+              }
+            });
+          });
+        }
+      }
+
+      // 2. Purchase Invoices Stock Reversal (حذف أو تعديل فواتير المشتريات)
+      if (appData.purchaseInvoices && newData.purchaseInvoices) {
+        const deletedPurchases = appData.purchaseInvoices.filter(
+          (oldInv) => !newData.purchaseInvoices.some((nInv) => nInv.id === oldInv.id)
+        );
+        if (deletedPurchases.length > 0) {
+          deletedPurchases.forEach((delInv) => {
+            const isReturn = delInv.type?.startsWith('return_');
+            delInv.items?.forEach((invItem) => {
+              const currentItem = newData.items.find((i) => (invItem.itemId && i.id === invItem.itemId) || i.name.trim() === invItem.name.trim());
+              const oldItem = appData.items.find((i) => (invItem.itemId && i.id === invItem.itemId) || i.name.trim() === invItem.name.trim());
+              if (currentItem && oldItem && currentItem.quantity === oldItem.quantity) {
+                const qtyToDeduct = isReturn ? invItem.qty : -invItem.qty;
+                currentItem.quantity = Math.max(0, (currentItem.quantity || 0) + qtyToDeduct);
+                if (!currentItem.movements) currentItem.movements = [];
+                currentItem.movements.push({
+                  date: new Date().toISOString().split('T')[0],
+                  type: 'adjustment',
+                  qty: qtyToDeduct,
+                  price: invItem.price,
+                  total: qtyToDeduct * (invItem.price || 0),
+                  note: `تسوية رصيد المخزن تلقائياً بعد حذف فاتورة المشتريات #${delInv.id}`,
+                });
+              }
+            });
+          });
+        }
+      }
+    }
+
     setAppData(newData);
     saveAppData(newData);
     if (session?.company?.id) {
@@ -231,9 +296,28 @@ export default function App() {
         const activeSession = await fetchCurrentSession();
         if (isMounted) {
           if (activeSession.valid && activeSession.user && activeSession.company) {
+            // Verify non-owner session against Firebase for strict validity
+            if (activeSession.user.role !== 'owner') {
+              const compCodeOrId = activeSession.company.code || activeSession.company.id;
+              const userCodeOrName = activeSession.user.code || activeSession.user.userCode || activeSession.user.username;
+              const verifyRes = await verifyUserIdentityInFirebase(compCodeOrId, userCodeOrName, activeSession.user.uid);
+              if (!verifyRes.valid) {
+                console.warn('Session rejected during launch validation:', verifyRes.error);
+                await logoutFromCloud();
+                setSession(null);
+                setIsAuthLoading(false);
+                return;
+              }
+              // Update session with verified UIDs
+              activeSession.user.uid = verifyRes.user?.uid || activeSession.user.uid;
+              activeSession.user.userCode = verifyRes.user?.userCode || activeSession.user.code;
+              activeSession.company.uid = verifyRes.company?.uid || activeSession.company.uid;
+              activeSession.company.companyCode = verifyRes.company?.companyCode || activeSession.company.code;
+            }
+
             setSession(activeSession);
-            // Fetch isolated tenant data directly from cloud database
-            const cloudRes = await fetchTenantDataCloud(activeSession.company.id);
+            // Fetch isolated tenant data directly from cloud database strictly matching company ID and user UID
+            const cloudRes = await fetchTenantDataCloud(activeSession.company.id, activeSession.user?.uid);
             if (cloudRes.success && cloudRes.data) {
               setAppData(cloudRes.data);
             }
@@ -255,29 +339,62 @@ export default function App() {
     };
   }, []);
 
-  // 🔐 Login Success Handler
+  // 🔐 Login Success Handler - Strict Firebase Verification of CompanyCode, UserCode & Password
   const handleLoginSuccess = async (loginResult: {
     user: any;
     company: any;
     subscription: any;
   }) => {
-    setSession({
+    // 🛡️ Strict Firebase Security Gate: Prevent session creation if verification fails
+    if (loginResult.user.role !== 'owner') {
+      const companyCodeOrId = loginResult.company.code || loginResult.company.id;
+      const userCodeOrName = loginResult.user.code || loginResult.user.userCode || loginResult.user.username;
+      
+      const verifyRes = await verifyUserIdentityInFirebase(
+        companyCodeOrId,
+        userCodeOrName,
+        loginResult.user.uid
+      );
+
+      if (!verifyRes.valid) {
+        // 🚫 STRICT BLOCK: Reject session immediately and clear any tokens
+        await logoutFromCloud();
+        setSession(null);
+        showToast(
+          `🚫 رفض أمني: فشل التحقق في قاعدة بيانات فايربيس (${verifyRes.error || 'عدم تطابق كود الشركة أو كود المستخدم أو معرّف الهوية UID'}). تم إلغاء ومنع إنشاء الجلسة فوراً.`,
+          'error'
+        );
+        return;
+      }
+
+      // Attach verified UIDs and codes
+      loginResult.user.uid = verifyRes.user?.uid || loginResult.user.uid;
+      loginResult.user.userCode = verifyRes.user?.userCode || loginResult.user.code;
+      loginResult.company.uid = verifyRes.company?.uid || loginResult.company.uid;
+      loginResult.company.companyCode = verifyRes.company?.companyCode || loginResult.company.code;
+    }
+
+    // 🔒 Establish Verified Session
+    const verifiedSession: AuthSessionResponse = {
       valid: true,
       user: loginResult.user,
       company: loginResult.company,
       subscription: loginResult.subscription,
-    });
+    };
+    setSession(verifiedSession);
 
     showToast(
-      `مرحباً بك ${loginResult.user.name}! تم تسجيل الدخول إلى شركة: ${loginResult.company.name}`,
+      `مرحباً بك ${loginResult.user.name}! تم التحقق من الهوية بنجاح وتسجيل الدخول لشركة: ${loginResult.company.name} [UID: ${loginResult.company.uid || loginResult.company.id}]`,
       'success'
     );
 
-    // Fetch tenant-isolated ERP data from cloud server
+    // ☁️ Fetch tenant-isolated ERP data from cloud server locked to this company and UID
     try {
-      const cloudRes = await fetchTenantDataCloud(loginResult.company.id);
+      const cloudRes = await fetchTenantDataCloud(loginResult.company.id, loginResult.user.uid);
       if (cloudRes.success && cloudRes.data) {
         setAppData(cloudRes.data);
+      } else if (!cloudRes.success && cloudRes.error) {
+        showToast(cloudRes.error, 'error');
       }
     } catch (e) {
       console.error('Failed fetching tenant cloud data on login:', e);
@@ -578,6 +695,7 @@ export default function App() {
       trial_balance: '📊 ميزان المراجعة بالمجاميع والأرصدة',
       income_statement: '📊 قائمة الدخل والأرباح والخسائر (P&L)',
       balance_sheet: '📊 الميزانية العمومية والمركز المالي',
+      monthly_profit_report: '💰 تقرير الأرباح الشهرية وتكلفة المبيعات (COGS & Growth)',
       year_end_closing: '🏛️ الإقفال السنوي وترحيل الحسابات الختامية (Fiscal Year Closing)',
       treasury: '🏦 الخزينة والأرصدة النقدية',
       cheques: '💳 إدارة الشيكات وأوراق القبض والدفع',
@@ -696,6 +814,8 @@ export default function App() {
       case 'income_statement':
       case 'balance_sheet':
         return <OperationsView appData={appData} subPage={currentPage} onUpdateData={updateData} showToast={showToast} />;
+      case 'monthly_profit_report':
+        return <MonthlyProfitReportView appData={appData} onNavigate={handleNavigate} />;
       case 'year_end_closing':
         return <YearEndClosingView appData={appData} onUpdateData={updateData} showToast={showToast} />;
       case 'treasury':

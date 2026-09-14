@@ -515,18 +515,68 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
 
     const updatedData = { ...appData };
 
-    // If editing, remove old invoice first and revert old stock movements
+    // If editing, remove old invoice first and revert old stock movements and financial impacts
     if (isEditing) {
       const oldInv = updatedData.salesInvoices.find((i) => i.id === editingInvoiceId);
       if (oldInv) {
+        const wasReturn = oldInv.type?.startsWith('return_');
         // Revert old item stocks
         oldInv.items?.forEach((itm) => {
-          const sItm = updatedData.items.find((i) => i.name === itm.name);
+          const sItm = updatedData.items.find((i) => (itm.itemId && i.id === itm.itemId) || i.name.trim() === itm.name.trim());
           if (sItm) {
-            const wasReturn = oldInv.type.startsWith('return_');
             sItm.quantity = wasReturn ? (sItm.quantity || 0) - itm.qty : (sItm.quantity || 0) + itm.qty;
+            if (!sItm.movements) sItm.movements = [];
+            sItm.movements.push({
+              date: date,
+              type: 'adjustment',
+              qty: wasReturn ? -itm.qty : itm.qty,
+              price: itm.price,
+              total: (wasReturn ? -itm.qty : itm.qty) * (itm.price || 0),
+              note: `تسوية وإعادة كميات الفاتورة السابقة #${oldInv.id} قبل حفظ التعديل`,
+            });
           }
         });
+
+        // Revert old financial impacts (Cashbox & Customer Balance)
+        if (oldInv.type === 'nagdi') {
+          const oldMethod = oldInv.paymentMethod || 'drawer';
+          if (updatedData.cashBox[oldMethod] !== undefined) {
+            updatedData.cashBox[oldMethod] = Math.max(0, (updatedData.cashBox[oldMethod] || 0) - (oldInv.total || 0));
+          }
+        } else if (oldInv.type === 'ajel') {
+          if (oldInv.paidAmount && oldInv.paidAmount > 0) {
+            const oldMethod = oldInv.paymentMethod || 'drawer';
+            if (updatedData.cashBox[oldMethod] !== undefined) {
+              updatedData.cashBox[oldMethod] = Math.max(0, (updatedData.cashBox[oldMethod] || 0) - oldInv.paidAmount);
+            }
+          }
+          const oldRemaining = oldInv.remainingAmount !== undefined ? oldInv.remainingAmount : (oldInv.total - (oldInv.paidAmount || 0));
+          if (oldRemaining > 0 && oldInv.customerName) {
+            const oldCust = updatedData.customers.find((c) => c.name === oldInv.customerName);
+            if (oldCust) {
+              oldCust.balance = (oldCust.balance || 0) - oldRemaining;
+            }
+          }
+        } else if (oldInv.type === 'return_nagdi') {
+          const oldMethod = oldInv.paymentMethod || 'drawer';
+          if (updatedData.cashBox[oldMethod] !== undefined) {
+            updatedData.cashBox[oldMethod] = (updatedData.cashBox[oldMethod] || 0) + (oldInv.total || 0);
+          }
+        } else if (oldInv.type === 'return_ajel') {
+          if (oldInv.paidAmount && oldInv.paidAmount > 0) {
+            const oldMethod = oldInv.paymentMethod || 'drawer';
+            if (updatedData.cashBox[oldMethod] !== undefined) {
+              updatedData.cashBox[oldMethod] = (updatedData.cashBox[oldMethod] || 0) + oldInv.paidAmount;
+            }
+          }
+          const oldRemaining = oldInv.remainingAmount !== undefined ? oldInv.remainingAmount : (oldInv.total - (oldInv.paidAmount || 0));
+          if (oldRemaining > 0 && oldInv.customerName) {
+            const oldCust = updatedData.customers.find((c) => c.name === oldInv.customerName);
+            if (oldCust) {
+              oldCust.balance = (oldCust.balance || 0) + oldRemaining;
+            }
+          }
+        }
       }
       updatedData.salesInvoices = updatedData.salesInvoices.map((i) => (i.id === editingInvoiceId ? newInvoice : i));
     } else {
@@ -534,9 +584,9 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
       updatedData.salesInvoices = [newInvoice, ...updatedData.salesInvoices];
     }
 
-    // Update Stock
+    // Update Stock with new items
     tempItems.forEach((item) => {
-      const stockItem = updatedData.items.find((i) => i.name === item.name);
+      const stockItem = updatedData.items.find((i) => (item.itemId && i.id === item.itemId) || i.name.trim() === item.name.trim());
       if (stockItem) {
         stockItem.quantity = isReturn ? (stockItem.quantity || 0) + item.qty : (stockItem.quantity || 0) - item.qty;
         if (!stockItem.movements) stockItem.movements = [];
@@ -645,15 +695,66 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
   };
 
   const handleDeleteInvoice = (id: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذه الفاتورة؟')) return;
+    if (!confirm('هل أنت متأكد من حذف هذه الفاتورة؟ سيتم استرجاع كميات الأصناف تلقائياً إلى رصيد المخزون وتسوية الحسابات.')) return;
     const updatedData = { ...appData };
+    const invToDelete = updatedData.salesInvoices.find((i) => i.id === id);
+
+    if (invToDelete) {
+      const isReturn = invToDelete.type?.startsWith('return_');
+      let restoredItemsCount = 0;
+
+      // 1. Rollback stock for all items
+      invToDelete.items?.forEach((itm) => {
+        const sItm = updatedData.items.find((i) => (itm.itemId && i.id === itm.itemId) || i.name.trim() === itm.name.trim());
+        if (sItm) {
+          const qtyDelta = isReturn ? -itm.qty : itm.qty;
+          sItm.quantity = (sItm.quantity || 0) + qtyDelta;
+          restoredItemsCount += itm.qty;
+
+          if (!sItm.movements) sItm.movements = [];
+          sItm.movements.push({
+            date: new Date().toISOString().split('T')[0],
+            type: 'adjustment',
+            qty: qtyDelta,
+            price: itm.price,
+            total: qtyDelta * (itm.price || 0),
+            note: `استرجاع رصيد المخزن بعد إلغاء/حذف فاتورة المبيعات #${id}`,
+          });
+        }
+      });
+
+      // 2. Rollback customer balance if credit sale
+      if (invToDelete.customerName) {
+        const cust = updatedData.customers.find((c) => c.name === invToDelete.customerName);
+        if (cust) {
+          const unpaidDebt = invToDelete.remainingAmount !== undefined ? invToDelete.remainingAmount : (invToDelete.total - (invToDelete.paidAmount || 0));
+          if (unpaidDebt > 0) {
+            cust.balance = Math.max(0, (cust.balance || 0) - (isReturn ? -unpaidDebt : unpaidDebt));
+          }
+        }
+      }
+
+      // 3. Rollback treasury cashbox if any paid amount
+      if (invToDelete.paidAmount && invToDelete.paidAmount > 0) {
+        const method = invToDelete.paymentMethod || 'drawer';
+        if (updatedData.cashBox[method] !== undefined) {
+          updatedData.cashBox[method] = isReturn
+            ? (updatedData.cashBox[method] || 0) + invToDelete.paidAmount
+            : Math.max(0, (updatedData.cashBox[method] || 0) - invToDelete.paidAmount);
+        }
+      }
+
+      // Remove related cash transaction
+      updatedData.cashTransactions = (updatedData.cashTransactions || []).filter((tx) => tx.invoiceId !== id);
+    }
+
     updatedData.salesInvoices = updatedData.salesInvoices.filter((i) => i.id !== id);
     onUpdateData(updatedData, {
       action: 'delete',
       module: 'المبيعات',
-      details: `حذف فاتورة مبيعات رقم #${id}`,
+      details: `حذف فاتورة مبيعات رقم #${id} واسترجاع الأصناف للمخزون`,
     });
-    showToast('تم حذف الفاتورة بنجاح', 'success');
+    showToast(`تم حذف الفاتورة رقم #${id} وإعادة كميات الأصناف كاملة إلى رصيد المخزن بنجاح`, 'success');
   };
 
   const handleOpenPayModal = (inv: SaleInvoice) => {

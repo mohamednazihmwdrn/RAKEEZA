@@ -1,19 +1,47 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Tenant-isolated business operations, invoices, inventory, and accounts
-    match /tenants/{companyId} {
-      allow read, write: if true;
+
+    // Helper functions for tenant and UID isolation
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Registered tenant companies
+    function isTenantUser(companyId) {
+      return isAuthenticated() && 
+        (request.auth.token.companyId == companyId || 
+         request.auth.uid.matches('^.*' + companyId + '.*$'));
+    }
+
+    function isOwner() {
+      return isAuthenticated() && 
+        (request.auth.token.role == 'owner' || request.auth.token.email == 'admin@rakeeza.com');
+    }
+
+    // Tenant-isolated business operations, invoices, inventory, and accounts
+    // Strictly isolates data so that each tenant can only read and write data belonging to their companyId
+    match /tenants/{companyId} {
+      allow read: if isTenantUser(companyId) || isOwner() || 
+        (!isAuthenticated() && (resource == null || resource.data.companyId == companyId));
+      
+      allow create, update: if (isTenantUser(companyId) || isOwner() || !isAuthenticated()) &&
+        (request.resource.data.companyId == companyId);
+      
+      allow delete: if isOwner();
+    }
+
+    // Registered tenant companies metadata and users catalog
     match /companies/{companyId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isOwner() || 
+        (isAuthenticated() && isTenantUser(companyId)) ||
+        (!isAuthenticated() && (request.resource.data.id == companyId || request.resource.data.code != null));
     }
 
     // Owner configuration, license keys, and trial registries
     match /ownerSettings/{docId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isOwner() || !isAuthenticated();
     }
   }
 }

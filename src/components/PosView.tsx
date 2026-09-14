@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AppData, Item, InvoiceItem, SaleInvoice } from '../types';
 import { printInvoiceWindow } from '../utils/printInvoice';
 import { printCashClosingWindow } from '../utils/printCashClosing';
 import { printShiftReportWindow } from '../utils/printShiftReport';
 import { addAuditLog } from '../utils/storage';
 import { getProductActivePrice } from '../utils/priceService';
+import { LayoutGrid, List, Sparkles, X, Image as ImageIcon } from 'lucide-react';
 
 interface PosViewProps {
   appData: AppData;
@@ -34,9 +35,57 @@ export const PosView: React.FC<PosViewProps> = ({ appData, onUpdateData, showToa
   const [heldOrders, setHeldOrders] = useState<Array<{ id: number; customer: string; time: string; items: InvoiceItem[] }>>([]);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [posMobileTab, setPosMobileTab] = useState<'products' | 'cart'>('products');
+  const [posViewMode, setPosViewMode] = useState<'visual' | 'compact'>('visual');
 
   // Categories list
-  const categories = ['all', ...Array.from(new Set(appData.items.map((i) => i.category || 'عام')))];
+  const categories = useMemo(() => {
+    return ['all', ...Array.from(new Set(appData.items.map((i) => i.category || 'عام')))];
+  }, [appData.items]);
+
+  // Category item counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: appData.items.length };
+    appData.items.forEach((item) => {
+      const cat = item.category || 'عام';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  }, [appData.items]);
+
+  // Category Icon mapper
+  const getCategoryIcon = (cat: string) => {
+    if (cat === 'all') return '🌟';
+    const lower = cat.toLowerCase();
+    if (lower.includes('كمبيوتر') || lower.includes('لابتوب') || lower.includes('شاش')) return '💻';
+    if (lower.includes('طابع') || lower.includes('حبر') || lower.includes('ورق')) return '🖨️';
+    if (lower.includes('إكسسوار') || lower.includes('سماعات') || lower.includes('كابل')) return '🎧';
+    if (lower.includes('شبك') || lower.includes('كامير') || lower.includes('مراقبة')) return '📹';
+    if (lower.includes('مكتب') || lower.includes('أدوات')) return '📎';
+    if (lower.includes('أجهزة') || lower.includes('جوال') || lower.includes('موبايل')) return '📱';
+    if (lower.includes('ملابس') || lower.includes('أقمشة')) return '👕';
+    if (lower.includes('غذائ') || lower.includes('أطعمة') || lower.includes('مشروب')) return '🍔';
+    return '📦';
+  };
+
+  // Keyboard shortcut listener for F1..F8 category switching
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is actively typing in an input
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+      if (e.key.startsWith('F') && !isNaN(Number(e.key.substring(1)))) {
+        const fIndex = Number(e.key.substring(1)) - 1;
+        if (fIndex >= 0 && fIndex < categories.length) {
+          e.preventDefault();
+          setSelectedCategory(categories[fIndex]);
+          showToast(`تم اختيار قسم: ${categories[fIndex] === 'all' ? 'جميع الأقسام' : categories[fIndex]} (مفتاح ${e.key})`, 'info');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [categories, showToast]);
 
   // Matched customer for balance and credit limit checks
   const matchedCustomer = appData.customers.find(
@@ -573,81 +622,302 @@ export const PosView: React.FC<PosViewProps> = ({ appData, onUpdateData, showToa
             </div>
           </div>
 
-          {/* Search & Barcode Bar */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
+          {/* Search, View Mode & Barcode Bar */}
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
+            <div className="relative flex-1 min-w-[220px]">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="🔍 ابحث بالاسم أو امسح الباركود سريعاً..."
-                className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 font-semibold"
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
                 autoFocus
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                  title="مسح البحث"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+              <button
+                type="button"
+                onClick={() => setPosViewMode('visual')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  posViewMode === 'visual'
+                    ? 'bg-white text-indigo-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="عرض شبكي بالصور"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">شبكة الصور</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPosViewMode('compact')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  posViewMode === 'compact'
+                    ? 'bg-white text-indigo-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="عرض مضغوط سريع"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">مضغوط</span>
+              </button>
             </div>
           </div>
 
-          {/* Categories Filter Tabs */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
-                  selectedCategory === cat
-                    ? 'bg-[#1a237e] text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                {cat === 'all' ? '🌟 جميع الأقسام' : cat}
-              </button>
-            ))}
-          </div>
+          {/* Categories Filter Bar with Quick Shortcuts */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center px-1">
+              <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                <span>📁 الفئات والأقسام</span>
+                <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded font-mono">
+                  (اختصارات سريعة F1-F8)
+                </span>
+              </span>
+              <span className="text-[11px] font-semibold text-slate-400">
+                المعروض: {filteredItems.length} صنف
+              </span>
+            </div>
 
-          {/* Items Touch Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[460px] overflow-y-auto pr-1">
-            {filteredItems.map((item) => {
-              const activePrice =
-                pricingTier === 'wholesale'
-                  ? item.wholesaleSellingPrice || item.wholesalePrice || (item.salePrice ? Math.round(item.salePrice * 0.9) : 0)
-                  : item.normalSellingPrice || item.salePrice || 0;
+            <div className="flex gap-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-thin">
+              {categories.map((cat, idx) => {
+                const isSelected = selectedCategory === cat;
+                const icon = getCategoryIcon(cat);
+                const count = categoryCounts[cat] || 0;
+                const shortcutKey = idx < 8 ? `F${idx + 1}` : null;
 
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => handleAddToCart(item)}
-                  className="bg-slate-50 hover:bg-indigo-50/70 border border-slate-200 hover:border-indigo-300 rounded-xl p-3 flex flex-col justify-between cursor-pointer transition transform active:scale-95 shadow-xs select-none"
-                >
-                  <div>
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono">
-                        مخزون: {item.quantity}
-                      </span>
-                      {item.quantity <= 3 && (
-                        <span className="text-[9px] bg-amber-100 text-amber-800 px-1 rounded font-bold">
-                          وشك
-                        </span>
-                      )}
-                    </div>
-                    <h4 className="font-bold text-slate-800 text-xs line-clamp-2">{item.name}</h4>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-slate-200/60 flex justify-between items-center">
-                    <div>
-                      <span className="font-bold text-[#1a237e] text-xs font-mono block">
-                        {activePrice.toFixed(2)} ج.م
-                      </span>
-                      <span className="text-[9px] text-slate-400">
-                        {pricingTier === 'wholesale' ? 'سعر جملة' : 'سعر نقدي'}
-                      </span>
-                    </div>
-                    <span className="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-black">
-                      +
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`group relative px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer flex items-center gap-2 border select-none ${
+                      isSelected
+                        ? 'bg-[#1a237e] text-white border-[#1a237e] shadow-md shadow-indigo-950/20 scale-[1.02]'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 shadow-2xs'
+                    }`}
+                  >
+                    <span className="text-sm">{icon}</span>
+                    <span className="font-semibold">{cat === 'all' ? 'جميع الأقسام' : cat}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-black ${
+                        isSelected
+                          ? 'bg-white/20 text-white'
+                          : 'bg-slate-100 text-slate-600 group-hover:bg-indigo-100 group-hover:text-indigo-800'
+                      }`}
+                    >
+                      {count}
                     </span>
-                  </div>
-                </div>
-              );
-            })}
+                    {shortcutKey && (
+                      <span
+                        className={`text-[9px] px-1 py-0.2 rounded font-mono hidden md:inline-block ${
+                          isSelected
+                            ? 'bg-amber-400 text-slate-950 font-black'
+                            : 'bg-slate-200/80 text-slate-500'
+                        }`}
+                        title={`اختصار لوحة المفاتيح: ${shortcutKey}`}
+                      >
+                        {shortcutKey}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Items Touch Grid (Visual Cards with Images OR Compact Grid) */}
+          {filteredItems.length === 0 ? (
+            <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+              <span className="text-3xl block">🔍</span>
+              <h4 className="font-bold text-slate-700 text-sm">لا توجد أصناف مطابقة للبحث أو القسم</h4>
+              <p className="text-xs text-slate-500">جرب البحث بكلمات أخرى أو اختر "جميع الأقسام".</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('all');
+                }}
+                className="mt-2 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                إلغاء الفلاتر وعرض الكل
+              </button>
+            </div>
+          ) : posViewMode === 'visual' ? (
+            /* Visual Grid with Product Images */
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3 max-h-[520px] overflow-y-auto pr-1">
+              {filteredItems.map((item) => {
+                const activePrice =
+                  pricingTier === 'wholesale'
+                    ? item.wholesaleSellingPrice || item.wholesalePrice || (item.salePrice ? Math.round(item.salePrice * 0.9) : 0)
+                    : item.normalSellingPrice || item.salePrice || 0;
+
+                const cartItem = cart.find((c) => c.name === item.name);
+                const cartQty = cartItem?.qty || 0;
+                const isOutOfStock = item.quantity <= 0;
+                const isLowStock = item.quantity > 0 && item.quantity <= 3;
+
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleAddToCart(item)}
+                    className={`group relative bg-white hover:bg-indigo-50/40 border rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition transform active:scale-95 shadow-xs hover:shadow-md select-none overflow-hidden ${
+                      cartQty > 0
+                        ? 'border-indigo-400 ring-2 ring-indigo-500/20 bg-indigo-50/20'
+                        : 'border-slate-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    {/* Product Image / Visual Placeholder */}
+                    <div className="relative w-full h-24 sm:h-28 bg-slate-100/80 rounded-xl overflow-hidden mb-2 flex items-center justify-center border border-slate-100 group-hover:border-indigo-200 transition">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-contain p-1 group-hover:scale-105 transition duration-200"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-slate-100 to-indigo-50/50 text-slate-400 group-hover:text-indigo-600 transition p-2">
+                          <span className="text-3xl mb-1 drop-shadow-xs">{getCategoryIcon(item.category || 'عام')}</span>
+                          <span className="text-[10px] font-bold text-slate-400 truncate max-w-[90%]">
+                            {item.category || 'صنف'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* In-cart Quantity Badge */}
+                      {cartQty > 0 && (
+                        <div className="absolute top-1.5 left-1.5 bg-amber-400 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 z-10 animate-pulse">
+                          <span>🛒</span>
+                          <span>{cartQty}</span>
+                        </div>
+                      )}
+
+                      {/* Stock Badge */}
+                      <div className="absolute top-1.5 right-1.5 z-10">
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded-md font-mono font-bold shadow-xs ${
+                            isOutOfStock
+                              ? 'bg-rose-600 text-white'
+                              : isLowStock
+                              ? 'bg-amber-500 text-slate-950 font-black'
+                              : 'bg-slate-900/70 text-white backdrop-blur-xs'
+                          }`}
+                        >
+                          {isOutOfStock ? 'نفذ' : `مخزون: ${item.quantity}`}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px] text-slate-400">
+                        <span className="truncate max-w-[70%]">{item.category || 'عام'}</span>
+                        {item.barcode && <span className="font-mono text-[9px]">#{item.barcode.slice(-4)}</span>}
+                      </div>
+                      <h4
+                        className="font-bold text-slate-800 text-xs line-clamp-2 leading-snug group-hover:text-indigo-900 transition"
+                        title={item.name}
+                      >
+                        {item.name}
+                      </h4>
+                    </div>
+
+                    {/* Price & Add Action Button */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-[#1a237e] text-xs sm:text-sm font-mono block">
+                          {activePrice.toFixed(2)} <span className="text-[10px] font-sans font-normal">ج.م</span>
+                        </span>
+                        <span className="text-[9px] text-slate-400">
+                          {pricingTier === 'wholesale' ? 'جملة' : 'نقدي'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shadow-xs transition ${
+                          isOutOfStock
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            : 'bg-indigo-600 hover:bg-indigo-700 text-white group-hover:scale-110'
+                        }`}
+                        title="إضافة للسلة"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Compact Dense Grid Layout */
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[520px] overflow-y-auto pr-1">
+              {filteredItems.map((item) => {
+                const activePrice =
+                  pricingTier === 'wholesale'
+                    ? item.wholesaleSellingPrice || item.wholesalePrice || (item.salePrice ? Math.round(item.salePrice * 0.9) : 0)
+                    : item.normalSellingPrice || item.salePrice || 0;
+
+                const cartItem = cart.find((c) => c.name === item.name);
+                const cartQty = cartItem?.qty || 0;
+
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleAddToCart(item)}
+                    className={`bg-slate-50 hover:bg-indigo-50/70 border rounded-xl p-2.5 flex flex-col justify-between cursor-pointer transition transform active:scale-95 shadow-xs select-none ${
+                      cartQty > 0 ? 'border-indigo-400 bg-indigo-50/30' : 'border-slate-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono">
+                          مخزون: {item.quantity}
+                        </span>
+                        {cartQty > 0 ? (
+                          <span className="text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full font-black">
+                            🛒 {cartQty}
+                          </span>
+                        ) : item.quantity <= 3 ? (
+                          <span className="text-[9px] bg-amber-100 text-amber-800 px-1 rounded font-bold">
+                            وشك
+                          </span>
+                        ) : null}
+                      </div>
+                      <h4 className="font-bold text-slate-800 text-xs line-clamp-2">{item.name}</h4>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-slate-200/60 flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-[#1a237e] text-xs font-mono block">
+                          {activePrice.toFixed(2)} ج.م
+                        </span>
+                        <span className="text-[9px] text-slate-400">
+                          {pricingTier === 'wholesale' ? 'سعر جملة' : 'سعر نقدي'}
+                        </span>
+                      </div>
+                      <span className="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-black">
+                        +
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Right Side: Active Cart & Checkout Panel (5 Cols) */}

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Building2,
   User,
@@ -12,14 +12,24 @@ import {
   Shield,
   KeyRound,
   RotateCcw,
+  Unlink,
+  Laptop,
+  ChevronDown,
+  ShieldCheck,
+  Sparkles,
+  Store,
   ArrowRight,
+  RefreshCw,
 } from 'lucide-react';
 import {
+  getStoredBoundDevice,
+  setStoredBoundDevice,
+  clearStoredBoundDevice,
+  fetchCompanyPublicDetailsApi,
+  registerNewCompanyDeviceApi,
   loginToCloud,
-  loginWithGoogle,
   verifyOwnerSecretApi,
-  requestOtpVerificationApi,
-  verifyEmailOtpApi,
+  BoundDeviceData,
 } from '../services/cloudApi';
 import { TenantCompany, User as AppUser } from '../types';
 
@@ -36,50 +46,38 @@ export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
   onOpenOwnerPanelDirectly,
 }) => {
-  // Login Mode: 'gmail' or 'credentials'
-  const [loginMode, setLoginMode] = useState<'gmail' | 'credentials'>('gmail');
+  // 💻 Device Binding State
+  const [boundDevice, setBoundDevice] = useState<BoundDeviceData | null>(null);
+  const [isCheckingDevice, setIsCheckingDevice] = useState<boolean>(true);
+  const [showUnbindConfirmModal, setShowUnbindConfirmModal] = useState<boolean>(false);
 
-  // Google / Gmail Login State
-  const [gmailEmail, setGmailEmail] = useState<string>('');
-  const [gmailCompanyName, setGmailCompanyName] = useState<string>('');
-  const [gmailAdminName, setGmailAdminName] = useState<string>('');
-  const [gmailPhone, setGmailPhone] = useState<string>('');
-  const [isRegisterNewWithGmail, setIsRegisterNewWithGmail] = useState<boolean>(false);
+  // 📝 Unbound Mode: Tab 'register_new' or 'bind_existing'
+  const [setupTab, setSetupTab] = useState<'register_new' | 'bind_existing'>('register_new');
 
-  // OTP Verification States (Anti-fake Gmail verification)
-  const [isOtpStep, setIsOtpStep] = useState<boolean>(false);
-  const [otpCode, setOtpCode] = useState<string>('');
-  const [resendCooldown, setResendCooldown] = useState<number>(0);
-  const [previewOtpCode, setPreviewOtpCode] = useState<string | null>(null);
+  // Form 1: Register New Company State
+  const [regCompanyName, setRegCompanyName] = useState<string>('');
+  const [regAdminEmail, setRegAdminEmail] = useState<string>('');
+  const [regAdminUsername, setRegAdminUsername] = useState<string>('admin');
+  const [regAdminPassword, setRegAdminPassword] = useState<string>('');
+  const [regBranchName, setRegBranchName] = useState<string>('الفرع الرئيسي');
+  const [showRegPassword, setShowRegPassword] = useState<boolean>(false);
 
-  // Countdown timer for OTP resend
-  React.useEffect(() => {
-    // Clear credentials on mount so user switching is clean and private
-    setUsername('');
-    setPassword('');
-  }, []);
+  // Form 2: Bind to Existing Company State
+  const [existingCompanyCode, setExistingCompanyCode] = useState<string>('');
 
-  React.useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
+  // ⚡ Bound Mode (Desktop-Style Quick Login) State
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const [selectedUsername, setSelectedUsername] = useState<string>('');
+  const [loginPassword, setLoginPassword] = useState<string>('');
+  const [showLoginPassword, setShowLoginPassword] = useState<boolean>(false);
+  const [isRefreshingMetadata, setIsRefreshingMetadata] = useState<boolean>(false);
 
-  // Standard Company Login Form States
-  const [companyId, setCompanyId] = useState<string>('');
-  const [username, setUsername] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [rememberMe, setRememberMe] = useState<boolean>(true);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-
-  // Status & Feedback States
+  // Feedback & Loading States
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Secret Owner Access via Long-Press State
+  // 🔐 Secret Owner Access State (Long-press on RAKEEZA logo)
   const [isHoldingLogo, setIsHoldingLogo] = useState<boolean>(false);
   const [showSecretOwnerModal, setShowSecretOwnerModal] = useState<boolean>(false);
   const [secretOwnerPin, setSecretOwnerPin] = useState<string>('');
@@ -87,7 +85,290 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [isVerifyingOwner, setIsVerifyingOwner] = useState<boolean>(false);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Long-press handler on system name (holding 1.5 seconds)
+  // Password Input Ref for Auto-focus
+  const passwordInputRef = useRef<HTMLInputElement | null>(null);
+
+  /**
+   * 1️⃣ On Mount: Check Local Device Binding
+   */
+  useEffect(() => {
+    const checkDeviceBinding = async () => {
+      setIsCheckingDevice(true);
+      const stored = getStoredBoundDevice();
+
+      if (stored && stored.companyId) {
+        setBoundDevice(stored);
+
+        // Set default branch
+        if (stored.branches && stored.branches.length > 0) {
+          const mainBranch = stored.branches.find((b) => b.isMain) || stored.branches[0];
+          setSelectedBranchId(mainBranch.id);
+        }
+
+        // Set default user
+        if (stored.users && stored.users.length > 0) {
+          setSelectedUsername(stored.users[0].username || stored.users[0].name);
+        }
+
+        // Auto-refresh company metadata and isolated users silently from server
+        try {
+          const res = await fetchCompanyPublicDetailsApi(stored.companyId);
+          if (res.success && res.company) {
+            const updated: BoundDeviceData = {
+              ...stored,
+              companyName: res.company.name || stored.companyName,
+              companyCode: res.company.code || (res.company as any).companyCode || stored.companyCode,
+              branches: res.branches || stored.branches,
+              users: res.users || stored.users,
+            };
+            setStoredBoundDevice(updated);
+            setBoundDevice(updated);
+
+            if (updated.branches?.length > 0 && !selectedBranchId) {
+              const mainB = updated.branches.find((b) => b.isMain) || updated.branches[0];
+              setSelectedBranchId(mainB.id);
+            }
+            if (updated.users?.length > 0 && !selectedUsername) {
+              setSelectedUsername(updated.users[0].username || updated.users[0].name);
+            }
+          }
+        } catch {
+          // Keep cached bound device on network hiccup
+        }
+      }
+
+      setIsCheckingDevice(false);
+    };
+
+    checkDeviceBinding();
+  }, []);
+
+  // Auto focus password input whenever user selects a user in bound mode
+  useEffect(() => {
+    if (boundDevice && passwordInputRef.current) {
+      passwordInputRef.current.focus();
+    }
+  }, [boundDevice, selectedUsername]);
+
+  /**
+   * 🔄 Refresh Company Branches & Users dynamically
+   */
+  const handleRefreshMetadata = async () => {
+    if (!boundDevice?.companyId || isRefreshingMetadata) return;
+    setIsRefreshingMetadata(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetchCompanyPublicDetailsApi(boundDevice.companyId);
+      if (res.success && res.branches && res.users) {
+        const updated: BoundDeviceData = {
+          ...boundDevice,
+          companyName: res.company?.name || boundDevice.companyName,
+          branches: res.branches,
+          users: res.users,
+        };
+        setStoredBoundDevice(updated);
+        setBoundDevice(updated);
+        setSuccessMessage('تم تحديث قائمة الفروع والمستخدمين بنجاح.');
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
+    } catch {
+      setErrorMessage('تعذر تحديث البيانات من السحابة.');
+    } finally {
+      setIsRefreshingMetadata(false);
+    }
+  };
+
+  /**
+   * 🏢 Handler: Register New Company & Bind Device
+   */
+  const handleRegisterNewCompanySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const cleanName = regCompanyName.trim();
+    const cleanEmail = regAdminEmail.trim().toLowerCase();
+    const cleanUsername = regAdminUsername.trim() || 'admin';
+    const cleanPassword = regAdminPassword.trim();
+    const cleanBranch = regBranchName.trim() || 'الفرع الرئيسي';
+
+    if (!cleanName) {
+      setErrorMessage('يرجى إدخال اسم المنشأة أو الشركة.');
+      return;
+    }
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setErrorMessage('يرجى إدخال بريد إلكتروني صالح للمدير (Gmail أو بريد العمل للتحقق من الهوية).');
+      return;
+    }
+    if (!cleanPassword) {
+      setErrorMessage('يرجى تحديد كلمة مرور لحساب المدير العام.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await registerNewCompanyDeviceApi({
+        companyName: cleanName,
+        adminEmail: cleanEmail,
+        adminUsername: cleanUsername,
+        adminPassword: cleanPassword,
+        branchName: cleanBranch,
+      });
+
+      if (res.success && res.company && res.user) {
+        setSuccessMessage('تهانينا! تم تسجيل المنشأة واعتماد ربط هذا الجهاز بنجاح. جاري فتح النظام...');
+
+        const freshBound = getStoredBoundDevice();
+        if (freshBound) {
+          setBoundDevice(freshBound);
+        }
+
+        setTimeout(() => {
+          onLoginSuccess({
+            user: res.user!,
+            company: res.company!,
+            subscription: res.subscription || {
+              status: res.company?.status || 'trial',
+              planName: res.company?.planName || 'التجربة المجانية (30 يوم)',
+              daysRemaining: 30,
+              isExpired: false,
+            },
+          });
+        }, 800);
+      } else {
+        setErrorMessage(res.error || 'فشل تسجيل المنشأة وربط الجهاز.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'حدث خطأ في الاتصال بالخادم السحابي.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * 🔗 Handler: Bind to Existing Company using Company Code or ID
+   */
+  const handleBindExistingCompanySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const cleanCode = existingCompanyCode.trim().toUpperCase();
+    if (!cleanCode) {
+      setErrorMessage('يرجى إدخال كود المنشأة (مثال: 101 أو 102).');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetchCompanyPublicDetailsApi(cleanCode);
+
+      if (res.success && res.company) {
+        const boundData: BoundDeviceData = {
+          companyId: res.company.id,
+          companyCode: res.company.code || (res.company as any).companyCode || cleanCode,
+          companyName: res.company.name,
+          adminEmail: res.company.email || res.company.adminEmail,
+          boundAt: new Date().toISOString(),
+          branches: res.branches || [{ id: `br-${res.company.id}-main`, name: 'الفرع الرئيسي', isMain: true }],
+          users: res.users || [
+            {
+              id: `u-${res.company.id}-admin`,
+              code: 1,
+              name: res.company.adminName || 'المدير العام',
+              username: res.company.adminUsername || 'admin',
+              role: 'company_admin',
+            },
+          ],
+        };
+
+        setStoredBoundDevice(boundData);
+        setBoundDevice(boundData);
+
+        if (boundData.branches?.length > 0) {
+          setSelectedBranchId(boundData.branches[0].id);
+        }
+        if (boundData.users?.length > 0) {
+          setSelectedUsername(boundData.users[0].username);
+        }
+
+        setSuccessMessage(`تم ربط هذا الجهاز بنجاح بمنشأة: "${res.company.name}". يمكنك الآن تسجيل الدخول مباشرة.`);
+      } else {
+        setErrorMessage(res.error || `لم يتم العثور على منشأة بالكود "${cleanCode}".`);
+      }
+    } catch {
+      setErrorMessage('تعذر التحقق من كود المنشأة عبر السحابة.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * 🚀 Handler: Quick Desktop-Style Login (Bound Device Mode)
+   */
+  const handleQuickLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    if (!boundDevice?.companyId) {
+      setErrorMessage('الجهاز غير مربوط بأي منشأة.');
+      return;
+    }
+    if (!selectedUsername) {
+      setErrorMessage('يرجى اختيار اسم المستخدم من القائمة.');
+      return;
+    }
+    if (!loginPassword) {
+      setErrorMessage('يرجى إدخال كلمة المرور.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await loginToCloud(boundDevice.companyId, selectedUsername, loginPassword);
+
+      if (res.success && res.user && res.company) {
+        // Attach selected branch to user session if available
+        const activeUser: AppUser = {
+          ...res.user,
+          branchId: selectedBranchId || res.user.branchId,
+        };
+
+        setSuccessMessage('تم التحقق بنجاح! جاري الدخول إلى حسابك...');
+        setTimeout(() => {
+          onLoginSuccess({
+            user: activeUser,
+            company: res.company!,
+            subscription: res.subscription,
+          });
+        }, 500);
+      } else {
+        setErrorMessage(res.error || 'كلمة المرور غير صحيحة لهذا المستخدم.');
+      }
+    } catch {
+      setErrorMessage('فشل الاتصال بالخادم السحابي.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * 🔓 Handler: Unbind Device & Switch Organization
+   */
+  const handleConfirmUnbindDevice = () => {
+    clearStoredBoundDevice();
+    setBoundDevice(null);
+    setSelectedUsername('');
+    setLoginPassword('');
+    setSelectedBranchId('');
+    setShowUnbindConfirmModal(false);
+    setSuccessMessage('تم إلغاء ربط الجهاز بنجاح. يمكنك الآن تسجيل شركة جديدة أو ربطه بشركة أخرى.');
+  };
+
+  /**
+   * 👑 Secret Owner Handler (Long-press on RAKEEZA title)
+   */
   const handleHoldStart = () => {
     setIsHoldingLogo(true);
     holdTimerRef.current = setTimeout(() => {
@@ -109,7 +390,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
     setIsHoldingLogo(false);
   };
 
-  // Secret Owner Verification
   const handleSecretOwnerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = secretOwnerPin.trim();
@@ -121,7 +401,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
     setIsVerifyingOwner(true);
     setOwnerPinError(null);
 
-    // Master PIN quick bypass
     if (clean === '29190615' || clean === '123' || clean.toLowerCase() === 'rakeeza') {
       setShowSecretOwnerModal(false);
       setIsVerifyingOwner(false);
@@ -150,203 +429,41 @@ export const LoginView: React.FC<LoginViewProps> = ({
     }
   };
 
-  // Google / Gmail Login & Registration Handler
-  const handleGmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    const email = gmailEmail.trim().toLowerCase();
-    if (!email || !email.includes('@')) {
-      setErrorMessage('يرجى إدخال بريد Gmail صالح (مثال: example@gmail.com)');
-      return;
-    }
-
-    // If new registration mode is active, trigger OTP verification flow
-    if (isRegisterNewWithGmail) {
-      if (!gmailCompanyName.trim()) {
-        setErrorMessage('يرجى إدخال اسم المنشأة أو الشركة لتسجيل الحساب');
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const otpRes = await requestOtpVerificationApi(
-          email,
-          gmailCompanyName.trim(),
-          gmailPhone.trim() || undefined,
-          gmailAdminName.trim() || undefined
-        );
-
-        if (otpRes.success) {
-          setIsOtpStep(true);
-          setResendCooldown(60);
-          setPreviewOtpCode(otpRes.previewCode || null);
-          setSuccessMessage(otpRes.message || 'تم إرسال رمز التحقق إلى بريدك الإلكتروني.');
-        } else {
-          setErrorMessage(otpRes.error || 'فشل إرسال رمز التحقق. يرجى المحاولة مرة أخرى.');
-        }
-      } catch {
-        setErrorMessage('حدث خطأ أثناء الاتصال بالخادم.');
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    // Otherwise: Try direct login for existing accounts
-    setIsLoading(true);
-    try {
-      const res = await loginWithGoogle(email);
-
-      if (res.success && res.user && res.company) {
-        setSuccessMessage('تم التحقق من حسابك بنجاح! جاري الدخول...');
-        setTimeout(() => {
-          onLoginSuccess({
-            user: res.user!,
-            company: res.company!,
-            subscription: res.subscription,
-          });
-        }, 600);
-      } else if (res.needsRegistration || (res as any).needsOtp) {
-        // Not registered yet -> switch to registration mode and prompt to verify email
-        setIsRegisterNewWithGmail(true);
-        setSuccessMessage('هذا البريد غير مسجل مسبقاً. يرجى إدخال اسم المنشأة لتأكيد ملكية البريد وتفعيل الحساب فوراً.');
-      } else {
-        setErrorMessage(res.error || 'تعذر تسجيل الدخول بواسطة Gmail.');
-      }
-    } catch {
-      setErrorMessage('حدث خطأ أثناء الاتصال بالخادم السحابي.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // OTP Verification Submit Handler
-  const handleVerifyOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    const cleanCode = otpCode.trim();
-    if (!cleanCode) {
-      setErrorMessage('يرجى إدخال رمز التحقق المكون من 6 أرقام');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const res = await verifyEmailOtpApi(
-        gmailEmail.trim().toLowerCase(),
-        cleanCode,
-        gmailCompanyName.trim(),
-        gmailPhone.trim() || undefined,
-        gmailAdminName.trim() || undefined
-      );
-
-      if (res.success && res.user && res.company) {
-        setSuccessMessage('تهانينا! تم تأكيد البريد الإلكتروني وتفعيل حساب المنشأة بنجاح! جاري الدخول...');
-        setTimeout(() => {
-          onLoginSuccess({
-            user: res.user!,
-            company: res.company!,
-            subscription: res.subscription,
-          });
-        }, 800);
-      } else {
-        setErrorMessage(res.error || 'رمز التحقق غير صحيح. يرجى مراجعة بريدك الإلكتروني.');
-      }
-    } catch {
-      setErrorMessage('حدث خطأ أثناء التحقق من الرمز.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Resend OTP Code Handler
-  const handleResendOtp = async () => {
-    if (resendCooldown > 0 || isLoading) return;
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    setIsLoading(true);
-
-    try {
-      const res = await requestOtpVerificationApi(
-        gmailEmail.trim().toLowerCase(),
-        gmailCompanyName.trim(),
-        gmailPhone.trim() || undefined,
-        gmailAdminName.trim() || undefined
-      );
-
-      if (res.success) {
-        setResendCooldown(60);
-        setPreviewOtpCode(res.previewCode || null);
-        setSuccessMessage(res.message || 'تم إرسال رمز تحقق جديد بنجاح.');
-      } else {
-        setErrorMessage(res.error || 'فشل إعادة الإرسال.');
-      }
-    } catch {
-      setErrorMessage('تعذر إعادة إرسال الرمز حالياً.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Standard Company ID + Username + Password Login Handler
-  const handleCompanyLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    if (!companyId.trim()) {
-      setErrorMessage('يرجى إدخال كود الشركة (Company ID)');
-      return;
-    }
-    if (!username.trim()) {
-      setErrorMessage('يرجى إدخال اسم المستخدم');
-      return;
-    }
-    if (!password) {
-      setErrorMessage('يرجى إدخال كلمة المرور');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const res = await loginToCloud(companyId.trim(), username.trim(), password);
-      if (res.success && res.user && res.company) {
-        onLoginSuccess({
-          user: res.user,
-          company: res.company,
-          subscription: res.subscription,
-        });
-      } else {
-        setErrorMessage(res.error || 'فشل تسجيل الدخول. يرجى التحقق من كود الشركة واسم المستخدم وكلمة المرور.');
-      }
-    } catch {
-      setErrorMessage('حدث خطأ أثناء الاتصال بالخادم السحابي.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (isCheckingDevice) {
+    return (
+      <div
+        dir="rtl"
+        className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-sans"
+      >
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-amber-400 p-0.5 animate-pulse mb-4">
+          <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+            <span className="text-2xl font-black text-amber-400">R</span>
+          </div>
+        </div>
+        <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-400 rounded-full animate-spin mb-2" />
+        <p className="text-xs text-slate-400">جاري التحقق من ربط الجهاز وحالة المنشأة...</p>
+      </div>
+    );
+  }
 
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white flex flex-col justify-between selection:bg-blue-500 selection:text-white"
+      className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white flex flex-col justify-between selection:bg-blue-500 selection:text-white relative font-sans"
     >
-      {/* Background Decorative Ambient Glows */}
+      {/* Ambient background glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Top Header Bar */}
-      <header className="relative z-10 w-full max-w-7xl mx-auto px-4 py-4 sm:py-6 flex items-center justify-between border-b border-slate-700/50">
+      {/* Top Header */}
+      <header className="relative z-10 w-full max-w-7xl mx-auto px-4 py-4 sm:py-5 flex items-center justify-between border-b border-slate-800/80">
         <div className="flex items-center gap-3">
-          {/* System Name / Logo with secret long-press action for owner */}
+          {/* Logo with Secret Owner Long-Press */}
           <div
+            id="rakeeza-brand-header"
             className={`flex items-center gap-3 cursor-pointer select-none px-2 py-1 rounded-xl transition-all relative ${
               isHoldingLogo
                 ? 'scale-105 bg-amber-400/20 ring-2 ring-amber-400 shadow-lg shadow-amber-400/30'
@@ -358,9 +475,9 @@ export const LoginView: React.FC<LoginViewProps> = ({
             onTouchStart={handleHoldStart}
             onTouchEnd={handleHoldEnd}
             onTouchCancel={handleHoldEnd}
-            title="منظومة ركيزة RAKEEZA Cloud ERP"
+            title="منظومة ركيزة RAKEEZA Cloud ERP (اضغط مطولاً للوحة المالك)"
           >
-            <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-amber-400 p-0.5 shadow-xl shadow-blue-500/30 flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-amber-400 p-0.5 shadow-xl shadow-blue-500/20 flex items-center justify-center shrink-0">
               <img
                 src="/pwa-192x192.png"
                 alt="شعار ركيزة ERP"
@@ -377,7 +494,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">
-                المنظومة السحابية المتكاملة لإدارة المنشآت والشركات
+                منظومة المحاسبة وإدارة الأعمال المتكاملة
               </p>
             </div>
             {isHoldingLogo && (
@@ -386,543 +503,630 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </div>
         </div>
 
-        {/* Top Status Badge */}
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-300 bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>السحابة متصلة وجاهزة</span>
+        {/* Device Status Indicator */}
+        <div className="flex items-center gap-2">
+          {boundDevice ? (
+            <div className="flex items-center gap-2 text-xs font-medium text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1.5 rounded-full shadow-inner">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="hidden sm:inline">الجهاز معتمد ومربوط بـ:</span>
+              <span className="font-bold text-white max-w-[130px] sm:max-w-none truncate">
+                {boundDevice.companyName}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs font-medium text-amber-300 bg-amber-950/60 border border-amber-500/30 px-3 py-1.5 rounded-full">
+              <Laptop className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>جهاز غير مربوط بشركة</span>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Main Content Area: Centered, Clean Login Card */}
+      {/* Main Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
-        <div className="w-full max-w-md mx-auto">
-          <div className="w-full bg-slate-800/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-700 shadow-2xl shadow-black/50">
-            
-            {/* Login Method Toggle Tabs */}
-            <div className="flex rounded-xl bg-slate-900/80 p-1 mb-6 border border-slate-700">
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginMode('gmail');
-                  setErrorMessage(null);
-                  setSuccessMessage(null);
-                }}
-                className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                  loginMode === 'gmail'
-                    ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {/* Google / Gmail Icon */}
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-                </svg>
-                <span>تسجيل عبر Gmail</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginMode('credentials');
-                  setErrorMessage(null);
-                  setSuccessMessage(null);
-                }}
-                className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                  loginMode === 'credentials'
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Building2 className="w-4 h-4" />
-                <span>كود الشركة وحساب الموظف</span>
-              </button>
-            </div>
-
-            {/* Error Banner */}
+        <div className="w-full max-w-lg mx-auto">
+          {/* Main Card */}
+          <div className="w-full bg-slate-900/95 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-slate-800 shadow-2xl shadow-black/80">
+            {/* Global Error Banner */}
             {errorMessage && (
-              <div className="mb-5 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs sm:text-sm flex items-start gap-2.5 animate-in fade-in">
+              <div
+                id="login-error-banner"
+                className="mb-5 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs sm:text-sm flex items-start gap-2.5 animate-in fade-in"
+              >
                 <AlertCircle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
                 <div className="flex-1 leading-relaxed">{errorMessage}</div>
               </div>
             )}
 
-            {/* Success Banner */}
+            {/* Global Success Banner */}
             {successMessage && (
-              <div className="mb-5 p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm flex items-start gap-2.5 animate-in fade-in">
+              <div
+                id="login-success-banner"
+                className="mb-5 p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm flex items-start gap-2.5 animate-in fade-in"
+              >
                 <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400 mt-0.5" />
                 <div className="flex-1 leading-relaxed">{successMessage}</div>
               </div>
             )}
 
-            {loginMode === 'gmail' ? (
-              isOtpStep ? (
-                /* OTP VERIFICATION FORM (Anti-Fake Gmail) */
-                <form onSubmit={handleVerifyOtpSubmit} className="space-y-4 animate-in fade-in">
-                  <div className="text-center mb-3">
-                    <div className="inline-flex p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 mb-2">
-                      <KeyRound className="w-7 h-7" />
+            {boundDevice ? (
+              /* ========================================================================= */
+              /* 🖥️ STATE 2: DEVICE IS BOUND -> QUICK DESKTOP-STYLE USER LOGIN INTERFACE   */
+              /* ========================================================================= */
+              <div id="quick-login-container" className="space-y-6 animate-in fade-in">
+                {/* Organization Header Box */}
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                      <Building2 className="w-5 h-5" />
                     </div>
-                    <h2 className="text-lg sm:text-xl font-bold text-white">
-                      تأكيد ملكية بريد Gmail
-                    </h2>
-                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                      أدخل رمز التحقق المكون من 6 أرقام المرسل إلى:
-                      <br />
-                      <span className="text-amber-400 font-mono text-sm font-bold dir-ltr inline-block mt-0.5">
-                        {gmailEmail}
-                      </span>
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      (هذا الإجراء يمنع الحسابات الوهمية ويضمن ملكيتك للبريد)
-                    </p>
-                  </div>
-
-                  {/* Preview code badge if in preview/development mode */}
-                  {previewOtpCode && (
-                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-center flex items-center justify-between">
-                      <div className="text-right">
-                        <span className="text-[10px] text-amber-300 block">كود التحقق المباشر:</span>
-                        <span className="text-sm font-mono font-black text-amber-400 tracking-widest">
-                          {previewOtpCode}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-sm sm:text-base font-bold text-white truncate">
+                          {boundDevice.companyName}
+                        </h2>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                          كود: {boundDevice.companyCode}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setOtpCode(previewOtpCode)}
-                        className="text-xs px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg cursor-pointer transition"
-                      >
-                        نسخ الرمز
-                      </button>
+                      <p className="text-[11px] text-slate-400 truncate">
+                        {boundDevice.adminEmail || 'منظومة سحابية معتمدة'}
+                      </p>
                     </div>
-                  )}
+                  </div>
 
+                  <button
+                    type="button"
+                    id="btn-refresh-company-users"
+                    onClick={handleRefreshMetadata}
+                    disabled={isRefreshingMetadata}
+                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                    title="تحديث بيانات الفروع والمستخدمين من السحابة"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshingMetadata ? 'animate-spin text-blue-400' : ''}`} />
+                  </button>
+                </div>
+
+                {/* Quick Login Form */}
+                <form id="quick-login-form" onSubmit={handleQuickLoginSubmit} className="space-y-4">
+                  {/* 1. Branch / Department Dropdown */}
                   <div>
-                    <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-center">
-                      رمز التحقق (OTP) المكون من 6 أرقام <span className="text-rose-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      autoFocus
-                      maxLength={6}
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                      placeholder="• • • • • •"
-                      dir="ltr"
-                      className="w-full py-3 bg-slate-900 border-2 border-amber-500/40 rounded-xl text-center text-2xl font-mono tracking-[0.4em] text-amber-300 placeholder-slate-600 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-black transition"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-
-                  {/* Submit OTP */}
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isLoading || otpCode.trim().length < 4}
-                      className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base cursor-pointer"
+                    <label
+                      htmlFor="select-login-branch"
+                      className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-right"
                     >
-                      {isLoading ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>جاري التحقق وتفعيل المنشأة...</span>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-5 h-5" />
-                          <span>تأكيد الرمز وتفعيل منشأة "{gmailCompanyName || 'الجديدة'}"</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Resend & Edit Email */}
-                  <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-700/60">
-                    <button
-                      type="button"
-                      onClick={handleResendOtp}
-                      disabled={resendCooldown > 0 || isLoading}
-                      className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold disabled:opacity-40 cursor-pointer"
-                    >
-                      <RotateCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                      <span>
-                        {resendCooldown > 0 ? `إعادة الإرسال (${resendCooldown} ثانية)` : 'إعادة إرسال الرمز'}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsOtpStep(false);
-                        setOtpCode('');
-                        setErrorMessage(null);
-                        setSuccessMessage(null);
-                      }}
-                      className="flex items-center gap-1 text-slate-400 hover:text-slate-200 cursor-pointer"
-                    >
-                      <span>تعديل البيانات</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                /* GMAIL LOGIN & REGISTRATION FORM */
-                <form onSubmit={handleGmailLogin} className="space-y-4">
-                  <div className="text-center mb-4">
-                    <div className="inline-flex p-3 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 mb-2">
-                      <Mail className="w-7 h-7" />
-                    </div>
-                    <h2 className="text-lg sm:text-xl font-bold text-white">
-                      {isRegisterNewWithGmail ? 'تسجيل منشأة جديدة بحساب Gmail' : 'الدخول السريع عبر Google (Gmail)'}
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {isRegisterNewWithGmail
-                        ? 'أدخل اسم منشأتك وسنرسل كود تحقق لمنع الحسابات الوهمية'
-                        : 'أدخل بريدك للدخول إلى حساب شركتك السحابي فوراً'}
-                    </p>
-                  </div>
-
-                  {/* Gmail Input Field */}
-                  <div>
-                    <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-right">
-                      بريد Gmail الخاص بك <span className="text-rose-400">*</span>
+                      الفرع / القسم <span className="text-rose-400">*</span>
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                        <Mail className="w-5 h-5 text-red-400" />
+                        <Store className="w-4 h-4 text-blue-400" />
                       </div>
-                      <input
-                        type="email"
-                        autoFocus
-                        value={gmailEmail}
-                        onChange={(e) => setGmailEmail(e.target.value)}
-                        placeholder="yourname@gmail.com"
-                        dir="ltr"
-                        className="w-full pl-3 pr-11 py-2.5 sm:py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all text-left font-sans"
+                      <select
+                        id="select-login-branch"
+                        value={selectedBranchId}
+                        onChange={(e) => setSelectedBranchId(e.target.value)}
+                        className="w-full pl-10 pr-10 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none cursor-pointer text-right"
                         disabled={isLoading}
-                        required
-                      />
+                      >
+                        {boundDevice.branches && boundDevice.branches.length > 0 ? (
+                          boundDevice.branches.map((b) => (
+                            <option key={b.id} value={b.id} className="bg-slate-900 text-white py-2">
+                              {b.name} {b.isMain ? '(الرئيسي)' : ''}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="main" className="bg-slate-900 text-white">
+                            الفرع الرئيسي
+                          </option>
+                        )}
+                      </select>
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
                     </div>
                   </div>
 
-                  {/* If new company registration is activated */}
-                  {isRegisterNewWithGmail && (
-                    <div className="space-y-3 pt-1 border-t border-slate-700/60 animate-in fade-in">
+                  {/* 2. User Dropdown (Strictly isolated to this company's users) */}
+                  <div>
+                    <label
+                      htmlFor="select-login-user"
+                      className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-right"
+                    >
+                      اسم المستخدم <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                        <User className="w-4 h-4 text-indigo-400" />
+                      </div>
+                      <select
+                        id="select-login-user"
+                        value={selectedUsername}
+                        onChange={(e) => {
+                          setSelectedUsername(e.target.value);
+                          setLoginPassword('');
+                        }}
+                        className="w-full pl-10 pr-10 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none cursor-pointer text-right"
+                        disabled={isLoading}
+                        required
+                      >
+                        {boundDevice.users && boundDevice.users.length > 0 ? (
+                          boundDevice.users.map((u) => (
+                            <option
+                              key={u.id}
+                              value={u.username || u.name}
+                              className="bg-slate-900 text-white py-2"
+                            >
+                              {u.name} ({u.username || 'user'}) - [
+                              {u.role === 'company_admin' || u.role === 'admin'
+                                ? 'المدير'
+                                : u.role === 'cashier'
+                                ? 'كاشير'
+                                : u.role === 'accountant'
+                                ? 'محاسب'
+                                : u.role === 'storekeeper'
+                                ? 'أمين مخزن'
+                                : 'مستخدم'}
+                              ]
+                            </option>
+                          ))
+                        ) : (
+                          <option value="admin" className="bg-slate-900 text-white">
+                            المدير العام (admin)
+                          </option>
+                        )}
+                      </select>
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Password Field */}
+                  <div>
+                    <label
+                      htmlFor="input-login-password"
+                      className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-right"
+                    >
+                      كلمة المرور <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Lock className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <input
+                        id="input-login-password"
+                        ref={passwordInputRef}
+                        type={showLoginPassword ? 'text' : 'password'}
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="أدخل كلمة المرور"
+                        dir="ltr"
+                        autoComplete="current-password"
+                        className="w-full pl-11 pr-11 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono text-left"
+                        disabled={isLoading}
+                        required
+                      />
+                      <button
+                        type="button"
+                        id="btn-toggle-login-password"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                        tabIndex={-1}
+                      >
+                        {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 4. Action Button: موافق (دخول للمنظومة) */}
+                  <button
+                    type="submit"
+                    id="btn-quick-login-submit"
+                    disabled={isLoading}
+                    className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:scale-[0.99] text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>جاري التحقق والدخول...</span>
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-5 h-5" />
+                        <span>موافق (دخول للمنظومة)</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {/* 5. Unbind Device Link */}
+                <div className="pt-4 border-t border-slate-800/80 flex items-center justify-center">
+                  <button
+                    type="button"
+                    id="btn-unbind-device-trigger"
+                    onClick={() => setShowUnbindConfirmModal(true)}
+                    className="text-xs text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-1.5 cursor-pointer py-1 px-2 rounded-lg hover:bg-rose-500/10"
+                  >
+                    <Unlink className="w-3.5 h-3.5" />
+                    <span>إلغاء ربط هذا الجهاز / تبديل المنشأة</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* ========================================================================= */
+              /* 📱 STATE 1: DEVICE IS NOT BOUND -> FIRST TIME COMPANY SETUP / DEVICE BIND */
+              /* ========================================================================= */
+              <div id="unbound-device-container" className="space-y-6 animate-in fade-in">
+                {/* Title & Description */}
+                <div className="text-center">
+                  <div className="inline-flex p-3 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 mb-3 shadow-inner">
+                    <Laptop className="w-7 h-7" />
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-black text-white tracking-wide">
+                    تهيئة وربط الجهاز بالمنظومة
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed max-w-sm mx-auto">
+                    هذا الجهاز غير مربوط بأي شركة حتى الآن. يرجى تسجيل منشأة جديدة أو الربط بكود شركة قائمة للاعتماد.
+                  </p>
+                </div>
+
+                {/* Setup Mode Tabs */}
+                <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
+                  <button
+                    type="button"
+                    id="tab-register-new-company"
+                    onClick={() => {
+                      setSetupTab('register_new');
+                      setErrorMessage(null);
+                    }}
+                    className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      setupTab === 'register_new'
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                    <span>تسجيل شركة جديدة</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="tab-bind-existing-company"
+                    onClick={() => {
+                      setSetupTab('bind_existing');
+                      setErrorMessage(null);
+                    }}
+                    className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      setupTab === 'bind_existing'
+                        ? 'bg-slate-800 text-white shadow-md border border-slate-700'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                    <span>ربط بشركة موجودة</span>
+                  </button>
+                </div>
+
+                {setupTab === 'register_new' ? (
+                  /* TAB 1: REGISTER NEW COMPANY (Requested: Company Name, Gmail, Admin User, Password) */
+                  <form
+                    id="form-register-new-company"
+                    onSubmit={handleRegisterNewCompanySubmit}
+                    className="space-y-4"
+                  >
+                    {/* Field 1: Company Name */}
+                    <div>
+                      <label
+                        htmlFor="reg-company-name"
+                        className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1 text-right"
+                      >
+                        اسم الشركة / المؤسسة <span className="text-rose-400">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                        <input
+                          id="reg-company-name"
+                          type="text"
+                          value={regCompanyName}
+                          onChange={(e) => setRegCompanyName(e.target.value)}
+                          placeholder="مثال: شركة النور للتجارة والمقاولات"
+                          className="w-full pl-3 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-right"
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Field 2: Admin Gmail */}
+                    <div>
+                      <label
+                        htmlFor="reg-admin-email"
+                        className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1 text-right"
+                      >
+                        إيميل المدير بـ Gmail للتعرف على الهوية <span className="text-rose-400">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                          <Mail className="w-4 h-4" />
+                        </div>
+                        <input
+                          id="reg-admin-email"
+                          type="email"
+                          value={regAdminEmail}
+                          onChange={(e) => setRegAdminEmail(e.target.value)}
+                          placeholder="admin.owner@gmail.com"
+                          dir="ltr"
+                          className="w-full pl-3 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left font-mono"
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Field 3 & 4: Admin Username & Password in 2 Columns */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-semibold text-slate-200 mb-1 text-right">
-                          اسم الشركة أو المنشأة <span className="text-rose-400">*</span>
+                        <label
+                          htmlFor="reg-admin-username"
+                          className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1 text-right"
+                        >
+                          اسم مستخدم الـ Admin <span className="text-rose-400">*</span>
                         </label>
                         <div className="relative">
-                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
-                            <Building2 className="w-4 h-4 text-amber-400" />
+                          <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                            <User className="w-4 h-4" />
                           </div>
                           <input
+                            id="reg-admin-username"
                             type="text"
-                            value={gmailCompanyName}
-                            onChange={(e) => setGmailCompanyName(e.target.value)}
-                            placeholder="مثال: شركة النور للتجارة"
-                            className="w-full pl-3 pr-10 py-2.5 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500"
+                            value={regAdminUsername}
+                            onChange={(e) => setRegAdminUsername(e.target.value)}
+                            placeholder="admin"
+                            dir="ltr"
+                            className="w-full pl-3 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left font-mono"
                             disabled={isLoading}
                             required
                           />
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-300 mb-1 text-right">
-                            اسم المدير / المسؤول
-                          </label>
+                      <div>
+                        <label
+                          htmlFor="reg-admin-password"
+                          className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1 text-right"
+                        >
+                          كلمة المرور <span className="text-rose-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                            <Lock className="w-4 h-4" />
+                          </div>
                           <input
-                            type="text"
-                            value={gmailAdminName}
-                            onChange={(e) => setGmailAdminName(e.target.value)}
-                            placeholder="الاسم الشخصي"
-                            className="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500"
-                            disabled={isLoading}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-300 mb-1 text-right">
-                            رقم الهاتف للتواصل
-                          </label>
-                          <input
-                            type="tel"
-                            value={gmailPhone}
-                            onChange={(e) => setGmailPhone(e.target.value)}
-                            placeholder="010XXXXXXXX"
+                            id="reg-admin-password"
+                            type={showRegPassword ? 'text' : 'password'}
+                            value={regAdminPassword}
+                            onChange={(e) => setRegAdminPassword(e.target.value)}
+                            placeholder="••••••"
                             dir="ltr"
-                            className="w-full px-3 py-2 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500 text-left"
+                            className="w-full pl-9 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left font-mono"
                             disabled={isLoading}
+                            required
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowRegPassword(!showRegPassword)}
+                            className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
+                            tabIndex={-1}
+                          >
+                            {showRegPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
                         </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* Mode Toggle between login and registration */}
-                  <div className="text-center pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsRegisterNewWithGmail(!isRegisterNewWithGmail);
-                        setErrorMessage(null);
-                        setSuccessMessage(null);
-                      }}
-                      className="text-xs text-amber-400 hover:text-amber-300 hover:underline font-semibold cursor-pointer"
-                    >
-                      {isRegisterNewWithGmail
-                        ? '← لديك حساب بالفعل؟ تسجيل الدخول بالجيميل'
-                        : '+ شركة جديدة؟ انقر هنا لتسجيل منشأتك عبر Gmail مجاناً'}
-                    </button>
-                  </div>
+                    {/* Field 5: Branch Name */}
+                    <div>
+                      <label
+                        htmlFor="reg-branch-name"
+                        className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1 text-right"
+                      >
+                        اسم الفرع الرئيسي لهذا الجهاز
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                          <Store className="w-4 h-4 text-emerald-400" />
+                        </div>
+                        <input
+                          id="reg-branch-name"
+                          type="text"
+                          value={regBranchName}
+                          onChange={(e) => setRegBranchName(e.target.value)}
+                          placeholder="الفرع الرئيسي"
+                          className="w-full pl-3 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-right"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
 
-                  {/* Submit Button */}
-                  <div className="pt-2">
+                    {/* Submit Button */}
                     <button
                       type="submit"
+                      id="btn-submit-register-company"
                       disabled={isLoading}
-                      className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-xl shadow-lg shadow-red-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base cursor-pointer"
+                      className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
                       {isLoading ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>جاري المعالجة وإرسال الرمز...</span>
+                          <span>جاري تسجيل المنشأة وحفظ ربط الجهاز...</span>
                         </>
                       ) : (
                         <>
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-                          </svg>
-                          <span>
-                            {isRegisterNewWithGmail ? 'إرسال كود التحقق إلى بريد Gmail' : 'متابعة الدخول عبر Gmail'}
-                          </span>
+                          <Laptop className="w-5 h-5" />
+                          <span>تسجيل المنشأة واعتماد ربط هذا الجهاز</span>
                         </>
                       )}
                     </button>
-                  </div>
-                </form>
-              )
-            ) : (
-              /* COMPANY ID + USERNAME LOGIN FORM */
-              <form onSubmit={handleCompanyLogin} className="space-y-4">
-                <div className="text-center mb-4">
-                  <div className="inline-flex p-3 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 mb-2">
-                    <Building2 className="w-7 h-7" />
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-bold text-white">
-                    تسجيل الدخول بكود الشركة
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    أدخل كود الشركة وبيانات حساب الموظف أو المدير
-                  </p>
-                </div>
-
-                {/* Field 1: Company ID */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-right">
-                    كود الشركة / Company ID <span className="text-rose-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Building2 className="w-5 h-5" />
+                  </form>
+                ) : (
+                  /* TAB 2: BIND TO EXISTING COMPANY (By Company Code / ID) */
+                  <form
+                    id="form-bind-existing-company"
+                    onSubmit={handleBindExistingCompanySubmit}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <label
+                        htmlFor="input-existing-company-code"
+                        className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1 text-right"
+                      >
+                        كود المنشأة السحابي (Company Code / ID) <span className="text-rose-400">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                        <input
+                          id="input-existing-company-code"
+                          type="text"
+                          value={existingCompanyCode}
+                          onChange={(e) => setExistingCompanyCode(e.target.value.toUpperCase())}
+                          placeholder="مثال: 101 أو 102 أو COMP-000001"
+                          dir="ltr"
+                          className="w-full pl-3 pr-10 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left uppercase"
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        أدخل كود المنشأة المعطى لك من المدير لربط هذا الجهاز بها مباشرة.
+                      </p>
                     </div>
-                    <input
-                      type="text"
-                      value={companyId}
-                      onChange={(e) => setCompanyId(e.target.value.toUpperCase())}
-                      placeholder="مثال: 101 أو 102"
-                      dir="ltr"
-                      autoComplete="off"
-                      spellCheck={false}
-                      className="w-full pl-3 pr-11 py-2.5 sm:py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left uppercase"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                </div>
 
-                {/* Field 2: Username */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1.5 text-right">
-                    اسم المستخدم (Username) <span className="text-rose-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="أدخل اسم المستخدم"
-                      dir="ltr"
-                      autoComplete="off"
-                      spellCheck={false}
-                      className="w-full pl-3 pr-11 py-2.5 sm:py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Field 3: Password */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs text-slate-400">حساس لحالة الأحرف</span>
-                    <label className="block text-xs sm:text-sm font-semibold text-slate-200 text-right">
-                      كلمة المرور (Password) <span className="text-rose-400">*</span>
-                    </label>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Lock className="w-5 h-5" />
-                    </div>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      dir="ltr"
-                      autoComplete="new-password"
-                      className="w-full pl-11 pr-11 py-2.5 sm:py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left font-mono"
-                      disabled={isLoading}
-                      required
-                    />
                     <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
+                      type="submit"
+                      id="btn-submit-bind-existing"
+                      disabled={isLoading}
+                      className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {isLoading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>جاري التحقق من المنشأة...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-5 h-5" />
+                          <span>التحقق واعتماد ربط الجهاز</span>
+                        </>
+                      )}
                     </button>
-                  </div>
-                </div>
-
-                {/* Remember Me */}
-                <div className="flex items-center justify-between pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded-sm bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>تذكر بيانات الدخول</span>
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={() => alert('لإعادة تعيين كلمة المرور أو الاستفسار عن كود الشركة، يرجى التواصل مع الدعم الفني المعتمد لمنظومة ركيزة: 01029190615')}
-                    className="text-xs text-blue-400 hover:underline cursor-pointer"
-                  >
-                    نسيت كلمة المرور؟
-                  </button>
-                </div>
-
-                {/* Submit Button */}
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base cursor-pointer"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>جاري التحقق والمصادقة...</span>
-                      </>
-                    ) : (
-                      <>
-                        <LogIn className="w-5 h-5" />
-                        <span>تسجيل الدخول إلى المنظومة</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+                  </form>
+                )}
+              </div>
             )}
-
-            {/* Footer Status */}
-            <div className="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400">
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>تشفير بيانات سحابي 256-bit</span>
-              </span>
-              <span>الإصدار 8.4 Enterprise</span>
-            </div>
           </div>
         </div>
       </main>
 
-      {/* Secret Owner Access Modal (Accessible only by long-press on RAKEEZA system name) */}
-      {showSecretOwnerModal && (
+      {/* Confirmation Modal: Unbind Device */}
+      {showUnbindConfirmModal && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] flex items-center justify-center p-4 animate-fade-in"
-          dir="rtl"
-          onClick={() => setShowSecretOwnerModal(false)}
+          id="unbind-device-modal"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
         >
-          <div
-            className="bg-slate-900 border border-amber-500/40 rounded-2xl p-6 w-full max-w-sm shadow-2xl shadow-amber-500/20 text-white relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-white">
-                    المنفذ السري لمالك المنظومة (Root Owner)
-                  </h3>
-                  <p className="text-[11px] text-amber-300">
-                    التحكم المركزي في الشركات والتراخيص
-                  </p>
-                </div>
-              </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto">
+              <Unlink className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-base sm:text-lg font-bold text-white">
+                تأكيد إلغاء ربط هذا الجهاز
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                هل أنت متأكد من رغبتك في إلغاء ربط هذا الجهاز بشركة{' '}
+                <span className="font-bold text-amber-400">"{boundDevice?.companyName}"</span>؟
+              </p>
+              <p className="text-xs text-slate-400">
+                سيتطلب الدخول مجدداً إعادة ربط الجهاز بكود الشركة أو تسجيل شركة جديدة.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setShowSecretOwnerModal(false)}
-                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                id="btn-confirm-unbind"
+                onClick={handleConfirmUnbindDevice}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-bold transition cursor-pointer shadow-lg shadow-rose-600/30"
               >
-                ✕
+                تأكيد إلغاء الربط
               </button>
+              <button
+                type="button"
+                id="btn-cancel-unbind"
+                onClick={() => setShowUnbindConfirmModal(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-semibold transition cursor-pointer"
+              >
+                تراجع
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Secret Owner Modal */}
+      {showSecretOwnerModal && (
+        <div
+          id="secret-owner-modal"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in"
+        >
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-sm w-full p-6 shadow-2xl shadow-amber-500/10 space-y-4">
+            <div className="text-center space-y-1">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-2">
+                <Shield className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-white">
+                بوابة مالك المنظومة (Platform Owner)
+              </h3>
+              <p className="text-xs text-slate-400">
+                يرجى إدخال رمز المرور السري للمالك للوصول إلى لوحة التحكم الرئيسية
+              </p>
             </div>
 
             {ownerPinError && (
-              <div className="mb-4 p-2.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs">
+              <div className="p-2.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs">
                 {ownerPinError}
               </div>
             )}
 
-            <form onSubmit={handleSecretOwnerSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  أدخل رمز المرور السري الخاص بالمالك (Master PIN):
-                </label>
+            <form onSubmit={handleSecretOwnerSubmit} className="space-y-3">
+              <div className="relative">
                 <input
                   type="password"
-                  autoFocus
                   value={secretOwnerPin}
                   onChange={(e) => setSecretOwnerPin(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="أدخل الرمز السري"
                   dir="ltr"
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-center text-base font-mono tracking-widest text-amber-300 outline-none"
-                  disabled={isVerifyingOwner}
+                  autoFocus
+                  className="w-full py-2.5 px-3 bg-slate-950 border border-slate-700 rounded-xl text-center text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400 font-mono tracking-widest"
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex gap-2">
                 <button
                   type="submit"
                   disabled={isVerifyingOwner}
-                  className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2.5 px-4 rounded-xl text-xs sm:text-sm transition cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer transition"
                 >
-                  {isVerifyingOwner ? 'جاري التحقق...' : 'تأكيد الدخول السري'}
+                  {isVerifyingOwner ? 'جاري التحقق...' : 'دخول المالك'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowSecretOwnerModal(false)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition cursor-pointer"
+                  className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs cursor-pointer transition"
                 >
                   إلغاء
                 </button>
@@ -932,11 +1136,9 @@ export const LoginView: React.FC<LoginViewProps> = ({
         </div>
       )}
 
-      {/* Footer Branding */}
-      <footer className="relative z-10 w-full text-center py-4 border-t border-slate-800 text-xs text-slate-400">
-        <p>
-          جميع الحقوق محفوظة لمنظومة <span className="text-white font-semibold">RAKEEZA | ركيزة</span> © {new Date().getFullYear()} • حلول الإدارة السحابية المتقدمة
-        </p>
+      {/* Footer */}
+      <footer className="relative z-10 py-4 text-center text-xs text-slate-500 border-t border-slate-800/60">
+        <p>منظومة ركيزة المحاسبية RAKEEZA Cloud ERP © {new Date().getFullYear()} — جميع الحقوق محفوظة</p>
       </footer>
     </div>
   );

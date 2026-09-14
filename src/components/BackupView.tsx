@@ -45,19 +45,19 @@ export const BackupView: React.FC<BackupViewProps> = ({ appData, onUpdateData, s
       ...newConfig,
     };
 
-    let updated = {
+    const updated: AppData = {
       ...appData,
       autoBackupConfig: updatedConfig,
     };
 
-    updated = addAuditLog(
+    const finalData = addAuditLog(
       updated,
       'update',
       'النسخ الاحتياطي',
       `تم تحديث إعدادات النسخ التلقائي: الحالة (${updatedConfig.enabled ? 'مفعل' : 'معطل'}) - الفاصل (${updatedConfig.intervalMinutes} دقيقة).`
     );
 
-    onUpdateData(updated);
+    onUpdateData(finalData);
     showToast('تم حفظ إعدادات النسخ الاحتياطي التلقائي بنجاح', 'success');
   };
 
@@ -66,7 +66,7 @@ export const BackupView: React.FC<BackupViewProps> = ({ appData, onUpdateData, s
     const customName = label || snapshotLabel.trim() || 'نقطة استعادة يدوية';
     const newSnapshot = createSystemSnapshot(appData, customName, 'manual');
 
-    let updated = {
+    const updated: AppData = {
       ...appData,
       backups: [newSnapshot, ...(appData.backups || [])].slice(0, autoConfig.maxSnapshotsToKeep || 20),
       autoBackupConfig: {
@@ -75,14 +75,14 @@ export const BackupView: React.FC<BackupViewProps> = ({ appData, onUpdateData, s
       },
     };
 
-    updated = addAuditLog(
+    const finalData = addAuditLog(
       updated,
       'create',
       'النسخ الاحتياطي',
       `تم إنشاء نقطة استعادة يدوية لنظام: ${customName} (حجم: ${newSnapshot.sizeKB} KB).`
     );
 
-    onUpdateData(updated);
+    onUpdateData(finalData);
     setSnapshotLabel('');
     showToast('تم إنشاء نقطة الاستعادة وحفظها في المتصفح بنجاح', 'success');
   };
