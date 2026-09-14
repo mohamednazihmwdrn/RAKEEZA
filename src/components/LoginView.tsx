@@ -770,9 +770,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   <h2 className="text-lg sm:text-xl font-black text-white tracking-wide">
                     تهيئة وربط الجهاز بالمنظومة
                   </h2>
-                  <p className="text-xs text-slate-400 mt-1 leading-relaxed max-w-sm mx-auto">
-                    هذا الجهاز غير مربوط بأي شركة حتى الآن. يرجى تسجيل منشأة جديدة أو الربط بكود شركة قائمة للاعتماد.
-                  </p>
                 </div>
 
                 {/* Setup Mode Tabs */}
@@ -812,21 +809,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   </button>
                 </div>
 
-                {/* Multi-device Explanatory Helper */}
-                <div className="p-3 bg-blue-950/40 border border-blue-800/40 rounded-xl text-right flex items-start gap-2.5">
-                  <div className="p-1 rounded-lg bg-blue-500/20 text-blue-400 shrink-0 mt-0.5">
-                    <Laptop className="w-4 h-4" />
-                  </div>
-                  <div className="text-xs text-slate-300 leading-relaxed">
-                    <p className="font-semibold text-blue-300 mb-0.5">
-                      💡 ربط أجهزة وفروع متعددة بنفس المنشأة:
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      إذا كان لديك أجهزة أخرى (كمبيوتر كاشير، لابتوب محاسب، أجهزة فروع أخرى)، يكفيك إدخال كود المنشأة السحابي (مثل: <span className="text-amber-300 font-mono font-bold">108</span> أو <span className="text-amber-300 font-mono font-bold">COMP-672842</span>) لربط الجهاز مباشرة ومزامنة كل البيانات والفواتير سحابياً.
-                    </p>
-                  </div>
-                </div>
-
                 {setupTab === 'bind_existing' ? (
                   /* TAB 1: BIND TO EXISTING COMPANY (Recommended for Multiple Devices & Branches) */
                   <form
@@ -857,9 +839,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
                           required
                         />
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1">
-                        أدخل كود المنشأة (مثل: 108 أو 101) أو معرّف الشركة (COMP-672842) لربط هذا الجهاز ومزامنة البيانات مع الأجهزة الأخرى.
-                      </p>
                     </div>
 
                     <button
@@ -1070,9 +1049,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 هل أنت متأكد من رغبتك في إلغاء ربط هذا الجهاز بشركة{' '}
                 <span className="font-bold text-amber-400">"{boundDevice?.companyName}"</span>؟
               </p>
-              <p className="text-xs text-slate-400">
-                سيتطلب الدخول مجدداً إعادة ربط الجهاز بكود الشركة أو تسجيل شركة جديدة.
-              </p>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -1111,9 +1087,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
               <h3 className="text-base font-bold text-white">
                 بوابة مالك المنظومة (Platform Owner)
               </h3>
-              <p className="text-xs text-slate-400">
-                يرجى إدخال رمز المرور السري للمالك للوصول إلى لوحة التحكم الرئيسية
-              </p>
             </div>
 
             {ownerPinError && (

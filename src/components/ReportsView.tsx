@@ -956,10 +956,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ pageId, onNavigate, on
 
       {/* Report Results */}
       <div id="report-printable-card" className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-100">
-          <p className="text-xs text-gray-500 font-medium">
-            💡 اضغط على أي بطاقة أو صف للاستعراض التفصيلي ومعاينة الفاتورة أو كشف الحساب
-          </p>
+        <div className="flex flex-wrap items-center justify-end gap-2 pb-2 border-b border-gray-100">
           <span className="text-xs font-bold text-[#1a237e] bg-indigo-50 px-2.5 py-1 rounded-lg">
             {reportData.rows.length} نتيجة
           </span>

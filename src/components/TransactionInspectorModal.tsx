@@ -576,10 +576,6 @@ export const TransactionInspectorModal: React.FC<TransactionInspectorModalProps>
 
           {activeTab === 'edit' && (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl text-xs text-blue-900">
-                💡 يمكنك تعديل التاريخ، الملاحظات، أو حالة الاعتماد للعملية وسيتم حفظ التعديلات وتوثيقها في سجل التدقيق فوراً.
-              </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">تاريخ العملية</label>
                 <input

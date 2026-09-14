@@ -276,7 +276,7 @@
       "branchesCount": 1,
       "warehousesCount": 1,
       "operationsCount": 0,
-      "lastActivityAt": "2026-09-14 13:57",
+      "lastActivityAt": "2026-09-14 15:12",
       "uid": "UID_COMP_COMP-672842",
       "companyCode": "108"
     },
@@ -819,6 +819,39 @@
       "role": "company_admin",
       "createdAt": "2026-09-14T14:55:08.910Z",
       "expiresAt": "2026-10-14T14:55:08.910Z"
+    },
+    "tok_COMP-672842_a77a9020-3daa-4bab-88c5-69e43558710f": {
+      "token": "tok_COMP-672842_a77a9020-3daa-4bab-88c5-69e43558710f",
+      "userId": "u-COMP-672842-admin",
+      "companyId": "COMP-672842",
+      "userName": "nazihm338",
+      "role": "company_admin",
+      "createdAt": "2026-09-14T15:12:10.320Z",
+      "expiresAt": "2026-10-14T15:12:10.320Z"
+    },
+    "tok_COMP-672842_53bf9cb4-4aee-4a8c-bfc9-61e5030352cf": {
+      "token": "tok_COMP-672842_53bf9cb4-4aee-4a8c-bfc9-61e5030352cf",
+      "userId": "u-COMP-672842-admin",
+      "userUid": "UID_COMP-672842_USR_1",
+      "companyId": "COMP-672842",
+      "companyUid": "UID_COMP_COMP-672842",
+      "userName": "nazihm338",
+      "userCode": 1,
+      "role": "company_admin",
+      "createdAt": "2026-09-14T15:28:51.539Z",
+      "expiresAt": "2026-10-14T15:28:51.539Z"
+    },
+    "tok_COMP-672842_a0d7f499-90f3-4ae7-ae24-ecae83df41d9": {
+      "token": "tok_COMP-672842_a0d7f499-90f3-4ae7-ae24-ecae83df41d9",
+      "userId": "u-1789394195396-709",
+      "userUid": "UID_COMP-672842_USR_1",
+      "companyId": "COMP-672842",
+      "companyUid": "UID_COMP_COMP-672842",
+      "userName": "محمد نزية",
+      "userCode": 2,
+      "role": "accountant",
+      "createdAt": "2026-09-14T15:28:55.473Z",
+      "expiresAt": "2026-10-14T15:28:55.473Z"
     }
   },
   "tenantsData": {
@@ -3814,8 +3847,8 @@
           "id": "u-COMP-672842-admin",
           "companyId": "COMP-672842",
           "name": "nazihm338",
-          "username": "mohamed nazih",
-          "password": "1272000",
+          "username": "admin",
+          "password": "123456",
           "role": "company_admin",
           "status": "active",
           "permissions": {
@@ -3847,7 +3880,9 @@
             "customers_manage": true,
             "suppliers_manage": true
           },
-          "createdAt": "2026-09-14"
+          "createdAt": "2026-09-14",
+          "uid": "UID_COMP-672842_USR_1",
+          "userCode": 1
         }
       ],
       "currentUser": "user1",
@@ -4330,6 +4365,26 @@
       "quotations": [],
       "nextQuoteId": 1,
       "auditLogs": [
+        {
+          "id": "log-login-1789399735473",
+          "timestamp": "2026-09-14 15:28:55",
+          "userName": "محمد نزية",
+          "userId": "u-1789394195396-709",
+          "companyId": "COMP-672842",
+          "action": "login",
+          "module": "المصادقة والأمان",
+          "details": "تسجيل دخول ناجح إلى منظومة شركة \"مؤسسة نزيه للتجارة\""
+        },
+        {
+          "id": "log-login-1789399731539",
+          "timestamp": "2026-09-14 15:28:51",
+          "userName": "nazihm338",
+          "userId": "u-COMP-672842-admin",
+          "companyId": "COMP-672842",
+          "action": "login",
+          "module": "المصادقة والأمان",
+          "details": "تسجيل دخول ناجح إلى منظومة شركة \"مؤسسة نزيه للتجارة\""
+        },
         {
           "id": "log-login-1789397708910",
           "timestamp": "2026-09-14 14:55:08",

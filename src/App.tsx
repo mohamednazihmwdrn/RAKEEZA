@@ -1067,9 +1067,6 @@ export default function App() {
               <h2 className="text-base sm:text-lg md:text-xl font-black text-[#1a237e] flex items-center gap-2 flex-wrap">
                 {getPageTitle(currentPage)}
               </h2>
-              <span className="hidden sm:inline-block text-[11px] text-slate-500 mt-0.5">
-                💡 تلميح اختصارات لوحة المفاتيح: (Ctrl+0 الرئيسية | Ctrl+1 المبيعات | Ctrl+2 المشتريات | Ctrl+3 نقطة البيع | Ctrl+4 المخزون | Ctrl+5 الحسابات)
-              </span>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
