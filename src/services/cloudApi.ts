@@ -1,5 +1,5 @@
 import { AppData, TenantCompany, User } from '../types';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const TOKEN_KEY = 'rakeeza_cloud_session_token';
@@ -279,6 +279,117 @@ export const DEFAULT_FIREBASE_COMPANIES = [
       },
     ],
   },
+  {
+    id: 'COMP-672842',
+    uid: 'UID-COMP-672842',
+    code: '108',
+    companyCode: '108',
+    tenantId: 'TENANT-RDQ6-96',
+    name: 'مؤسسة نزيه للتجارة',
+    tradeName: 'مؤسسة نزيه للتجارة',
+    email: 'nazihm338@gmail.com',
+    adminEmail: 'nazihm338@gmail.com',
+    phone: '01029190615',
+    address: 'الفرع الرئيسي',
+    createdAt: '2026-09-05',
+    status: 'active' as const,
+    planId: 'enterprise',
+    planName: 'الباقة الشاملة Enterprise',
+    trialEndsAt: '2026-12-31',
+    adminName: 'nazihm338',
+    adminUsername: 'admin',
+    adminPassword: '123',
+    users: [
+      {
+        id: 'u-COMP-672842-admin',
+        uid: 'UID-COMP-672842-USR-1',
+        code: 1,
+        userCode: 1,
+        username: 'admin',
+        password: '123',
+        altPass: '123',
+        name: 'nazihm338',
+        role: 'company_admin' as const,
+        status: 'active' as const,
+        companyId: 'COMP-672842',
+        companyCode: '108',
+      },
+    ],
+  },
+  {
+    id: 'COMP-748566',
+    uid: 'UID-COMP-748566',
+    code: '107',
+    companyCode: '107',
+    tenantId: 'TENANT-748566',
+    name: 'مؤسسة الاخوة للحدايد والبويات',
+    tradeName: 'مؤسسة الاخوة',
+    email: 'mohamednazih188@gmail.com',
+    adminEmail: 'mohamednazih188@gmail.com',
+    phone: '01029190615',
+    address: 'الفرع الرئيسي',
+    createdAt: '2026-09-05',
+    status: 'active' as const,
+    planId: 'enterprise',
+    planName: 'الباقة الشاملة Enterprise',
+    trialEndsAt: '2026-12-31',
+    adminName: 'mohamednazih188',
+    adminUsername: 'admin',
+    adminPassword: '123',
+    users: [
+      {
+        id: 'u-COMP-748566-admin',
+        uid: 'UID-COMP-748566-USR-1',
+        code: 1,
+        userCode: 1,
+        username: 'admin',
+        password: '123',
+        altPass: '123',
+        name: 'mohamednazih188',
+        role: 'company_admin' as const,
+        status: 'active' as const,
+        companyId: 'COMP-748566',
+        companyCode: '107',
+      },
+    ],
+  },
+  {
+    id: 'COMP-516314',
+    uid: 'UID-COMP-516314',
+    code: '109',
+    companyCode: '109',
+    tenantId: 'TENANT-516314',
+    name: 'الصفا مكرم',
+    tradeName: 'الصفا مكرم',
+    email: 'safaglc95@gmail.com',
+    adminEmail: 'safaglc95@gmail.com',
+    phone: '',
+    address: 'الفرع الرئيسي',
+    createdAt: '2026-09-05',
+    status: 'active' as const,
+    planId: 'enterprise',
+    planName: 'الباقة الشاملة Enterprise',
+    trialEndsAt: '2026-12-31',
+    adminName: 'الصفا مكرم',
+    adminUsername: 'admin',
+    adminPassword: '123',
+    users: [
+      {
+        id: 'u-COMP-516314-admin',
+        uid: 'UID-COMP-516314-USR-1',
+        code: 1,
+        userCode: 1,
+        username: 'admin',
+        password: '123',
+        altPass: '123',
+        name: 'الصفا مكرم',
+        role: 'company_admin' as const,
+        status: 'active' as const,
+        companyId: 'COMP-516314',
+        companyCode: '109',
+      },
+    ],
+  },
 ];
 
 /**
@@ -376,6 +487,87 @@ export async function lookupCompanyInFirebase(companyCodeOrId: string): Promise<
 }
 
 /**
+ * 🏢 Helper: Normalize and extract Company ID and User Info from flexible inputs
+ */
+export function parseFlexibleCompanyQuery(query: string) {
+  const clean = (query || '').trim();
+  const upper = clean.toUpperCase();
+
+  // 1. Extract COMP-XXXXXX pattern
+  const compMatch = upper.match(/COMP-[A-Z0-9_-]+/i);
+  let extractedCompanyId = compMatch ? compMatch[0] : '';
+  if (extractedCompanyId) {
+    extractedCompanyId = extractedCompanyId.replace(/-(ADMIN|USER|CASHIER|ACCOUNTANT|MANAGER|USR.*)$/i, '');
+  }
+
+  // 2. Candidate username if query was a User ID
+  let extractedUsername = '';
+  if (upper.endsWith('-ADMIN')) {
+    extractedUsername = 'admin';
+  } else if (upper.endsWith('-CASHIER')) {
+    extractedUsername = 'cashier';
+  } else if (upper.endsWith('-WAREHOUSE')) {
+    extractedUsername = 'warehouse';
+  }
+
+  return {
+    clean,
+    upper,
+    extractedCompanyId,
+    extractedUsername,
+  };
+}
+
+/**
+ * 🏢 Match company or users against query
+ */
+function matchesCompanyOrUsers(
+  c: any,
+  queryInfo: ReturnType<typeof parseFlexibleCompanyQuery>
+): { matched: boolean; matchedUser?: any } {
+  const { upper, extractedCompanyId, extractedUsername } = queryInfo;
+  const cIdUpper = (c.id || '').toUpperCase();
+  const cCodeUpper = (c.code || c.companyCode || '').toString().toUpperCase();
+  const cEmailUpper = (c.email || c.adminEmail || '').toUpperCase();
+  const cTenantUpper = (c.tenantId || '').toUpperCase();
+  const cNameUpper = (c.name || '').toUpperCase();
+  const cTradeUpper = (c.tradeName || '').toUpperCase();
+
+  if (
+    cIdUpper === upper ||
+    (extractedCompanyId && cIdUpper === extractedCompanyId) ||
+    cCodeUpper === upper ||
+    cTenantUpper === upper ||
+    cEmailUpper === upper ||
+    (upper.length >= 6 && upper.includes(cIdUpper)) ||
+    (upper.length >= 3 && (cNameUpper.includes(upper) || cTradeUpper.includes(upper)))
+  ) {
+    const users = c.users || [];
+    const matchedUser = users.find(
+      (u: any) =>
+        u.id?.toUpperCase() === upper ||
+        (extractedUsername && u.username?.toLowerCase() === extractedUsername.toLowerCase()) ||
+        u.username?.toUpperCase() === upper
+    );
+    return { matched: true, matchedUser };
+  }
+
+  const users = c.users || [];
+  for (const u of users) {
+    if (
+      u.id?.toUpperCase() === upper ||
+      (u.username && u.username.toUpperCase() === upper) ||
+      String(u.code) === upper ||
+      String(u.userCode) === upper
+    ) {
+      return { matched: true, matchedUser: u };
+    }
+  }
+
+  return { matched: false };
+}
+
+/**
  * 🏢 Fetch public company details (branches & isolated users) for device binding & login dropdowns
  */
 export async function fetchCompanyPublicDetailsApi(query: string): Promise<{
@@ -383,74 +575,179 @@ export async function fetchCompanyPublicDetailsApi(query: string): Promise<{
   company?: any;
   branches?: Array<{ id: string; name: string; isMain?: boolean }>;
   users?: Array<{ id: string; code?: number | string; name: string; username: string; role: string; branchId?: string }>;
+  preselectedUsername?: string;
+  preselectedUserId?: string;
   error?: string;
 }> {
   const clean = (query || '').trim();
   if (!clean) {
-    return { success: false, error: 'يرجى إدخال كود أو معرّف المنشأة.' };
+    return { success: false, error: 'يرجى إدخال كود المنشأة أو معرّفها السحابي أو كود المستخدم.' };
   }
+
+  const queryInfo = parseFlexibleCompanyQuery(clean);
 
   // 1. Try server endpoint
   try {
     const res = await fetch(`/api/company/public-info?query=${encodeURIComponent(clean)}`);
     if (res.ok) {
       const data = await res.json();
-      if (data.success && data.company) {
+      if (data && data.success && data.company) {
         saveStoredLocalCompany(data.company);
         await syncCompanyToFirebase(data.company);
         return data;
       }
     }
   } catch (e) {
-    console.warn('Network lookup notice, falling back to local registry:', e);
+    console.warn('Network lookup notice, trying alternatives:', e);
   }
 
-  // 2. Fallback to predefined / local known companies
+  // 1b. If server didn't find and we have an extracted company ID, try that on server too
+  if (queryInfo.extractedCompanyId && queryInfo.extractedCompanyId !== queryInfo.upper) {
+    try {
+      const res = await fetch(`/api/company/public-info?query=${encodeURIComponent(queryInfo.extractedCompanyId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.company) {
+          saveStoredLocalCompany(data.company);
+          await syncCompanyToFirebase(data.company);
+          if (queryInfo.extractedUsername) {
+            data.preselectedUsername = queryInfo.extractedUsername;
+          }
+          return data;
+        }
+      }
+    } catch {}
+  }
+
+  // 2. Query Firebase Firestore Directly (Essential for Vercel / serverless deployments)
+  try {
+    let foundFirestoreDoc: any = null;
+
+    // Check direct doc by extracted company ID or clean query
+    const candidateIds = [queryInfo.extractedCompanyId, queryInfo.upper].filter(Boolean);
+    for (const testId of candidateIds) {
+      const snap = await getDoc(doc(db, 'companies', testId));
+      if (snap.exists()) {
+        foundFirestoreDoc = snap.data();
+        break;
+      }
+    }
+
+    // If not found by direct ID, scan companies collection in Firestore
+    if (!foundFirestoreDoc) {
+      const colSnap = await getDocs(collection(db, 'companies'));
+      for (const d of colSnap.docs) {
+        const cData = d.data();
+        const matchResult = matchesCompanyOrUsers(cData, queryInfo);
+        if (matchResult.matched) {
+          foundFirestoreDoc = cData;
+          break;
+        }
+      }
+    }
+
+    if (foundFirestoreDoc) {
+      saveStoredLocalCompany(foundFirestoreDoc);
+
+      // Fetch tenant branches and users from Firestore
+      let branches = [
+        {
+          id: `br-${foundFirestoreDoc.id}-main`,
+          name: 'الفرع الرئيسي',
+          isMain: true,
+        },
+      ];
+      let users = [
+        {
+          id: `u-${foundFirestoreDoc.id}-admin`,
+          code: 1,
+          name: foundFirestoreDoc.adminName || 'المدير العام',
+          username: foundFirestoreDoc.adminUsername || 'admin',
+          role: 'company_admin',
+        },
+      ];
+
+      try {
+        const tenantSnap = await getDoc(doc(db, 'tenants', foundFirestoreDoc.id));
+        if (tenantSnap.exists()) {
+          const tData = tenantSnap.data() as any;
+          if (tData.branches?.length) branches = tData.branches;
+          if (tData.users?.length) {
+            users = tData.users.map((u: any) => ({
+              id: u.id,
+              code: u.code || 1,
+              name: u.name,
+              username: u.username,
+              role: u.role,
+              branchId: u.branchId,
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn('Tenant data lookup notice:', err);
+      }
+
+      const matchResult = matchesCompanyOrUsers(foundFirestoreDoc, queryInfo);
+
+      return {
+        success: true,
+        company: foundFirestoreDoc,
+        branches,
+        users,
+        preselectedUsername: matchResult.matchedUser?.username || queryInfo.extractedUsername || users[0]?.username,
+        preselectedUserId: matchResult.matchedUser?.id || users[0]?.id,
+      };
+    }
+  } catch (err) {
+    console.warn('Firebase direct company lookup notice:', err);
+  }
+
+  // 3. Fallback to predefined / local known companies
   const registeredLocalCompanies = getStoredLocalCompanies();
   const allKnown = [...DEFAULT_FIREBASE_COMPANIES, ...registeredLocalCompanies];
-  const matched = allKnown.find(
-    (c) =>
-      c.id.toUpperCase() === clean.toUpperCase() ||
-      (c as any).code?.toString().toUpperCase() === clean.toUpperCase() ||
-      (c as any).companyCode?.toString().toUpperCase() === clean.toUpperCase() ||
-      c.email?.toLowerCase() === clean.toLowerCase() ||
-      c.name?.toUpperCase().includes(clean.toUpperCase())
-  );
 
-  if (matched) {
-    const branches = [
-      {
-        id: `br-${matched.id}-main`,
-        name: 'الفرع الرئيسي',
-        isMain: true,
-      },
-    ];
-    const users = ((matched as any).users || [
-      {
-        id: `u-${matched.id}-admin`,
-        code: 1,
-        name: (matched as any).adminName || 'المدير العام',
-        username: (matched as any).adminUsername || 'admin',
-        role: 'company_admin',
-      },
-    ]).map((u: any) => ({
-      id: u.id,
-      code: u.code || u.userCode || 1,
-      name: u.name,
-      username: u.username,
-      role: u.role,
-      branchId: u.branchId,
-    }));
+  for (const c of allKnown) {
+    const matchResult = matchesCompanyOrUsers(c, queryInfo);
+    if (matchResult.matched) {
+      const branches = [
+        {
+          id: `br-${c.id}-main`,
+          name: 'الفرع الرئيسي',
+          isMain: true,
+        },
+      ];
+      const users = ((c as any).users || [
+        {
+          id: `u-${c.id}-admin`,
+          code: 1,
+          name: (c as any).adminName || 'المدير العام',
+          username: (c as any).adminUsername || 'admin',
+          role: 'company_admin',
+        },
+      ]).map((u: any) => ({
+        id: u.id,
+        code: u.code || u.userCode || 1,
+        name: u.name,
+        username: u.username,
+        role: u.role,
+        branchId: u.branchId,
+      }));
 
-    return {
-      success: true,
-      company: matched,
-      branches,
-      users,
-    };
+      return {
+        success: true,
+        company: c,
+        branches,
+        users,
+        preselectedUsername: matchResult.matchedUser?.username || queryInfo.extractedUsername || users[0]?.username,
+        preselectedUserId: matchResult.matchedUser?.id || users[0]?.id,
+      };
+    }
   }
 
-  return { success: false, error: `لم يتم العثور على منشأة بالكود أو المعرف "${query}".` };
+  return {
+    success: false,
+    error: `لم يتم العثور على منشأة بالكود أو المعرف "${query}". يرجى التأكد من كتابة كود المنشأة (مثل 108 أو 101) أو معرّف الشركة (COMP-672842) أو كود المستخدم.`,
+  };
 }
 
 /**
@@ -472,43 +769,148 @@ export async function registerNewCompanyDeviceApi(params: {
   subscription?: any;
   error?: string;
 }> {
+  // 1. Try server endpoint
   try {
     const res = await fetch('/api/company/register-device', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
     });
-    const data = await res.json();
-    if (data.success && data.company) {
-      if (data.token) {
-        setStoredToken(data.token);
-      }
-      saveStoredLocalCompany(data.company);
-      await syncCompanyToFirebase(data.company);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && data.company) {
+        if (data.token) {
+          setStoredToken(data.token);
+        }
+        saveStoredLocalCompany(data.company);
+        await syncCompanyToFirebase(data.company);
 
-      // Auto-bind device
-      const boundInfo: BoundDeviceData = {
-        companyId: data.company.id,
-        companyCode: data.company.code || (data.company as any).companyCode || '101',
-        companyName: data.company.name,
-        adminEmail: data.company.adminEmail || params.adminEmail,
-        boundAt: new Date().toISOString(),
-        branches: data.branches || [{ id: `br-${data.company.id}-main`, name: params.branchName || 'الفرع الرئيسي', isMain: true }],
-        users: data.users || [
-          {
-            id: data.user?.id || `u-${data.company.id}-admin`,
-            code: 1,
-            name: data.user?.name || params.adminUsername,
-            username: params.adminUsername,
-            role: 'company_admin',
-          },
-        ],
-      };
-      setStoredBoundDevice(boundInfo);
+        // Auto-bind device
+        const boundInfo: BoundDeviceData = {
+          companyId: data.company.id,
+          companyCode: data.company.code || (data.company as any).companyCode || '101',
+          companyName: data.company.name,
+          adminEmail: data.company.adminEmail || params.adminEmail,
+          boundAt: new Date().toISOString(),
+          branches: data.branches || [{ id: `br-${data.company.id}-main`, name: params.branchName || 'الفرع الرئيسي', isMain: true }],
+          users: data.users || [
+            {
+              id: data.user?.id || `u-${data.company.id}-admin`,
+              code: 1,
+              name: data.user?.name || params.adminUsername,
+              username: params.adminUsername,
+              role: 'company_admin',
+            },
+          ],
+        };
+        setStoredBoundDevice(boundInfo);
+        return data;
+      }
     }
-    return data;
+  } catch (e) {
+    console.warn('Server registration endpoint notice, using direct Firebase registration:', e);
+  }
+
+  // 2. Direct Firebase & Local Storage Registration (Guarantees registration on Vercel / Static hosts)
+  try {
+    const randomNum = Math.floor(100000 + Math.random() * 900000);
+    const newCompId = `COMP-${randomNum}`;
+    const newCode = String(Math.floor(110 + Math.random() * 880));
+    const now = new Date().toISOString();
+
+    const newCompany: TenantCompany = {
+      id: newCompId,
+      tenantId: `TENANT-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+      code: newCode,
+      name: params.companyName.trim(),
+      tradeName: params.companyName.trim(),
+      email: params.adminEmail.trim().toLowerCase(),
+      adminEmail: params.adminEmail.trim().toLowerCase(),
+      phone: '',
+      address: params.branchName || 'المقر الرئيسي',
+      createdAt: now.split('T')[0],
+      status: 'active',
+      planId: 'trial',
+      planName: 'التجربة المجانية (30 يوم)',
+      trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      maxUsers: 15,
+      activeUsersCount: 1,
+      adminName: params.adminUsername || 'المدير العام',
+      adminUsername: params.adminUsername,
+      adminPassword: params.adminPassword,
+    };
+
+    const newUser: User = {
+      id: `u-${newCompId}-admin`,
+      code: 1,
+      name: params.adminUsername || 'المدير العام',
+      username: params.adminUsername,
+      password: params.adminPassword,
+      role: 'company_admin',
+      status: 'active',
+      companyId: newCompId,
+    };
+
+    const mainBranch = {
+      id: `br-${newCompId}-main`,
+      name: params.branchName || 'الفرع الرئيسي',
+      isMain: true,
+    };
+
+    const token = `tok_local_${newCompId}_${Date.now()}`;
+
+    // Write to Firebase Firestore
+    try {
+      await setDoc(doc(db, 'companies', newCompId), {
+        ...newCompany,
+        companyCode: newCode,
+        syncedAt: now,
+      });
+
+      await setDoc(doc(db, 'tenants', newCompId), {
+        companyId: newCompId,
+        branches: [mainBranch],
+        users: [newUser],
+        lastSync: now,
+      });
+    } catch (fbErr) {
+      console.warn('Firebase direct write warning:', fbErr);
+    }
+
+    // Save locally
+    saveStoredLocalCompany(newCompany);
+    setStoredToken(token);
+
+    const boundInfo: BoundDeviceData = {
+      companyId: newCompId,
+      companyCode: newCode,
+      companyName: newCompany.name,
+      adminEmail: newCompany.adminEmail,
+      boundAt: now,
+      branches: [mainBranch],
+      users: [newUser],
+    };
+    setStoredBoundDevice(boundInfo);
+
+    return {
+      success: true,
+      company: newCompany,
+      user: newUser,
+      token,
+      branches: [mainBranch],
+      users: [newUser],
+      subscription: {
+        status: 'active',
+        planName: 'التجربة المجانية (30 يوم)',
+        daysRemaining: 30,
+        isExpired: false,
+      },
+    };
   } catch (err: any) {
-    return { success: false, error: err.message || 'فشل الاتصال بالخادم لإنشاء وربط المنشأة.' };
+    return {
+      success: false,
+      error: err.message || 'حدث خطأ أثناء تسجيل المنشأة. يرجى المحاولة مرة أخرى.',
+    };
   }
 }
 

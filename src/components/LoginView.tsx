@@ -51,8 +51,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [isCheckingDevice, setIsCheckingDevice] = useState<boolean>(true);
   const [showUnbindConfirmModal, setShowUnbindConfirmModal] = useState<boolean>(false);
 
-  // 📝 Unbound Mode: Tab 'register_new' or 'bind_existing'
-  const [setupTab, setSetupTab] = useState<'register_new' | 'bind_existing'>('register_new');
+  // 📝 Unbound Mode: Tab 'bind_existing' (default for branch/employee devices) or 'register_new'
+  const [setupTab, setSetupTab] = useState<'bind_existing' | 'register_new'>('bind_existing');
 
   // Form 1: Register New Company State
   const [regCompanyName, setRegCompanyName] = useState<string>('');
@@ -255,7 +255,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
     const cleanCode = existingCompanyCode.trim().toUpperCase();
     if (!cleanCode) {
-      setErrorMessage('يرجى إدخال كود المنشأة (مثال: 101 أو 102).');
+      setErrorMessage('يرجى إدخال كود المنشأة أو معرّفها السحابي أو كود المستخدم.');
       return;
     }
 
@@ -288,11 +288,16 @@ export const LoginView: React.FC<LoginViewProps> = ({
         if (boundData.branches?.length > 0) {
           setSelectedBranchId(boundData.branches[0].id);
         }
-        if (boundData.users?.length > 0) {
+        if (res.preselectedUsername) {
+          setSelectedUsername(res.preselectedUsername);
+        } else if (boundData.users?.length > 0) {
           setSelectedUsername(boundData.users[0].username);
         }
 
-        setSuccessMessage(`تم ربط هذا الجهاز بنجاح بمنشأة: "${res.company.name}". يمكنك الآن تسجيل الدخول مباشرة.`);
+        const displayCode = res.company.code || res.company.companyCode || res.company.id;
+        setSuccessMessage(
+          `تم التعرف على منشأة: "${res.company.name}" (كود: ${displayCode}) بنجاح! تم اعتماد ربط هذا الجهاز، يمكنك الآن إدخال كلمة المرور لتسجيل الدخول.`
+        );
       } else {
         setErrorMessage(res.error || `لم يتم العثور على منشأة بالكود "${cleanCode}".`);
       }
@@ -774,6 +779,23 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
                   <button
                     type="button"
+                    id="tab-bind-existing-company"
+                    onClick={() => {
+                      setSetupTab('bind_existing');
+                      setErrorMessage(null);
+                    }}
+                    className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      setupTab === 'bind_existing'
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                    <span>ربط هذا الجهاز بشركتك (كود المنشأة)</span>
+                  </button>
+
+                  <button
+                    type="button"
                     id="tab-register-new-company"
                     onClick={() => {
                       setSetupTab('register_new');
@@ -786,29 +808,81 @@ export const LoginView: React.FC<LoginViewProps> = ({
                     }`}
                   >
                     <Sparkles className="w-4 h-4 text-amber-300" />
-                    <span>تسجيل شركة جديدة</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    id="tab-bind-existing-company"
-                    onClick={() => {
-                      setSetupTab('bind_existing');
-                      setErrorMessage(null);
-                    }}
-                    className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      setupTab === 'bind_existing'
-                        ? 'bg-slate-800 text-white shadow-md border border-slate-700'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <Building2 className="w-4 h-4" />
-                    <span>ربط بشركة موجودة</span>
+                    <span>تسجيل منشأة جديدة أول مرة</span>
                   </button>
                 </div>
 
-                {setupTab === 'register_new' ? (
-                  /* TAB 1: REGISTER NEW COMPANY (Requested: Company Name, Gmail, Admin User, Password) */
+                {/* Multi-device Explanatory Helper */}
+                <div className="p-3 bg-blue-950/40 border border-blue-800/40 rounded-xl text-right flex items-start gap-2.5">
+                  <div className="p-1 rounded-lg bg-blue-500/20 text-blue-400 shrink-0 mt-0.5">
+                    <Laptop className="w-4 h-4" />
+                  </div>
+                  <div className="text-xs text-slate-300 leading-relaxed">
+                    <p className="font-semibold text-blue-300 mb-0.5">
+                      💡 ربط أجهزة وفروع متعددة بنفس المنشأة:
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      إذا كان لديك أجهزة أخرى (كمبيوتر كاشير، لابتوب محاسب، أجهزة فروع أخرى)، يكفيك إدخال كود المنشأة السحابي (مثل: <span className="text-amber-300 font-mono font-bold">108</span> أو <span className="text-amber-300 font-mono font-bold">COMP-672842</span>) لربط الجهاز مباشرة ومزامنة كل البيانات والفواتير سحابياً.
+                    </p>
+                  </div>
+                </div>
+
+                {setupTab === 'bind_existing' ? (
+                  /* TAB 1: BIND TO EXISTING COMPANY (Recommended for Multiple Devices & Branches) */
+                  <form
+                    id="form-bind-existing-company"
+                    onSubmit={handleBindExistingCompanySubmit}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <label
+                        htmlFor="input-existing-company-code"
+                        className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1 text-right"
+                      >
+                        كود أو معرّف المنشأة / كود المستخدم <span className="text-rose-400">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                        <input
+                          id="input-existing-company-code"
+                          type="text"
+                          value={existingCompanyCode}
+                          onChange={(e) => setExistingCompanyCode(e.target.value.toUpperCase())}
+                          placeholder="مثال: 108 أو COMP-672842 أو U-COMP-672842-ADMIN"
+                          dir="ltr"
+                          className="w-full pl-3 pr-10 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left uppercase"
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        أدخل كود المنشأة (مثل: 108 أو 101) أو معرّف الشركة (COMP-672842) لربط هذا الجهاز ومزامنة البيانات مع الأجهزة الأخرى.
+                      </p>
+                    </div>
+
+                    <button
+                      type="submit"
+                      id="btn-submit-bind-existing"
+                      disabled={isLoading}
+                      className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:scale-[0.99] text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>جاري التحقق من المنشأة وربط الجهاز...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-5 h-5" />
+                          <span>اعتماد ربط هذا الجهاز بالمنشأة</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  /* TAB 2: REGISTER NEW COMPANY (First Time Company Creation) */
                   <form
                     id="form-register-new-company"
                     onSubmit={handleRegisterNewCompanySubmit}
@@ -966,60 +1040,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
                         <>
                           <Laptop className="w-5 h-5" />
                           <span>تسجيل المنشأة واعتماد ربط هذا الجهاز</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
-                ) : (
-                  /* TAB 2: BIND TO EXISTING COMPANY (By Company Code / ID) */
-                  <form
-                    id="form-bind-existing-company"
-                    onSubmit={handleBindExistingCompanySubmit}
-                    className="space-y-4"
-                  >
-                    <div>
-                      <label
-                        htmlFor="input-existing-company-code"
-                        className="block text-xs sm:text-sm font-semibold text-slate-200 mb-1 text-right"
-                      >
-                        كود المنشأة السحابي (Company Code / ID) <span className="text-rose-400">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                          <Building2 className="w-4 h-4" />
-                        </div>
-                        <input
-                          id="input-existing-company-code"
-                          type="text"
-                          value={existingCompanyCode}
-                          onChange={(e) => setExistingCompanyCode(e.target.value.toUpperCase())}
-                          placeholder="مثال: 101 أو 102 أو COMP-000001"
-                          dir="ltr"
-                          className="w-full pl-3 pr-10 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-left uppercase"
-                          disabled={isLoading}
-                          required
-                        />
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-1">
-                        أدخل كود المنشأة المعطى لك من المدير لربط هذا الجهاز بها مباشرة.
-                      </p>
-                    </div>
-
-                    <button
-                      type="submit"
-                      id="btn-submit-bind-existing"
-                      disabled={isLoading}
-                      className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-                    >
-                      {isLoading ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>جاري التحقق من المنشأة...</span>
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="w-5 h-5" />
-                          <span>التحقق واعتماد ربط الجهاز</span>
                         </>
                       )}
                     </button>

@@ -272,11 +272,13 @@
         "full_export",
         "cloud_sync"
       ],
-      "usersCount": 1,
+      "usersCount": 2,
       "branchesCount": 1,
       "warehousesCount": 1,
       "operationsCount": 0,
-      "lastActivityAt": "2026-09-05 13:32"
+      "lastActivityAt": "2026-09-14 13:57",
+      "uid": "UID_COMP_COMP-672842",
+      "companyCode": "108"
     },
     {
       "id": "COMP-516314",
@@ -805,6 +807,18 @@
       "role": "company_admin",
       "createdAt": "2026-09-05T14:31:31.099Z",
       "expiresAt": "2026-10-05T14:31:31.099Z"
+    },
+    "tok_COMP-672842_dd8601cd-33ef-4ff3-b116-3e66ace858f0": {
+      "token": "tok_COMP-672842_dd8601cd-33ef-4ff3-b116-3e66ace858f0",
+      "userId": "u-COMP-672842-admin",
+      "userUid": "UID_COMP-672842_USR_1",
+      "companyId": "COMP-672842",
+      "companyUid": "UID_COMP_COMP-672842",
+      "userName": "nazihm338",
+      "userCode": 1,
+      "role": "company_admin",
+      "createdAt": "2026-09-14T14:55:08.910Z",
+      "expiresAt": "2026-10-14T14:55:08.910Z"
     }
   },
   "tenantsData": {
@@ -3777,7 +3791,11 @@
     },
     "COMP-672842": {
       "settings": {
-        "companyName": "مؤسسة نزيه للتجارة",
+        "paperSize": "A4",
+        "pageMargin": 5,
+        "showLogoInPrint": true,
+        "printerType": "standard",
+        "companyName": "مؤسسة الاخوة",
         "address": "الفرع الرئيسي",
         "phone1": "",
         "phone2": "01100000000",
@@ -3796,8 +3814,8 @@
           "id": "u-COMP-672842-admin",
           "companyId": "COMP-672842",
           "name": "nazihm338",
-          "username": "nazihm338",
-          "password": "123",
+          "username": "mohamed nazih",
+          "password": "1272000",
           "role": "company_admin",
           "status": "active",
           "permissions": {
@@ -3805,16 +3823,68 @@
           },
           "email": "nazihm338@gmail.com",
           "code": 1
+        },
+        {
+          "id": "u-1789394195396-709",
+          "companyId": "COMP-672842",
+          "name": "محمد نزية",
+          "username": "محمد نزية",
+          "password": "123456",
+          "phone": "",
+          "role": "accountant",
+          "status": "active",
+          "permissions": {
+            "dashboard": true,
+            "accounts_view": true,
+            "daily_entries": true,
+            "treasury_view": true,
+            "cash_receipt": true,
+            "cash_payment": true,
+            "banks_manage": true,
+            "cheques_manage": true,
+            "reports_view": true,
+            "reports_export": true,
+            "customers_manage": true,
+            "suppliers_manage": true
+          },
+          "createdAt": "2026-09-14"
         }
       ],
       "currentUser": "user1",
       "customers": [],
       "suppliers": [],
-      "items": [],
+      "items": [
+        {
+          "id": "i1789394256755",
+          "name": "بستلة 3030",
+          "description": "ابيض",
+          "quantity": 10,
+          "purchasePrice": 570,
+          "salePrice": 580,
+          "movements": []
+        }
+      ],
       "salesInvoices": [],
       "purchaseInvoices": [],
       "cashTransactions": [],
-      "backups": [],
+      "backups": [
+        {
+          "id": "snap-1789394130181-ttgx",
+          "date": "2026-09-14T13:55:30.181Z",
+          "label": "🤖 نسخة احتياطية مجدولة آلياً",
+          "type": "auto",
+          "sizeKB": 14.3,
+          "code": "",
+          "dataPreview": {
+            "invoicesCount": 0,
+            "purchasesCount": 0,
+            "customersCount": 0,
+            "itemsCount": 0,
+            "journalEntriesCount": 0
+          },
+          "snapshotJson": "{\"settings\":{\"paperSize\":\"A4\",\"pageMargin\":5,\"showLogoInPrint\":true,\"printerType\":\"standard\",\"companyName\":\"مؤسسة الاخوة\",\"address\":\"الفرع الرئيسي\",\"phone1\":\"\",\"phone2\":\"01100000000\",\"phone3\":\"01200000000\",\"taxNumber\":\"\",\"commercialReg\":\"\",\"activityCode\":\"تجارة عامة وخدمات\",\"notes\":\"شكراً لتعاملكم مع منظومة RAKEEZA للمحاسبة\",\"defaultTaxRate\":14,\"withholdingTaxRate\":1,\"currencySymbol\":\"ج.م\",\"fiscalYear\":\"2026\"},\"users\":[{\"id\":\"u-COMP-672842-admin\",\"companyId\":\"COMP-672842\",\"name\":\"nazihm338\",\"username\":\"mohamed nazih\",\"password\":\"1272000\",\"role\":\"company_admin\",\"status\":\"active\",\"permissions\":{\"all\":true},\"email\":\"nazihm338@gmail.com\",\"code\":1}],\"currentUser\":\"user1\",\"customers\":[],\"suppliers\":[],\"items\":[],\"salesInvoices\":[],\"purchaseInvoices\":[],\"cashTransactions\":[],\"backups\":[],\"nextInvoiceNumber\":1,\"nextPurchaseNumber\":1,\"nextCashId\":1,\"cashBox\":{\"drawer\":0,\"vodafone\":0,\"instapay\":0,\"bank\":0},\"salesReps\":[],\"bankAccounts\":[{\"id\":\"b1\",\"name\":\"البنك الأهلي المصري\",\"accountNumber\":\"12345678901\",\"balance\":0},{\"id\":\"b2\",\"name\":\"بنك مصر\",\"accountNumber\":\"98765432101\",\"balance\":0},{\"id\":\"b3\",\"name\":\"البنك التجاري الدولي CIB\",\"accountNumber\":\"5544332211\",\"balance\":0}],\"physicalInventories\":[],\"inventoryAdjustments\":[],\"goodsIssueVouchers\":[],\"fiscalClosings\":[],\"nextStocktakeId\":1,\"nextAdjustmentId\":1,\"nextGoodsIssueId\":1,\"nextClosingId\":1,\"advancedSettings\":{\"categories\":[\"أجهزة كمبيوتر\",\"طابعات ومعدات\",\"شاشات\",\"إكسسوارات\",\"شبكات وكاميرات\"],\"itemGroups\":[\"إلكترونيات\",\"مكتبية\",\"أجهزة ذكية\"],\"units\":[\"جهاز\",\"قطعة\",\"طقم\",\"علبة\",\"كرتونة\",\"متر\"]},\"accounts\":[{\"code\":\"1\",\"name\":\"الأصول (Assets)\",\"type\":\"asset\",\"isParent\":true,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"11\",\"name\":\"الأصول المتداولة (Current Assets)\",\"type\":\"asset\",\"parentCode\":\"1\",\"isParent\":true,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"1101\",\"name\":\"الصندوق والخزينة الرئيسية (Cash)\",\"type\":\"asset\",\"parentCode\":\"11\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"1102\",\"name\":\"فودافون كاش والمحافظ الإلكترونية\",\"type\":\"asset\",\"parentCode\":\"11\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"1103\",\"name\":\"إنستاباي (InstaPay)\",\"type\":\"asset\",\"parentCode\":\"11\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"1104\",\"name\":\"الحسابات البنكية (Bank Accounts)\",\"type\":\"asset\",\"parentCode\":\"11\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"1105\",\"name\":\"العملاء والمدينون (Accounts Receivable)\",\"type\":\"asset\",\"parentCode\":\"11\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"1106\",\"name\":\"مخزون البضاعة (Merchandise Inventory)\",\"type\":\"asset\",\"parentCode\":\"11\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"12\",\"name\":\"الأصول الثابتة (Fixed Assets)\",\"type\":\"asset\",\"parentCode\":\"1\",\"isParent\":true,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"1201\",\"name\":\"الأثاث والمعدات المكتبية\",\"type\":\"asset\",\"parentCode\":\"12\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"1202\",\"name\":\"أجهزة الكمبيوتر والتكنولوجيا\",\"type\":\"asset\",\"parentCode\":\"12\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"2\",\"name\":\"الخصوم والالتزامات (Liabilities)\",\"type\":\"liability\",\"isParent\":true,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"21\",\"name\":\"الخصوم المتداولة (Current Liabilities)\",\"type\":\"liability\",\"parentCode\":\"2\",\"isParent\":true,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"2101\",\"name\":\"الموردون والدائنون (Accounts Payable)\",\"type\":\"liability\",\"parentCode\":\"21\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"2102\",\"name\":\"أمانات ضريبة القيمة المضافة (VAT Payable)\",\"type\":\"liability\",\"parentCode\":\"21\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"2103\",\"name\":\"ضريبة الخصم والتحصيل من المنبع\",\"type\":\"liability\",\"parentCode\":\"21\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"2104\",\"name\":\"مصروفات مستحقة الدفع\",\"type\":\"liability\",\"parentCode\":\"21\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"3\",\"name\":\"حقوق الملكية (Owner's Equity)\",\"type\":\"equity\",\"isParent\":true,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"3101\",\"name\":\"رأس المال المستثمر (Capital)\",\"type\":\"equity\",\"parentCode\":\"3\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"3102\",\"name\":\"الأرباح والخسائر المرحلة (Retained Earnings)\",\"type\":\"equity\",\"parentCode\":\"3\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"3103\",\"name\":\"جاري صاحب المنشأة / الشركاء\",\"type\":\"equity\",\"parentCode\":\"3\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"4\",\"name\":\"الإيرادات والمبيعات (Revenues)\",\"type\":\"revenue\",\"isParent\":true,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"4101\",\"name\":\"إيراد مبيعات بضاعة تجارية (Sales Revenue)\",\"type\":\"revenue\",\"parentCode\":\"4\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"4102\",\"name\":\"مردودات ومسموحات المبيعات (Sales Returns)\",\"type\":\"revenue\",\"parentCode\":\"4\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"4103\",\"name\":\"إيرادات خدمات وشحن وصيانة\",\"type\":\"revenue\",\"parentCode\":\"4\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"4104\",\"name\":\"خصم مسموح به (Sales Discounts)\",\"type\":\"revenue\",\"parentCode\":\"4\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"4201\",\"name\":\"أرباح وفروقات تسوية المخزون (Inventory Adjustment Gain)\",\"type\":\"revenue\",\"parentCode\":\"4\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"5\",\"name\":\"المصروفات وتكلفة البضاعة (Expenses & COGS)\",\"type\":\"expense\",\"isParent\":true,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"5101\",\"name\":\"تكلفة البضاعة المباعة (Cost of Goods Sold - COGS)\",\"type\":\"expense\",\"parentCode\":\"5\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"5201\",\"name\":\"مصروفات الإيجار والمرافق\",\"type\":\"expense\",\"parentCode\":\"5\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"5202\",\"name\":\"الرواتب والأجور والمكافآت\",\"type\":\"expense\",\"parentCode\":\"5\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"5203\",\"name\":\"مصاريف الدعاية والتسويق\",\"type\":\"expense\",\"parentCode\":\"5\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"5204\",\"name\":\"مصاريف الصيانة والتشغيل والنثريات\",\"type\":\"expense\",\"parentCode\":\"5\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"5205\",\"name\":\"عمولات المندوبين والمبيعات\",\"type\":\"expense\",\"parentCode\":\"5\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0},{\"code\":\"5206\",\"name\":\"عجز وفاقد تسوية المخزون (Inventory Shrinkage & Loss)\",\"type\":\"expense\",\"parentCode\":\"5\",\"isParent\":false,\"debit\":0,\"credit\":0,\"balance\":0}],\"journalEntries\":[],\"nextJournalId\":1,\"costCenters\":[{\"id\":\"cc-1\",\"code\":\"CC-01\",\"name\":\"المركز العام الرئيسي\",\"manager\":\"المدير المالي\"},{\"id\":\"cc-2\",\"code\":\"CC-02\",\"name\":\"مشروع مبيعات التوزيع\",\"manager\":\"مدير المبيعات\"},{\"id\":\"cc-3\",\"code\":\"CC-03\",\"name\":\"فرع الجيزة والمعارض\",\"manager\":\"مدير الفرع\"}],\"branches\":[{\"id\":\"br-COMP-672842-main\",\"code\":\"HQ-01\",\"name\":\"المقر الرئيسي\",\"location\":\"الفرع الرئيسي\",\"phone\":\"\",\"isMain\":true,\"manager\":\"nazihm338\"}],\"activeBranchId\":\"br-COMP-672842-main\",\"stockTransfers\":[],\"quotations\":[],\"nextQuoteId\":1,\"auditLogs\":[{\"id\":\"log-op-1789394125481-k0a3\",\"timestamp\":\"2026-09-14 13:55:25\",\"userName\":\"nazihm338\",\"userId\":\"u-COMP-672842-admin\",\"userCode\":1,\"userRole\":\"company_admin\",\"companyId\":\"COMP-672842\",\"action\":\"update\",\"module\":\"مزامنة سحابية لحظية\",\"details\":\"قام المستخدم \\\"nazihm338\\\" (كود 1) بتحديث بيانات المنظومة\"},{\"id\":\"log-purge-1789196660231\",\"timestamp\":\"2026-09-12 07:04:20\",\"userName\":\"مالك المنظومة (System Purge)\",\"action\":\"system_cleanup\",\"module\":\"إدارة النظام\",\"details\":\"تم تفريغ وتنظيف قاعدة البيانات بالكامل وتصفير جميع القيود والعمليات والمبالغ بنجاح.\"}],\"eInvoiceConfig\":{\"taxRegNumber\":\"123-456-789\",\"commercialRegNumber\":\"CR-98765\",\"branchCode\":\"0\",\"activityCode\":\"4651\",\"posSerial\":\"NAZIH-POS-001\",\"isEtaConnected\":true,\"autoGenerateQr\":true},\"employees\":[],\"payrollSlips\":[],\"nextPayrollId\":1,\"employeeAdvances\":[],\"fixedAssets\":[],\"depreciationLogs\":[],\"cheques\":[],\"nextChequeId\":1,\"commissions\":[],\"boms\":[],\"productionOrders\":[],\"nextProductionId\":1,\"bankStatements\":[],\"approvalRequests\":[],\"autoBackupConfig\":{\"enabled\":true,\"intervalMinutes\":60,\"autoDownloadFile\":false,\"maxSnapshotsToKeep\":15,\"lastBackupTimestamp\":\"2026-09-05T13:32:46.593Z\",\"backupLocation\":\"browser_storage\",\"notifyOnBackup\":true},\"companyId\":\"COMP-672842\",\"companies\":[{\"id\":\"COMP-000001\",\"tenantId\":\"TENANT-8812-HQ1\",\"code\":\"RKZ-001\",\"name\":\"شركة ركيزة للمحاسبة والتجارة العامة (RAKEEZA)\",\"tradeName\":\"ركيزة للأنظمة والحلول التقنية RAKEEZA\",\"activity\":\"4651 - تجارة أجهزة الكمبيوتر والمعدات الإلكترونية\",\"phone\":\"01029190615\",\"whatsapp\":\"01029190615\",\"email\":\"admin@rakeeza.com\",\"address\":\"مدينة نصر، القاهرة، جمهورية مصر العربية\",\"taxNumber\":\"123-456-789\",\"commercialReg\":\"CR-98765\",\"adminName\":\"Mohamed Nazih\",\"adminPhone\":\"01029190615\",\"adminEmail\":\"nazih@rakeeza.com\",\"adminUsername\":\"admin\",\"adminPassword\":\"admin123\",\"status\":\"active\",\"planId\":\"annual\",\"planName\":\"الاشتراك السنوي (Annual Pro)\",\"subscriptionId\":\"SUB-2026-0001\",\"licenseId\":\"LIC-2026-9901\",\"createdAt\":\"2026-01-01 08:00\",\"subscriptionStartedAt\":\"2026-01-01\",\"subscriptionExpiresAt\":\"2027-01-01\",\"limits\":{\"maxUsers\":50,\"maxBranches\":15,\"maxWarehouses\":25,\"maxTransactionsPerMonth\":100000,\"storageMb\":20480,\"maxSalesReps\":50},\"features\":[\"sales\",\"pos\",\"purchases\",\"inventory\",\"accounting\",\"treasury\",\"reports\",\"hr\",\"manufacturing\",\"bi\",\"multi_branch\",\"e_invoicing\",\"fixed_assets\",\"cheques\",\"price_management\",\"full_export\"],\"usersCount\":3,\"branchesCount\":2,\"warehousesCount\":2,\"operationsCount\":142,\"lastActivityAt\":\"2026-09-02 11:20\"},{\"id\":\"COMP-000002\",\"tenantId\":\"TENANT-4491-TR2\",\"code\":\"RKZ-002\",\"name\":\"مؤسسة الأمل للتوريدات العمومية\",\"tradeName\":\"الأمل سوفت وير\",\"activity\":\"4791 - تجارة التجزئة والتوريدات\",\"phone\":\"01011223344\",\"whatsapp\":\"01011223344\",\"email\":\"contact@alamal-trade.eg\",\"address\":\"المهندسين، الجيزة\",\"taxNumber\":\"987-654-321\",\"commercialReg\":\"CR-11223\",\"adminName\":\"أحمد محمود القاضي\",\"adminPhone\":\"01011223344\",\"adminEmail\":\"ahmed@alamal-trade.eg\",\"adminUsername\":\"alamal_admin\",\"adminPassword\":\"123\",\"status\":\"trial\",\"planId\":\"trial\",\"planName\":\"التجربة المجانية (Free Trial 30 Days)\",\"subscriptionId\":\"SUB-2026-0002\",\"licenseId\":\"LIC-2026-0002\",\"createdAt\":\"2026-08-15 10:00\",\"trialStartedAt\":\"2026-08-15\",\"trialExpiresAt\":\"2026-09-15\",\"limits\":{\"maxUsers\":5,\"maxBranches\":2,\"maxWarehouses\":3,\"maxTransactionsPerMonth\":1000,\"storageMb\":1024,\"maxSalesReps\":5},\"features\":[\"sales\",\"pos\",\"purchases\",\"inventory\",\"accounting\",\"treasury\",\"reports\",\"hr\",\"manufacturing\",\"bi\",\"multi_branch\"],\"usersCount\":2,\"branchesCount\":1,\"warehousesCount\":1,\"operationsCount\":28,\"lastActivityAt\":\"2026-09-01 16:45\"},{\"id\":\"COMP-000003\",\"tenantId\":\"TENANT-9923-SL3\",\"code\":\"RKZ-003\",\"name\":\"مجموعة السلام الهندسية والمقاولات\",\"tradeName\":\"السلام إنجينيرينج\",\"activity\":\"4321 - التركيبات والتجهيزات الهندسية\",\"phone\":\"01299887766\",\"email\":\"info@elsalam-group.com\",\"address\":\"سموحة، الإسكندرية\",\"taxNumber\":\"445-556-667\",\"commercialReg\":\"CR-77889\",\"adminName\":\"م. حسام علي إبراهيم\",\"adminPhone\":\"01299887766\",\"adminEmail\":\"hossam@elsalam-group.com\",\"adminUsername\":\"elsalam_admin\",\"adminPassword\":\"123\",\"status\":\"active\",\"planId\":\"monthly\",\"planName\":\"الاشتراك الشهري (Monthly)\",\"subscriptionId\":\"SUB-2026-0003\",\"licenseId\":\"LIC-2026-0003\",\"createdAt\":\"2026-07-01 12:00\",\"subscriptionStartedAt\":\"2026-08-01\",\"subscriptionExpiresAt\":\"2026-09-01\",\"limits\":{\"maxUsers\":5,\"maxBranches\":2,\"maxWarehouses\":3,\"maxTransactionsPerMonth\":3000,\"storageMb\":2048,\"maxSalesReps\":5},\"features\":[\"sales\",\"pos\",\"purchases\",\"inventory\",\"accounting\",\"treasury\",\"reports\"],\"usersCount\":3,\"branchesCount\":2,\"warehousesCount\":2,\"operationsCount\":84,\"lastActivityAt\":\"2026-08-30 14:10\"}],\"companyCatalogConfigs\":{\"COMP-000001\":{\"enabled\":true,\"storeName\":\"شركة ركيزة للمحاسبة والتجارة RAKEEZA\",\"storeDescription\":\"الكتالوج الإلكتروني لأجهزة الكمبيوتر والشاشات والشبكات مع الطلب الفوري\",\"contactPhone\":\"01029190615\",\"whatsappNumber\":\"01029190615\",\"allowOnlineOrders\":true,\"priceDisplayMode\":\"both\",\"showStockStatus\":true,\"showExactStockQty\":false,\"bannerMessage\":\"🚚 شحن وتوصيل فوري لجميع المحافظات مع ضمان الاستبدال\",\"minOrderAmount\":200,\"currencySymbol\":\"ج.م\",\"autoPrintOrders\":true,\"printFormat\":\"80mm\",\"soundAlertEnabled\":true,\"companyId\":\"COMP-000001\"},\"COMP-000002\":{\"enabled\":true,\"storeName\":\"مؤسسة الأمل للتوريدات ومستلزمات الكاشير\",\"storeDescription\":\"المتجر الإلكتروني لتوريدات الورق الحراري وطابعات الفواتير والأجهزة المكتبية\",\"contactPhone\":\"01011223344\",\"whatsappNumber\":\"01011223344\",\"allowOnlineOrders\":true,\"priceDisplayMode\":\"both\",\"showStockStatus\":true,\"showExactStockQty\":false,\"bannerMessage\":\"📦 أسعار خاصة وخصومات للكميات والجملة لكراتين بكر الكاشير وورق التصوير\",\"minOrderAmount\":150,\"currencySymbol\":\"ج.م\",\"autoPrintOrders\":true,\"printFormat\":\"80mm\",\"soundAlertEnabled\":true,\"companyId\":\"COMP-000002\"}},\"productPrices\":[],\"priceHistories\":[]}"
+        }
+      ],
       "nextInvoiceNumber": 1,
       "nextPurchaseNumber": 1,
       "nextCashId": 1,
@@ -4261,6 +4331,62 @@
       "nextQuoteId": 1,
       "auditLogs": [
         {
+          "id": "log-login-1789397708910",
+          "timestamp": "2026-09-14 14:55:08",
+          "userName": "nazihm338",
+          "userId": "u-COMP-672842-admin",
+          "companyId": "COMP-672842",
+          "action": "login",
+          "module": "المصادقة والأمان",
+          "details": "تسجيل دخول ناجح إلى منظومة شركة \"مؤسسة نزيه للتجارة\""
+        },
+        {
+          "id": "log-op-1789394257470-2jus",
+          "timestamp": "2026-09-14 13:57:37",
+          "userName": "nazihm338",
+          "userId": "u-COMP-672842-admin",
+          "userCode": 1,
+          "userRole": "company_admin",
+          "companyId": "COMP-672842",
+          "action": "update",
+          "module": "مزامنة سحابية لحظية",
+          "details": "قام المستخدم \"nazihm338\" (كود 1) بتحديث بيانات المنظومة"
+        },
+        {
+          "id": "log-op-1789394196092-xav3",
+          "timestamp": "2026-09-14 13:56:36",
+          "userName": "nazihm338",
+          "userId": "u-COMP-672842-admin",
+          "userCode": 1,
+          "userRole": "company_admin",
+          "companyId": "COMP-672842",
+          "action": "update",
+          "module": "مزامنة سحابية لحظية",
+          "details": "قام المستخدم \"nazihm338\" (كود 1) بتحديث بيانات المنظومة"
+        },
+        {
+          "id": "log-usr-1789394195396",
+          "timestamp": "2026-09-14 13:56:35",
+          "userName": "nazihm338",
+          "userId": "u-COMP-672842-admin",
+          "companyId": "COMP-672842",
+          "action": "create_user",
+          "module": "إدارة المستخدمين والصلاحيات",
+          "details": "تم إنشاء حساب مستخدم جديد \"محمد نزية\" (اسم الدخول: محمد نزية) مع تخصيص الصلاحيات"
+        },
+        {
+          "id": "log-op-1789394125481-k0a3",
+          "timestamp": "2026-09-14 13:55:25",
+          "userName": "nazihm338",
+          "userId": "u-COMP-672842-admin",
+          "userCode": 1,
+          "userRole": "company_admin",
+          "companyId": "COMP-672842",
+          "action": "update",
+          "module": "مزامنة سحابية لحظية",
+          "details": "قام المستخدم \"nazihm338\" (كود 1) بتحديث بيانات المنظومة"
+        },
+        {
           "id": "log-purge-1789196660231",
           "timestamp": "2026-09-12 07:04:20",
           "userName": "مالك المنظومة (System Purge)",
@@ -4297,7 +4423,7 @@
         "intervalMinutes": 60,
         "autoDownloadFile": false,
         "maxSnapshotsToKeep": 15,
-        "lastBackupTimestamp": "2026-09-05T13:32:46.593Z",
+        "lastBackupTimestamp": "2026-09-14T13:55:30.182Z",
         "backupLocation": "browser_storage",
         "notifyOnBackup": true
       },

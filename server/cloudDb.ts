@@ -442,21 +442,16 @@ export function authenticateUser(
   if (!cleanCompanyInput) {
     return {
       success: false,
-      error: 'يرجى إدخال كود الشركة (Company ID) أو كود المنشأة.',
+      error: 'يرجى إدخال كود الشركة (Company ID) أو كود المنشأة أو كود المستخدم.',
     };
   }
 
-  const company = db.companies.find(
-    (c) =>
-      c.id.toUpperCase() === cleanCompanyInput ||
-      c.code.toUpperCase() === cleanCompanyInput ||
-      c.tenantId.toUpperCase() === cleanCompanyInput
-  );
+  const { company } = findCompanyByAnyIdentifier(db, companyIdOrCode);
 
   if (!company) {
     return {
       success: false,
-      error: `لم يتم العثور على شركة مسجلة بالكود "${companyIdOrCode}". يرجى التأكد من كتابة كود الشركة بشكل صحيح.`,
+      error: `لم يتم العثور على شركة مسجلة بالكود "${companyIdOrCode}". يرجى التأكد من كتابة كود الشركة أو المستخدم بشكل صحيح.`,
     };
   }
 
@@ -1824,6 +1819,105 @@ export function registerDeviceAndCompany(params: {
 }
 
 /**
+ * 🏢 Helper: Normalize and extract Company ID and User Info from flexible inputs
+ * Handles inputs like:
+ * - "U-COMP-672842-ADMIN" -> companyId: "COMP-672842", username: "admin"
+ * - "COMP-672842" -> companyId: "COMP-672842"
+ * - "108" -> code: "108"
+ * - "nazihm338@gmail.com" -> email
+ */
+function parseFlexibleCompanyQuery(query: string) {
+  const clean = (query || '').trim();
+  const upper = clean.toUpperCase();
+
+  // 1. Extract COMP-XXXXXX pattern
+  const compMatch = upper.match(/COMP-[A-Z0-9_-]+/i);
+  let extractedCompanyId = compMatch ? compMatch[0] : '';
+  if (extractedCompanyId) {
+    // Strip trailing user parts like -ADMIN, -USER, -CASHIER
+    extractedCompanyId = extractedCompanyId.replace(/-(ADMIN|USER|CASHIER|ACCOUNTANT|MANAGER|USR.*)$/i, '');
+  }
+
+  // 2. Candidate username if query was a User ID
+  let extractedUsername = '';
+  if (upper.endsWith('-ADMIN')) {
+    extractedUsername = 'admin';
+  } else if (upper.endsWith('-CASHIER')) {
+    extractedUsername = 'cashier';
+  } else if (upper.endsWith('-WAREHOUSE')) {
+    extractedUsername = 'warehouse';
+  }
+
+  return {
+    clean,
+    upper,
+    extractedCompanyId,
+    extractedUsername,
+  };
+}
+
+/**
+ * 🏢 Find Company in database by any identifier (ID, Code, Name, Email, or User ID)
+ */
+export function findCompanyByAnyIdentifier(
+  db: CloudDatabaseSchema,
+  query: string
+): { company?: TenantCompany; matchedUser?: User } {
+  const { clean, upper, extractedCompanyId, extractedUsername } = parseFlexibleCompanyQuery(query);
+  if (!clean) return {};
+
+  // Check direct company fields
+  for (const c of db.companies) {
+    const cIdUpper = (c.id || '').toUpperCase();
+    const cCodeUpper = (c.code || (c as any).companyCode || '').toString().toUpperCase();
+    const cEmailUpper = (c.email || c.adminEmail || '').toUpperCase();
+    const cTenantUpper = (c.tenantId || '').toUpperCase();
+    const cNameUpper = (c.name || '').toUpperCase();
+    const cTradeUpper = (c.tradeName || '').toUpperCase();
+
+    if (
+      cIdUpper === upper ||
+      (extractedCompanyId && cIdUpper === extractedCompanyId) ||
+      cCodeUpper === upper ||
+      cTenantUpper === upper ||
+      cEmailUpper === upper ||
+      (upper.length >= 6 && upper.includes(cIdUpper)) ||
+      (upper.length >= 3 && (cNameUpper.includes(upper) || cTradeUpper.includes(upper)))
+    ) {
+      // Find matching user if available
+      const tData = db.tenantsData[c.id];
+      const users = tData?.users || [];
+      const matchedUser = users.find(
+        (u) =>
+          u.id?.toUpperCase() === upper ||
+          (extractedUsername && u.username?.toLowerCase() === extractedUsername.toLowerCase()) ||
+          u.username?.toUpperCase() === upper
+      );
+      return { company: c, matchedUser };
+    }
+  }
+
+  // Search inside tenant users for any matching user ID or username
+  for (const c of db.companies) {
+    const tData = db.tenantsData[c.id];
+    if (tData?.users) {
+      for (const u of tData.users) {
+        if (
+          u.id?.toUpperCase() === upper ||
+          (u.username && u.username.toUpperCase() === upper) ||
+          String(u.code) === upper ||
+          String((u as any).userCode) === upper
+        ) {
+          return { company: c, matchedUser: u };
+        }
+      }
+    }
+  }
+
+  return {};
+}
+
+/**
  * 🏢 Get Public Info (Branches & Users) for Device Binding & Quick Desktop Login
  */
 export function getCompanyPublicInfo(query: string): {
@@ -1831,22 +1925,17 @@ export function getCompanyPublicInfo(query: string): {
   company?: TenantCompany;
   branches?: Array<{ id: string; name: string; isMain?: boolean }>;
   users?: Array<{ id: string; code?: number | string; name: string; username: string; role: string; branchId?: string }>;
+  preselectedUsername?: string;
+  preselectedUserId?: string;
   error?: string;
 } {
-  const clean = (query || '').trim().toUpperCase();
+  const clean = (query || '').trim();
   if (!clean) {
-    return { success: false, error: 'يرجى إدخال كود الشركة أو معرفها.' };
+    return { success: false, error: 'يرجى إدخال كود المنشأة أو معرّفها السحابي أو كود المستخدم.' };
   }
 
   const db = getCloudDatabase();
-  const company = db.companies.find(
-    (c) =>
-      c.id.toUpperCase() === clean ||
-      c.code?.toString().toUpperCase() === clean ||
-      (c as any).companyCode?.toString().toUpperCase() === clean ||
-      c.email?.toUpperCase() === clean ||
-      c.name?.toUpperCase().includes(clean)
-  );
+  const { company, matchedUser } = findCompanyByAnyIdentifier(db, query);
 
   if (!company) {
     return { success: false, error: `لم يتم العثور على منشأة بالكود أو المعرف "${query}".` };
@@ -1887,6 +1976,8 @@ export function getCompanyPublicInfo(query: string): {
     company,
     branches,
     users,
+    preselectedUsername: matchedUser?.username || users[0]?.username,
+    preselectedUserId: matchedUser?.id || users[0]?.id,
   };
 }
 
