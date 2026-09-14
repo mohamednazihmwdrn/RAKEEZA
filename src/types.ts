@@ -19,6 +19,7 @@ export interface Settings {
   showLogoInPrint?: boolean;
   printerType?: 'standard' | 'thermal';
   companyId?: string;
+  apiKey?: string;
 }
 
 export interface CustomerRepresentative {
@@ -1095,6 +1096,7 @@ export interface TenantCompany {
   plan?: any;
   subscriptionId?: string;
   licenseId?: string;
+  apiKey?: string;
   createdAt?: string;
   trialStartedAt?: string;
   trialExpiresAt?: string;
