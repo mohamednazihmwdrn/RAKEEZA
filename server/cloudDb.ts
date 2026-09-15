@@ -79,6 +79,17 @@ export function initCloudDatabase(): CloudDatabaseSchema {
       const parsed = JSON.parse(content) as CloudDatabaseSchema;
       parsed.pendingVerifications = parsed.pendingVerifications || {};
       parsed.verifiedEmails = parsed.verifiedEmails || {};
+      let needsSave = false;
+      parsed.companies = (parsed.companies || []).map((c) => {
+        if (!c.apiKey) {
+          c.apiKey = `rkz_live_${c.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}_${Math.random().toString(36).substring(2, 8)}${Math.random().toString(36).substring(2, 8)}`;
+          needsSave = true;
+        }
+        return c;
+      });
+      if (needsSave) {
+        saveCloudDatabase(parsed);
+      }
       dbCache = parsed;
       return parsed;
     } catch (err) {
@@ -1308,6 +1319,10 @@ export function createNewCompanyCloud(
   const db = getCloudDatabase();
   const res = createNewTenantCompany(companyInput, planId, db.plans, db.trialRegistry);
 
+  if (!res.company.apiKey) {
+    res.company.apiKey = `rkz_live_${res.company.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}_${Math.random().toString(36).substring(2, 8)}${Math.random().toString(36).substring(2, 8)}`;
+  }
+
   db.companies.push(res.company);
   db.licenses.push(res.license);
   db.trialRegistry = res.updatedRegistry;
@@ -1993,5 +2008,79 @@ export function getCompanyPublicInfo(query: string): {
     preselectedUsername: matchedUser?.username || users[0]?.username,
     preselectedUserId: matchedUser?.id || users[0]?.id,
   };
+}
+
+/**
+ * 🔑 Retrieve company by its unique API / APK Integration Key
+ */
+export function getCompanyByApiKey(apiKey: string): TenantCompany | undefined {
+  if (!apiKey) return undefined;
+  const db = getCloudDatabase();
+  return db.companies.find((c) => c.apiKey === apiKey);
+}
+
+/**
+ * 🔄 Regenerate API Key for a tenant company
+ */
+export function regenerateCompanyApiKey(companyId: string): string | null {
+  const db = getCloudDatabase();
+  const comp = db.companies.find((c) => c.id === companyId || c.code === companyId);
+  if (!comp) return null;
+  comp.apiKey = `rkz_live_${comp.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}_${Math.random().toString(36).substring(2, 8)}${Math.random().toString(36).substring(2, 8)}`;
+  saveCloudDatabase(db);
+  return comp.apiKey;
+}
+
+/**
+ * 🏢 Update company profile in database and sync with tenant settings
+ */
+export function updateCompanyProfileCloud(
+  companyId: string,
+  profileData: any
+): { success: boolean; company?: TenantCompany; error?: string } {
+  const db = getCloudDatabase();
+  const comp = db.companies.find((c) => c.id === companyId || c.code === companyId);
+  if (!comp) {
+    return { success: false, error: 'الشركة غير موجودة' };
+  }
+
+  if (profileData.name) comp.name = profileData.name;
+  if (profileData.tradeName) comp.tradeName = profileData.tradeName;
+  if (profileData.phone !== undefined) comp.phone = profileData.phone;
+  if (profileData.phone1 !== undefined) comp.phone = profileData.phone1;
+  if (profileData.address !== undefined) comp.address = profileData.address;
+  if (profileData.taxNumber !== undefined) comp.taxNumber = profileData.taxNumber;
+  if (profileData.commercialReg !== undefined) comp.commercialReg = profileData.commercialReg;
+  if (profileData.activity !== undefined) comp.activity = profileData.activity;
+  if (profileData.email !== undefined) comp.email = profileData.email;
+
+  // Also update in tenantData settings
+  if (db.tenantsData[comp.id]) {
+    db.tenantsData[comp.id].settings = {
+      ...db.tenantsData[comp.id].settings,
+      companyName: comp.name,
+      address: comp.address || '',
+      phone1: profileData.phone1 ?? comp.phone ?? '',
+      phone2: profileData.phone2 ?? db.tenantsData[comp.id].settings?.phone2 ?? '',
+      phone3: profileData.phone3 ?? db.tenantsData[comp.id].settings?.phone3 ?? '',
+      taxNumber: comp.taxNumber || '',
+      commercialReg: comp.commercialReg || '',
+      activityCode: profileData.activityCode ?? comp.activity ?? '',
+      email: profileData.email ?? db.tenantsData[comp.id].settings?.email ?? '',
+      website: profileData.website ?? db.tenantsData[comp.id].settings?.website ?? '',
+      city: profileData.city ?? db.tenantsData[comp.id].settings?.city ?? '',
+      country: profileData.country ?? db.tenantsData[comp.id].settings?.country ?? '',
+      bankName: profileData.bankName ?? db.tenantsData[comp.id].settings?.bankName ?? '',
+      bankAccountNumber: profileData.bankAccountNumber ?? db.tenantsData[comp.id].settings?.bankAccountNumber ?? '',
+      iban: profileData.iban ?? db.tenantsData[comp.id].settings?.iban ?? '',
+      defaultTaxRate: profileData.defaultTaxRate !== undefined ? Number(profileData.defaultTaxRate) : (db.tenantsData[comp.id].settings?.defaultTaxRate ?? 14),
+      currencySymbol: profileData.currencySymbol ?? db.tenantsData[comp.id].settings?.currencySymbol ?? 'ج.م',
+      fiscalYear: profileData.fiscalYear ?? db.tenantsData[comp.id].settings?.fiscalYear ?? '2026',
+      notes: profileData.notes ?? db.tenantsData[comp.id].settings?.notes ?? '',
+    };
+  }
+
+  saveCloudDatabase(db);
+  return { success: true, company: comp };
 }
 

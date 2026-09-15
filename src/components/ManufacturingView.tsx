@@ -752,7 +752,58 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                 </select>
               </div>
 
-              <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+              {/* Mobile BOM Items Cards */}
+              <div className="block sm:hidden space-y-2">
+                {bomItems.length === 0 ? (
+                  <div className="p-4 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
+                    اختر الخامات من القائمة أعلاه لإضافتها للمعادلة
+                  </div>
+                ) : (
+                  bomItems.map((b, idx) => (
+                    <div key={b.itemId} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-900">{b.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setBomItems(bomItems.filter((_, i) => i !== idx))}
+                          className="text-rose-600 font-bold hover:text-rose-800 p-1"
+                        >
+                          ✕ حذف
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 items-center">
+                        <div>
+                          <label className="text-[10px] text-slate-500 block mb-0.5">الكمية:</label>
+                          <input
+                            type="number"
+                            min={0.1}
+                            step="0.5"
+                            value={b.qty}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setBomItems(bomItems.map((x, i) => (i === idx ? { ...x, qty: val } : x)));
+                            }}
+                            className="w-full p-1 border border-slate-300 rounded text-center font-bold font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-500 block mb-0.5">تكلفة الوحدة:</label>
+                          <div className="font-mono text-slate-700 font-bold">{b.unitCost} {currency}</div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-500 block mb-0.5">الإجمالي:</label>
+                          <div className="font-mono font-black text-emerald-700">
+                            {((b.qty || 0) * (b.unitCost || 0)).toLocaleString()} {currency}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop BOM Table */}
+              <div className="hidden sm:block border border-slate-200 rounded-xl overflow-hidden text-xs">
                 <table className="w-full text-right">
                   <thead className="bg-slate-50 font-bold text-slate-700 border-b border-slate-200">
                     <tr>

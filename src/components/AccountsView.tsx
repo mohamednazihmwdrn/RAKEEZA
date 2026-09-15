@@ -446,13 +446,13 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
             </div>
           </div>
 
-          {/* Mobile Card List (< sm) */}
-          <div className="block sm:hidden space-y-2.5">
+          {/* Mobile Card List (< md) */}
+          <div className="block md:hidden space-y-2.5">
             {appData.customers.length === 0 ? (
               <div className="text-center py-6 text-gray-400 text-xs">لا يوجد عملاء مسجلين</div>
             ) : (
               appData.customers.map((c) => (
-                <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 shadow-2xs">
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="font-bold text-slate-900 text-sm">👤 {c.name}</div>
@@ -470,7 +470,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 gap-1.5 pt-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
                     <button
                       onClick={() =>
                         setManagingRepsParty({
@@ -509,8 +509,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
             )}
           </div>
 
-          {/* Desktop Table (>= sm) */}
-          <div className="hidden sm:block overflow-x-auto">
+          {/* Desktop Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
               <thead>
                 <tr className="bg-[#1a237e] text-white">
@@ -631,13 +631,13 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
             </div>
           </div>
 
-          {/* Mobile Card List (< sm) */}
-          <div className="block sm:hidden space-y-2.5">
+          {/* Mobile Card List (< md) */}
+          <div className="block md:hidden space-y-2.5">
             {appData.suppliers.length === 0 ? (
               <div className="text-center py-6 text-gray-400 text-xs">لا يوجد موردين مسجلين</div>
             ) : (
               appData.suppliers.map((s) => (
-                <div key={s.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                <div key={s.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 shadow-2xs">
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="font-bold text-slate-900 text-sm">🏢 {s.name}</div>
@@ -655,7 +655,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 gap-1.5 pt-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
                     <button
                       onClick={() =>
                         setManagingRepsParty({
@@ -694,8 +694,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
             )}
           </div>
 
-          {/* Desktop Table (>= sm) */}
-          <div className="hidden sm:block overflow-x-auto">
+          {/* Desktop Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
               <thead>
                 <tr className="bg-[#1a237e] text-white">

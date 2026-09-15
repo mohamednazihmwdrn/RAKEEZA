@@ -557,7 +557,7 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
     }
   };
 
-  // Recursive tree rendering
+  // Recursive tree rendering - ultra responsive with mobile card layout
   const renderAccountNode = (node: AccountNode, level: number = 0) => {
     const children = appData.accounts.filter((a) => a.parentCode === node.code);
     const hasChildren = children.length > 0;
@@ -565,39 +565,47 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
     const stats = computeAccountBalance(node.code);
 
     return (
-      <div key={node.code} className="flex flex-col">
+      <div key={node.code} className="flex flex-col w-full max-w-full">
         <div
-          className={`flex items-center justify-between p-2.5 rounded-xl transition border mb-1.5 ${
+          className={`p-2.5 sm:p-3 rounded-xl transition border mb-1.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 ${
             level === 0
               ? 'bg-slate-100 font-bold border-slate-300 text-slate-900 shadow-xs'
               : level === 1
-              ? 'bg-slate-50 font-semibold border-slate-200 text-slate-800 mr-4'
-              : 'bg-white hover:bg-slate-50 border-slate-100 text-slate-700 mr-8'
+              ? 'bg-slate-50 font-semibold border-slate-200 text-slate-800'
+              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
           }`}
         >
-          <div className="flex items-center gap-2">
+          {/* Right Section: Node Toggle, Code, Name, Type */}
+          <div className="flex items-center flex-wrap gap-2 flex-1 min-w-0">
             {hasChildren ? (
               <button
+                type="button"
                 onClick={() => toggleNode(node.code)}
-                className="w-6 h-6 flex items-center justify-center rounded-md bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition cursor-pointer"
+                className="w-7 h-7 min-w-[28px] flex items-center justify-center rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition cursor-pointer"
+                title={isExpanded ? 'طي التفرع' : 'توسيع التفرع'}
               >
                 {isExpanded ? '▼' : '◀'}
               </button>
             ) : (
-              <span className="w-6 text-center text-xs text-slate-400">📄</span>
+              <span className="w-7 text-center text-xs text-slate-400">📄</span>
             )}
-            <span className="font-mono bg-[#1a237e]/10 text-[#1a237e] px-2 py-0.5 rounded text-xs font-black">
+            <span className="font-mono bg-[#1a237e]/10 text-[#1a237e] px-2 py-0.5 rounded text-xs font-black shrink-0">
               {node.code}
             </span>
-            <span className="text-sm">{node.name}</span>
-            {getTypeBadge(node.type)}
+            <span className="text-xs sm:text-sm font-bold text-slate-800 break-words flex-1 min-w-[120px]">
+              {node.name}
+            </span>
+            <div className="shrink-0">
+              {getTypeBadge(node.type)}
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="text-left font-mono">
-              <span className="text-xs text-gray-500 ml-1">الرصيد:</span>
+          {/* Left Section: Balance & Action Buttons */}
+          <div className="flex items-center justify-between sm:justify-end gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 shrink-0">
+            <div className="text-right sm:text-left font-mono">
+              <span className="text-[11px] text-slate-500 ml-1">الرصيد:</span>
               <strong
-                className={`text-sm ${
+                className={`text-xs sm:text-sm ${
                   stats.balance >= 0 ? 'text-emerald-700' : 'text-rose-700'
                 }`}
               >
@@ -605,37 +613,42 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
               </strong>
             </div>
 
-            <button
-              onClick={() => {
-                setSelectedAccCode(node.code);
-                setActiveTab('statement');
-              }}
-              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg text-xs font-semibold transition"
-              title="عرض كشف حساب تفصيلي"
-            >
-              📊 كشف حساب
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedAccCode(node.code);
+                  setActiveTab('statement');
+                }}
+                className="min-h-[34px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap"
+                title="عرض كشف حساب تفصيلي"
+              >
+                📊 <span className="hidden xs:inline">كشف حساب</span>
+              </button>
 
-            <button
-              onClick={() => handleOpenEditAccount(node)}
-              className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded-lg text-xs font-semibold transition cursor-pointer"
-              title="تعديل بيانات الحساب"
-            >
-              ✏️
-            </button>
+              <button
+                type="button"
+                onClick={() => handleOpenEditAccount(node)}
+                className="w-8 h-8 flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold transition cursor-pointer"
+                title="تعديل بيانات الحساب"
+              >
+                ✏️
+              </button>
 
-            <button
-              onClick={() => handleDeleteAccount(node.code)}
-              className="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2 py-1 rounded-lg text-xs font-semibold transition cursor-pointer"
-              title="حذف الحساب"
-            >
-              🗑️
-            </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteAccount(node.code)}
+                className="w-8 h-8 flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-semibold transition cursor-pointer"
+                title="حذف الحساب"
+              >
+                🗑️
+              </button>
+            </div>
           </div>
         </div>
 
         {hasChildren && isExpanded && (
-          <div className="flex flex-col border-r-2 border-indigo-200/50 pr-2 mr-3 my-1">
+          <div className="flex flex-col border-r-2 border-indigo-200/60 pr-1.5 sm:pr-3 mr-1.5 sm:mr-3 my-1">
             {children.map((child) => renderAccountNode(child, level + 1))}
           </div>
         )}
@@ -684,9 +697,10 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
           </button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {activeTab === 'tree' && (
             <button
+              type="button"
               onClick={() => {
                 setEditingAccountCode(null);
                 setNewAccCode('');
@@ -694,13 +708,14 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
                 setNewAccDesc('');
                 setIsAddAccountModalOpen(true);
               }}
-              className="bg-[#2e7d32] hover:bg-[#1b5e20] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center gap-1 shadow-sm"
+              className="flex-1 sm:flex-initial min-h-[42px] bg-[#2e7d32] hover:bg-[#1b5e20] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1 shadow-sm whitespace-nowrap"
             >
               ➕ إضافة حساب شجري جديد
             </button>
           )}
           {activeTab === 'costCenters' && (
             <button
+              type="button"
               onClick={() => {
                 setEditingCostCenterId(null);
                 setCcCode('');
@@ -708,7 +723,7 @@ export const AccountsTreeView: React.FC<AccountsTreeViewProps> = ({
                 setCcManager('');
                 setIsAddCostCenterModalOpen(true);
               }}
-              className="bg-[#0288d1] hover:bg-[#0277bd] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center gap-1 shadow-sm"
+              className="flex-1 sm:flex-initial min-h-[42px] bg-[#0288d1] hover:bg-[#0277bd] text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer flex items-center justify-center gap-1 shadow-sm whitespace-nowrap"
             >
               ➕ إضافة مركز تكلفة
             </button>

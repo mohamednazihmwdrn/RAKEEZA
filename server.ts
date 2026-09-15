@@ -22,6 +22,9 @@ import {
   verifyEmailOtpAndRegister,
   registerDeviceAndCompany,
   getCompanyPublicInfo,
+  getCompanyByApiKey,
+  regenerateCompanyApiKey,
+  updateCompanyProfileCloud,
 } from './server/cloudDb';
 
 async function startServer() {
@@ -32,7 +35,7 @@ async function startServer() {
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-api-key, x-apk-key');
     if (req.method === 'OPTIONS') {
       return res.status(200).end();
     }
@@ -46,14 +49,44 @@ async function startServer() {
   initCloudDatabase();
 
   // ----------------------------------------------------
-  // Middleware: Extract & Verify Token
+  // Middleware: Extract & Verify Token or External API/APK Key
   // ----------------------------------------------------
   const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    // 1. Check for API / APK key for external integrations
+    const apiKey =
+      (req.headers['x-api-key'] as string) ||
+      (req.headers['x-apk-key'] as string) ||
+      (req.query.apiKey as string) ||
+      (req.headers.authorization?.startsWith('ApiKey ') ? req.headers.authorization.substring(7) : '');
+
+    if (apiKey) {
+      const company = getCompanyByApiKey(apiKey);
+      if (company) {
+        (req as any).auth = {
+          valid: true,
+          company,
+          session: {
+            token: `api_${company.id}`,
+            userId: `u-${company.id}-api`,
+            companyId: company.id,
+            userName: 'مفتاح الربط البرمجي السحابي (API Integration)',
+            userCode: 1,
+            role: 'company_admin',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
+          },
+        };
+        return next();
+      }
+      return res.status(401).json({ success: false, error: 'مفتاح الـ API / APK غير صحيح أو غير مفعل.' });
+    }
+
+    // 2. Standard Session Token
     const authHeader = req.headers.authorization || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : (req.query.token as string);
 
     if (!token) {
-      return res.status(401).json({ success: false, error: 'غير مصرح: يرجى تسجيل الدخول أولاً.' });
+      return res.status(401).json({ success: false, error: 'غير مصرح: يرجى تسجيل الدخول أو إرسال مفتاح الـ API.' });
     }
 
     const verification = validateSession(token);
@@ -208,6 +241,70 @@ async function startServer() {
 
     if (!result.success) {
       return res.status(404).json(result);
+    }
+
+    res.json(result);
+  });
+
+  // 🔑 Get Company API Key & Integration info (Requires Auth or Admin)
+  app.get('/api/company/api-key', requireAuth, (req, res) => {
+    const auth = (req as any).auth;
+    const targetCompanyId = auth.session.companyId;
+    const db = getCloudDatabase();
+    const comp = db.companies.find((c) => c.id === targetCompanyId || c.code === targetCompanyId);
+
+    if (!comp) {
+      return res.status(404).json({ success: false, error: 'المنشأة غير موجودة.' });
+    }
+
+    res.json({
+      success: true,
+      companyId: comp.id,
+      companyCode: comp.code,
+      companyName: comp.name,
+      apiKey: comp.apiKey || '',
+      instructions: {
+        headerName: 'x-api-key',
+        authHeaderExample: `x-api-key: ${comp.apiKey}`,
+        queryExample: `?apiKey=${comp.apiKey}`,
+        endpoints: {
+          health: '/api/health',
+          tenantData: '/api/tenant/data',
+          syncMutate: '/api/sync/mutate',
+        },
+      },
+    });
+  });
+
+  // 🔄 Regenerate Company API Key
+  app.post('/api/company/regenerate-api-key', requireAuth, (req, res) => {
+    const auth = (req as any).auth;
+    if (auth.session.role !== 'company_admin' && auth.session.role !== 'owner' && auth.session.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'صلاحية توليد مفتاح الـ API مخصصة لمدير المنشأة فقط.' });
+    }
+
+    const targetCompanyId = auth.session.companyId;
+    const newKey = regenerateCompanyApiKey(targetCompanyId);
+    if (!newKey) {
+      return res.status(400).json({ success: false, error: 'تعذر تجديد المفتاح، تحقق من المنشأة.' });
+    }
+
+    res.json({
+      success: true,
+      apiKey: newKey,
+      message: 'تم تجديد مفتاح الـ API بنجاح.',
+    });
+  });
+
+  // 🏢 Update Company Profile & Print Header details
+  app.post('/api/company/update-profile', requireAuth, (req, res) => {
+    const auth = (req as any).auth;
+    const targetCompanyId = auth.session.companyId;
+    const profileData = req.body;
+
+    const result = updateCompanyProfileCloud(targetCompanyId, profileData);
+    if (!result.success) {
+      return res.status(400).json(result);
     }
 
     res.json(result);

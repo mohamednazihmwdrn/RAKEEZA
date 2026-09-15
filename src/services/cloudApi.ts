@@ -1973,4 +1973,95 @@ export async function cleanEntireSystemCloudApi(): Promise<{
   }
 }
 
+/**
+ * 🔑 Get Company API / APK Key for External Server & Mobile Integration
+ */
+export async function getCompanyApiKey(): Promise<{
+  success: boolean;
+  apiKey?: string;
+  companyId?: string;
+  companyCode?: string;
+  companyName?: string;
+  instructions?: any;
+  error?: string;
+}> {
+  const token = getStoredToken();
+  try {
+    const res = await fetch('/api/company/api-key', {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message || 'فشل الاتصال بالخادم' };
+  }
+}
+
+/**
+ * 🔄 Regenerate Company API Key
+ */
+export async function regenerateCompanyApiKey(): Promise<{
+  success: boolean;
+  apiKey?: string;
+  message?: string;
+  error?: string;
+}> {
+  const token = getStoredToken();
+  try {
+    const res = await fetch('/api/company/regenerate-api-key', {
+      method: 'POST',
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message || 'فشل الاتصال بالخادم' };
+  }
+}
+
+/**
+ * 🏢 Update Company Profile in Cloud Database & Firestore
+ */
+export async function updateCompanyProfile(profileData: {
+  name: string;
+  tradeName?: string;
+  address?: string;
+  phone?: string;
+  phone1?: string;
+  phone2?: string;
+  phone3?: string;
+  taxNumber?: string;
+  commercialReg?: string;
+  activityCode?: string;
+  activity?: string;
+  email?: string;
+  website?: string;
+  city?: string;
+  country?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  iban?: string;
+  defaultTaxRate?: number;
+  currencySymbol?: string;
+  fiscalYear?: string;
+  notes?: string;
+}): Promise<{ success: boolean; company?: TenantCompany; error?: string }> {
+  const token = getStoredToken();
+  try {
+    const res = await fetch('/api/company/update-profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify(profileData),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message || 'فشل الاتصال بالخادم' };
+  }
+}
+
 

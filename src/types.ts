@@ -12,6 +12,13 @@ export interface Settings {
   activityCode?: string;
   withholdingTaxRate?: number;
   fiscalYear?: string;
+  email?: string;
+  website?: string;
+  city?: string;
+  country?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  iban?: string;
   logo?: string;
   logoUrl?: string;
   paperSize?: 'A4' | 'A5' | 'Letter' | 'auto';

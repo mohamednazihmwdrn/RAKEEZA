@@ -17,7 +17,7 @@ export function generateInvoicePrintHtml(
   const companyPhone2 = settings.phone2 || '';
   const companyPhone3 = settings.phone3 || '';
 
-  const companyName = settings.companyName || 'منظومة RAKEEZA للمحاسبة';
+  const companyName = settings.companyName || 'RAKEEZA';
   const companyAddress = settings.address || 'جمهورية مصر العربية';
   const logoUrl = (settings as any).logo || (settings as any).logoUrl || '';
 
@@ -728,6 +728,7 @@ export function generateInvoicePrintHtml(
         <div class="info-item" style="text-align: left;">
           <p><strong>التاريخ:</strong> <span id="lblInvoiceDate">${invoiceDate}</span></p>
           <p><strong>الوقت:</strong> <span id="lblInvoiceTime">${invoiceTime}</span></p>
+          ${(inv as any).createdBy || (inv as any).userName ? `<p><strong>المستخدم:</strong> <span>${(inv as any).createdBy || (inv as any).userName}</span></p>` : ''}
         </div>
       </div>
 

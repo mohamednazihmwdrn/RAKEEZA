@@ -300,11 +300,11 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('payroll')}
-              className={`px-4 py-1.5 rounded-lg transition cursor-pointer ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 sm:py-1.5 rounded-lg transition cursor-pointer text-center whitespace-nowrap ${
                 activeTab === 'payroll' ? 'bg-[#1a237e] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -312,7 +312,7 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('employees')}
-              className={`px-4 py-1.5 rounded-lg transition cursor-pointer ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 sm:py-1.5 rounded-lg transition cursor-pointer text-center whitespace-nowrap ${
                 activeTab === 'employees' ? 'bg-[#1a237e] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -320,11 +320,11 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('advances')}
-              className={`px-4 py-1.5 rounded-lg transition cursor-pointer ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 sm:py-1.5 rounded-lg transition cursor-pointer text-center whitespace-nowrap ${
                 activeTab === 'advances' ? 'bg-[#1a237e] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              💳 السلف والقروض ({advances.length})
+              💳 السلف ({advances.length})
             </button>
           </div>
         </div>
@@ -348,10 +348,11 @@ export const HrPayrollView: React.FC<HrPayrollViewProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
+                type="button"
                 onClick={handleGenerateMonthlyPayroll}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                className="flex-1 sm:flex-initial min-h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
               >
                 <span>⚡ إنشاء مسير الشهر آلياً بنقرة واحدة</span>
               </button>

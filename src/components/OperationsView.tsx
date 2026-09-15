@@ -424,8 +424,8 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                   {totalSalesVal.toFixed(2)} ج.م
                 </span>
               </h4>
-              {/* Mobile Today Sales Cards (< sm) */}
-              <div className="block sm:hidden space-y-2 max-h-[300px] overflow-y-auto">
+              {/* Mobile Today Sales Cards (< md) */}
+              <div className="block md:hidden space-y-2 max-h-[300px] overflow-y-auto">
                 {salesToday.length === 0 ? (
                   <div className="p-4 text-center text-slate-400 text-xs">
                     لا توجد فواتير مبيعات مسجلة اليوم
@@ -448,8 +448,8 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                 )}
               </div>
 
-              {/* Desktop Today Sales Table (>= sm) */}
-              <div className="hidden sm:block overflow-x-auto max-h-[300px]">
+              {/* Desktop Today Sales Table (>= md) */}
+              <div className="hidden md:block overflow-x-auto max-h-[300px]">
                 <table className="w-full text-right text-xs">
                   <thead className="bg-slate-100 text-slate-700 sticky top-0">
                     <tr>
@@ -495,8 +495,8 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                   {totalPurchasesVal.toFixed(2)} ج.م
                 </span>
               </h4>
-              {/* Mobile Today Purchases Cards (< sm) */}
-              <div className="block sm:hidden space-y-2 max-h-[300px] overflow-y-auto">
+              {/* Mobile Today Purchases Cards (< md) */}
+              <div className="block md:hidden space-y-2 max-h-[300px] overflow-y-auto">
                 {purchasesToday.length === 0 ? (
                   <div className="p-4 text-center text-slate-400 text-xs">
                     لا توجد فواتير مشتريات مسجلة اليوم
@@ -519,8 +519,8 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                 )}
               </div>
 
-              {/* Desktop Today Purchases Table (>= sm) */}
-              <div className="hidden sm:block overflow-x-auto max-h-[300px]">
+              {/* Desktop Today Purchases Table (>= md) */}
+              <div className="hidden md:block overflow-x-auto max-h-[300px]">
                 <table className="w-full text-right text-xs">
                   <tbody className="divide-y divide-slate-100">
                     {purchasesToday.length === 0 ? (
@@ -1257,8 +1257,8 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
               <div><strong>المصدر:</strong> {selectedJournal.source}</div>
             </div>
 
-            {/* Mobile Modal Lines Cards (< sm) */}
-            <div className="block sm:hidden space-y-2">
+            {/* Mobile Modal Lines Cards (< md) */}
+            <div className="block md:hidden space-y-2">
               {selectedJournal.lines.map((l, i) => (
                 <div key={i} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1">
                   <div className="flex items-center justify-between">
@@ -1277,8 +1277,8 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
               ))}
             </div>
 
-            {/* Desktop Modal Lines Table (>= sm) */}
-            <div className="hidden sm:block overflow-x-auto">
+            {/* Desktop Modal Lines Table (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-right text-xs">
                 <thead className="bg-[#1a237e] text-white">
                   <tr>

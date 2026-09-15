@@ -2467,8 +2467,8 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
               </div>
             </div>
 
-            {/* Mobile Voucher Items (< sm) */}
-            <div className="block sm:hidden space-y-2 max-h-[300px] overflow-y-auto">
+            {/* Mobile Voucher Items (< md) */}
+            <div className="block md:hidden space-y-2 max-h-[300px] overflow-y-auto">
               {selectedVoucher.items.map((item, idx) => (
                 <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
                   <div className="flex items-center justify-between font-bold">
@@ -2507,8 +2507,8 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
               ))}
             </div>
 
-            {/* Desktop Voucher Items Table (>= sm) */}
-            <div className="hidden sm:block overflow-x-auto max-h-[300px] border border-slate-200 rounded-2xl">
+            {/* Desktop Voucher Items Table (>= md) */}
+            <div className="hidden md:block overflow-x-auto max-h-[300px] border border-slate-200 rounded-2xl">
               <table className="w-full text-right text-xs">
                 <thead className="bg-slate-100 text-slate-700 sticky top-0">
                   <tr>
@@ -2778,7 +2778,111 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
               </button>
             </div>
 
-            <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+            {/* Mobile Issue Items Cards (< md) */}
+            <div className="block md:hidden space-y-2.5">
+              {newIssueItems.length === 0 ? (
+                <div className="p-4 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
+                  لم يتم إضافة أي صنف بعد. انقر على "إضافة صنف" لإدراج أصناف لإذن الصرف.
+                </div>
+              ) : (
+                newIssueItems.map((row, idx) => (
+                  <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <label className="text-[10px] text-slate-500 block mb-0.5 font-bold">الصنف #{idx + 1}</label>
+                        <select
+                          value={row.itemId}
+                          onChange={(e) => handleUpdateIssueItem(idx, 'itemId', e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        >
+                          {(appData.items || []).map((it) => (
+                            <option key={it.id} value={it.id}>
+                              {it.name} ({it.barcode || it.code || 'بدون كود'})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveIssueItemRow(idx)}
+                        className="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg bg-rose-50 cursor-pointer font-bold shrink-0 mt-3.5"
+                        title="حذف هذا الصنف"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">الكود</label>
+                        <input
+                          type="text"
+                          value={row.code}
+                          onChange={(e) => handleUpdateIssueItem(idx, 'code', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded p-1 text-xs font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">الوحدة</label>
+                        <input
+                          type="text"
+                          value={row.unit}
+                          onChange={(e) => handleUpdateIssueItem(idx, 'unit', e.target.value)}
+                          className="w-full text-center bg-white border border-slate-200 rounded p-1 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">الرصيد المتاح</label>
+                        <div className={`font-mono font-bold text-xs p-1 text-center rounded ${
+                          row.currentStock > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                        }`}>
+                          {row.currentStock}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">الكمية المنصرفة</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={row.qty}
+                          onChange={(e) => handleUpdateIssueItem(idx, 'qty', Math.max(1, Number(e.target.value)))}
+                          className="w-full text-center font-mono font-bold text-indigo-700 bg-white border border-indigo-300 rounded-lg p-1 text-xs focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">سعر التكلفة</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={row.unitCost}
+                          onChange={(e) => handleUpdateIssueItem(idx, 'unitCost', Number(e.target.value))}
+                          className="w-full text-center font-mono bg-white border border-slate-300 rounded p-1 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">إجمالي التكلفة</label>
+                        <div className="p-1 bg-white border border-slate-200 rounded text-center font-mono font-bold text-slate-900">
+                          {(Number(row.qty || 1) * Number(row.unitCost || 0)).toFixed(2)} ج.م
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="ملاحظات الصنف..."
+                        value={row.notes || ''}
+                        onChange={(e) => handleUpdateIssueItem(idx, 'notes', e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded p-1 text-xs"
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table (>= md) */}
+            <div className="hidden md:block border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
               <table className="w-full text-right text-xs">
                 <thead className="bg-[#1a237e] text-white">
                   <tr>
@@ -3026,7 +3130,30 @@ export const InventoryStocktakingView: React.FC<InventoryStocktakingViewProps> =
             </div>
 
             {/* Items Table */}
-            <div className="border border-slate-200 rounded-2xl overflow-hidden">
+            {/* Mobile Voucher Items Cards (< md) */}
+            <div className="block md:hidden space-y-2">
+              {selectedIssueVoucher.items.map((it, idx) => (
+                <div key={idx} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-bold text-slate-800 text-xs">{it.name}</span>
+                      <span className="text-[11px] text-slate-400 block font-mono">{it.code || '-'}</span>
+                    </div>
+                    <span className="font-mono font-bold text-slate-900">{it.totalCost.toFixed(2)} ج.م</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/50">
+                    <span>الكمية: <strong className="text-indigo-700 font-mono">{it.qty} {it.unit || 'قطعة'}</strong></span>
+                    <span>سعر التكلفة: <strong className="text-slate-700 font-mono">{it.unitCost.toFixed(2)} ج.م</strong></span>
+                  </div>
+                  {it.notes && (
+                    <div className="text-[10px] text-slate-400 italic">ملاحظة: {it.notes}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View (>= md) */}
+            <div className="hidden md:block border border-slate-200 rounded-2xl overflow-hidden">
               <table className="w-full text-right text-xs">
                 <thead className="bg-[#1a237e] text-white">
                   <tr>

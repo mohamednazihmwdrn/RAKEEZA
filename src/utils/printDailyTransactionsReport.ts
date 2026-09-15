@@ -35,7 +35,7 @@ export function compileDailyTransactionsData(
   totalCount: number;
 } {
   const company = appData.settings || {
-    companyName: 'شركة ركيزة التجارية RAKEEZA',
+    companyName: 'RAKEEZA',
     address: 'الفرع الرئيسي - ش المعهد الديني، القاهرة',
     phone1: '01029190615',
     phone2: '',
@@ -228,7 +228,7 @@ export function generateDailyTransactionsReportHtml(appData: AppData, targetDate
   const data = compileDailyTransactionsData(appData, targetDate, branchName);
 
   const phone = data.company.phone1 || '01029190615';
-  const companyTitle = data.company.companyName || 'شركة ركيزة التجارية RAKEEZA';
+  const companyTitle = data.company.companyName || 'RAKEEZA';
   const branchAddress = data.company.address || 'الفرع الرئيسي - ش المعهد الديني';
 
   const now = new Date();

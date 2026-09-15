@@ -213,8 +213,9 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <button
+            type="button"
             onClick={() => {
               setEditingAssetId(null);
               setAssetName('');
@@ -224,13 +225,14 @@ export const FixedAssetsView: React.FC<FixedAssetsViewProps> = ({
               setAssetNotes('');
               setIsAssetModalOpen(true);
             }}
-            className="bg-[#1a237e] hover:bg-[#0d47a1] text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
+            className="flex-1 sm:flex-initial min-h-[42px] bg-[#1a237e] hover:bg-[#0d47a1] text-white px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 shadow-xs whitespace-nowrap"
           >
             <span>➕ تسجيل أصل جديد</span>
           </button>
           <button
+            type="button"
             onClick={handleRunPeriodicDepreciation}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+            className="flex-1 sm:flex-initial min-h-[42px] bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
           >
             <span>⚡ احتساب وإثبات الإهلاك الدوري</span>
           </button>

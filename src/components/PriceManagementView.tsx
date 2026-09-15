@@ -1489,8 +1489,8 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
       >
         {historyItem && (
           <div className="space-y-4 text-xs sm:text-sm">
-            {/* Mobile Modal History Cards (< sm) */}
-            <div className="block sm:hidden space-y-2 max-h-80 overflow-y-auto">
+            {/* Mobile Modal History Cards (< md) */}
+            <div className="block md:hidden space-y-2 max-h-80 overflow-y-auto">
               {syncedData.priceHistories?.filter((h) => h.productId === historyItem.id).length === 0 ? (
                 <div className="text-center p-6 text-slate-400 bg-slate-50 rounded-xl">
                   لا توجد تغييرات سابقة مسجلة لهذا الصنف
@@ -1514,8 +1514,8 @@ export const PriceManagementView: React.FC<PriceManagementViewProps> = ({
               )}
             </div>
 
-            {/* Desktop Modal History Table (>= sm) */}
-            <div className="hidden sm:block border border-slate-200 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
+            {/* Desktop Modal History Table (>= md) */}
+            <div className="hidden md:block border border-slate-200 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
               <table className="w-full text-right text-xs">
                 <thead className="bg-slate-100 text-slate-700">
                   <tr>

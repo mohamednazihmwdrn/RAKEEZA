@@ -1924,8 +1924,8 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
           </div>
 
           {/* Section 3: Interactive Items (Directly Editable) */}
-          {/* Mobile Cards for Added Items (< sm) */}
-          <div className="block sm:hidden space-y-2">
+          {/* Mobile Cards for Added Items (< md) */}
+          <div className="block md:hidden space-y-2">
             {items.length === 0 ? (
               <div className="p-4 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs">
                 لم يتم إضافة أصناف إلى المستند بعد. استخدم الصندوق أعلاه لإضافة الأصناف.
@@ -1980,8 +1980,8 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
             )}
           </div>
 
-          {/* Desktop Table (>= sm) */}
-          <div className="hidden sm:block border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+          {/* Desktop Table (>= md) */}
+          <div className="hidden md:block border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-100 text-slate-800">
                 <tr>
@@ -2252,8 +2252,8 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
             </div>
 
             {/* Items Table */}
-            {/* Mobile Cards for Items (< sm) */}
-            <div className="block sm:hidden space-y-2">
+            {/* Mobile Cards for Items (< md) */}
+            <div className="block md:hidden space-y-2">
               {selectedQuote.items?.map((it, idx) => (
                 <div key={idx} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs flex items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -2269,8 +2269,8 @@ export const QuotesOrdersView: React.FC<QuotesOrdersViewProps> = ({
               ))}
             </div>
 
-            {/* Desktop Table (>= sm) */}
-            <div className="hidden sm:block border border-slate-200 rounded-2xl overflow-hidden">
+            {/* Desktop Table (>= md) */}
+            <div className="hidden md:block border border-slate-200 rounded-2xl overflow-hidden">
               <table className="w-full text-right text-xs">
                 <thead className="bg-[#1a237e] text-white">
                   <tr>

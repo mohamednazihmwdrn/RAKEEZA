@@ -1181,34 +1181,52 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ pageId, onNavigate, on
               </div>
             </div>
 
-            {/* Line items table */}
+            {/* Line items */}
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               <div className="bg-[#1a237e] text-white p-2.5 font-bold text-xs flex justify-between">
                 <span>اصناف وبنود الفاتورة</span>
                 <span>إجمالي البنود: {activeSaleInvoice.items.length}</span>
               </div>
-              <table className="w-full text-right">
-                <thead className="bg-gray-100 border-b border-gray-200 text-xs">
-                  <tr>
-                    <th className="p-2">#</th>
-                    <th className="p-2">اسم الصنف</th>
-                    <th className="p-2">الكمية</th>
-                    <th className="p-2">سعر الوحدة</th>
-                    <th className="p-2">الإجمالي (ج.م)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {activeSaleInvoice.items.map((it, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
-                      <td className="p-2 text-gray-500">{idx + 1}</td>
-                      <td className="p-2 font-bold text-[#1a237e]">{it.name}</td>
-                      <td className="p-2">{it.qty}</td>
-                      <td className="p-2">{it.price.toFixed(2)} ج.م</td>
-                      <td className="p-2 font-bold text-[#2e7d32]">{(it.total || it.qty * it.price).toFixed(2)} ج.م</td>
+              {/* Mobile Items Cards (< md) */}
+              <div className="block md:hidden p-2 space-y-2 max-h-60 overflow-y-auto">
+                {activeSaleInvoice.items.map((it, idx) => (
+                  <div key={idx} className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs space-y-1">
+                    <div className="flex justify-between items-start font-bold">
+                      <span className="text-[#1a237e]">{it.name}</span>
+                      <span className="text-[#2e7d32]">{(it.total || it.qty * it.price).toFixed(2)} ج.م</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/50">
+                      <span>الكمية: <strong className="text-slate-800">{it.qty}</strong></span>
+                      <span>سعر الوحدة: <strong className="text-slate-800">{it.price.toFixed(2)} ج.م</strong></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop Items Table (>= md) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-gray-100 border-b border-gray-200 text-xs">
+                    <tr>
+                      <th className="p-2">#</th>
+                      <th className="p-2">اسم الصنف</th>
+                      <th className="p-2">الكمية</th>
+                      <th className="p-2">سعر الوحدة</th>
+                      <th className="p-2">الإجمالي (ج.م)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {activeSaleInvoice.items.map((it, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="p-2 text-gray-500">{idx + 1}</td>
+                        <td className="p-2 font-bold text-[#1a237e]">{it.name}</td>
+                        <td className="p-2">{it.qty}</td>
+                        <td className="p-2">{it.price.toFixed(2)} ج.م</td>
+                        <td className="p-2 font-bold text-[#2e7d32]">{(it.total || it.qty * it.price).toFixed(2)} ج.م</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Totals Summary */}
@@ -1313,34 +1331,52 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ pageId, onNavigate, on
               </div>
             </div>
 
-            {/* Line items table */}
+            {/* Line items */}
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               <div className="bg-[#1a237e] text-white p-2.5 font-bold text-xs flex justify-between">
                 <span>اصناف المشتريات الواردة</span>
                 <span>إجمالي البنود: {activePurchaseInvoice.items.length}</span>
               </div>
-              <table className="w-full text-right">
-                <thead className="bg-gray-100 border-b border-gray-200 text-xs">
-                  <tr>
-                    <th className="p-2">#</th>
-                    <th className="p-2">اسم الصنف</th>
-                    <th className="p-2">الكمية الواردة</th>
-                    <th className="p-2">سعر الشراء</th>
-                    <th className="p-2">الإجمالي (ج.م)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {activePurchaseInvoice.items.map((it, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
-                      <td className="p-2 text-gray-500">{idx + 1}</td>
-                      <td className="p-2 font-bold text-[#1a237e]">{it.name}</td>
-                      <td className="p-2">{it.qty}</td>
-                      <td className="p-2">{it.price.toFixed(2)} ج.م</td>
-                      <td className="p-2 font-bold text-[#2e7d32]">{(it.total || it.qty * it.price).toFixed(2)} ج.م</td>
+              {/* Mobile Items Cards (< md) */}
+              <div className="block md:hidden p-2 space-y-2 max-h-60 overflow-y-auto">
+                {activePurchaseInvoice.items.map((it, idx) => (
+                  <div key={idx} className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs space-y-1">
+                    <div className="flex justify-between items-start font-bold">
+                      <span className="text-[#1a237e]">{it.name}</span>
+                      <span className="text-[#2e7d32]">{(it.total || it.qty * it.price).toFixed(2)} ج.م</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/50">
+                      <span>الكمية الواردة: <strong className="text-slate-800">{it.qty}</strong></span>
+                      <span>سعر الشراء: <strong className="text-slate-800">{it.price.toFixed(2)} ج.م</strong></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop Items Table (>= md) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-gray-100 border-b border-gray-200 text-xs">
+                    <tr>
+                      <th className="p-2">#</th>
+                      <th className="p-2">اسم الصنف</th>
+                      <th className="p-2">الكمية الواردة</th>
+                      <th className="p-2">سعر الشراء</th>
+                      <th className="p-2">الإجمالي (ج.م)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {activePurchaseInvoice.items.map((it, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="p-2 text-gray-500">{idx + 1}</td>
+                        <td className="p-2 font-bold text-[#1a237e]">{it.name}</td>
+                        <td className="p-2">{it.qty}</td>
+                        <td className="p-2">{it.price.toFixed(2)} ج.م</td>
+                        <td className="p-2 font-bold text-[#2e7d32]">{(it.total || it.qty * it.price).toFixed(2)} ج.م</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Totals Summary */}

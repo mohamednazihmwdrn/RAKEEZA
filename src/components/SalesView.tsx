@@ -1723,7 +1723,7 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
           ) : (
             <div>
               {/* Mobile Card List for Added Items */}
-              <div className="block sm:hidden space-y-2 max-h-56 overflow-y-auto pr-0.5">
+              <div className="block md:hidden space-y-2 max-h-56 overflow-y-auto pr-0.5">
                 {tempItems.map((item, idx) => (
                   <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col gap-2 text-xs">
                     <div className="flex items-start justify-between gap-2">
@@ -1773,7 +1773,7 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
               </div>
 
               {/* Desktop Table for Added Items */}
-              <div className="hidden sm:block border border-gray-200 rounded-xl overflow-x-auto max-h-56">
+              <div className="hidden md:block border border-gray-200 rounded-xl overflow-x-auto max-h-56">
                 <table className="w-full text-right text-xs">
                   <thead className="bg-gray-100 text-gray-700 font-bold">
                     <tr>
