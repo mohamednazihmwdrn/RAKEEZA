@@ -725,14 +725,6 @@ export function openUnifiedPrintWindow(
   settings?: Settings,
   showToast?: (msg: string, type: any) => void
 ): void {
-  const printWindow = window.open('', '_blank', 'width=1000,height=900');
-  if (!printWindow) {
-    if (showToast) {
-      showToast('يرجى السماح بالنوافذ المنبثقة (Popups) لمعاينة وطباعة التقرير', 'warning');
-    }
-    return;
-  }
-
   // Check if it's already a UnifiedReportConfig or convert from PrintDocumentConfig
   let unifiedConfig: UnifiedReportConfig;
 
@@ -789,7 +781,63 @@ export function openUnifiedPrintWindow(
   }
 
   const html = generateUnifiedReportHtml(unifiedConfig);
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
+
+  let printWindow: Window | null = null;
+  try {
+    printWindow = window.open('', '_blank', 'width=1000,height=900');
+  } catch {
+    printWindow = null;
+  }
+
+  if (printWindow) {
+    try {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      return;
+    } catch {
+      // Fall back to hidden iframe
+    }
+  }
+
+  // Fallback: hidden iframe for sandboxed environments
+  try {
+    let iframe = document.getElementById('rakeeza-report-print-frame') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'rakeeza-report-print-frame';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
+    }
+    const frameDoc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (frameDoc) {
+      frameDoc.open();
+      frameDoc.write(html);
+      frameDoc.close();
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          if (showToast) {
+            showToast('تم إرسال أمر طباعة التقرير بنجاح', 'success');
+          }
+        } catch (err) {
+          console.error('Iframe report print error:', err);
+        }
+      }, 500);
+      return;
+    }
+  } catch (err) {
+    console.error('Report fallback print error:', err);
+  }
+
+  if (showToast) {
+    showToast('يرجى السماح بالنوافذ المنبثقة (Popups) لمعاينة وطباعة التقرير', 'warning');
+  }
 }

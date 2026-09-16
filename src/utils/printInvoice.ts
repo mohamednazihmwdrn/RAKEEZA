@@ -917,20 +917,71 @@ export function printInvoiceWindow(
   inv: SaleInvoice | PurchaseInvoice,
   isSales: boolean,
   settings: Settings,
-  showToast?: (msg: string, type: 'warning' | 'error' | 'success' | 'info') => void
+  showToast?: (msg: string, type: 'warning' | 'error' | 'success' | 'info') => void,
+  preferredPaperSize?: 'A4' | 'A5' | '80mm' | '58mm'
 ) {
-  const printWin = window.open('', '_blank', 'width=900,height=950');
-  if (!printWin) {
-    if (showToast) {
-      showToast('يرجى السماح بالنوافذ المنبثقة للطباعة', 'warning');
-    } else {
-      alert('يرجى السماح بالنوافذ المنبثقة للطباعة');
-    }
-    return;
+  if (preferredPaperSize && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('sys_print_pref_size', preferredPaperSize);
+    } catch {}
+  }
+  const html = generateInvoicePrintHtml(inv, isSales, settings);
+  let printWin: Window | null = null;
+  try {
+    printWin = window.open('', '_blank', 'width=900,height=950');
+  } catch (e) {
+    printWin = null;
   }
 
-  const html = generateInvoicePrintHtml(inv, isSales, settings);
-  printWin.document.open();
-  printWin.document.write(html);
-  printWin.document.close();
+  if (printWin) {
+    try {
+      printWin.document.open();
+      printWin.document.write(html);
+      printWin.document.close();
+      return;
+    } catch {
+      // If writing to window fails, fall back to iframe
+    }
+  }
+
+  // Fallback: Invisible iframe printing for iframe/sandboxed environments
+  try {
+    let iframe = document.getElementById('rakeeza-invoice-print-frame') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'rakeeza-invoice-print-frame';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
+    }
+    const frameDoc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (frameDoc) {
+      frameDoc.open();
+      frameDoc.write(html);
+      frameDoc.close();
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          if (showToast) {
+            showToast('تم إرسال أمر الطباعة بنجاح', 'success');
+          }
+        } catch (err) {
+          console.error('Iframe print error:', err);
+        }
+      }, 500);
+      return;
+    }
+  } catch (err) {
+    console.error('Fallback printing error:', err);
+  }
+
+  if (showToast) {
+    showToast('يرجى السماح بالنوافذ المنبثقة لمعاينة الفاتورة', 'warning');
+  }
 }

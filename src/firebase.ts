@@ -1,13 +1,27 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeFirestore, getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase App
-export const app = initializeApp(firebaseConfig);
+export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Cloud Firestore with custom databaseId if configured
-export const db = firebaseConfig.firestoreDatabaseId
-  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-  : getFirestore(app);
+const customDatabaseId = firebaseConfig.firestoreDatabaseId || '(default)';
 
+// Initialize Cloud Firestore with auto-detect long polling to prevent 10s backend connection timeouts
+let firestoreInstance;
+try {
+  firestoreInstance = initializeFirestore(
+    app,
+    {
+      experimentalAutoDetectLongPolling: true,
+    },
+    customDatabaseId
+  );
+} catch {
+  firestoreInstance = customDatabaseId && customDatabaseId !== '(default)'
+    ? getFirestore(app, customDatabaseId)
+    : getFirestore(app);
+}
+
+export const db = firestoreInstance;
 export default db;

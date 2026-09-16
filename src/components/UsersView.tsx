@@ -4,6 +4,7 @@ import { Modal } from './Modal';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
 import { TableActionButtons } from './TableActionButtons';
+import { SYSTEM_PERMISSIONS, PermissionDefinition } from '../utils/permissions';
 import {
   Shield,
   UserPlus,
@@ -23,83 +24,9 @@ import {
 
 interface UsersViewProps {
   appData: AppData;
-  onUpdateData: (newData: AppData) => void;
+  onUpdateData: (newData: AppData, actionInfo?: { action?: string; module?: string; details?: string }) => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
 }
-
-// Granular permission categories and permissions requested by the user
-export interface PermissionDefinition {
-  id: string;
-  name: string;
-  category: string;
-}
-
-export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
-  // الرئيسية ولوحة التحكم
-  { id: 'dashboard', name: 'لوحة التحكم والقيادة', category: 'لوحة التحكم' },
-
-  // المبيعات
-  { id: 'sales_view', name: 'استعراض المبيعات', category: 'المبيعات' },
-  { id: 'sales_create', name: 'إنشاء فاتورة مبيعات', category: 'المبيعات' },
-  { id: 'sales_edit', name: 'تعديل فاتورة مبيعات', category: 'المبيعات' },
-  { id: 'sales_delete', name: 'حذف فاتورة مبيعات', category: 'المبيعات' },
-  { id: 'sales_returns', name: 'مرتجعات المبيعات', category: 'المبيعات' },
-  { id: 'quotes_orders', name: 'عروض الأسعار والطلبيات', category: 'المبيعات' },
-  { id: 'pos_access', name: 'نقطة البيع السريعة POS', category: 'المبيعات' },
-
-  // المشتريات
-  { id: 'purchases_view', name: 'استعراض المشتريات', category: 'المشتريات' },
-  { id: 'purchases_create', name: 'إنشاء فاتورة مشتريات', category: 'المشتريات' },
-  { id: 'purchases_edit', name: 'تعديل فاتورة مشتريات', category: 'المشتريات' },
-  { id: 'purchases_delete', name: 'حذف فاتورة مشتريات', category: 'المشتريات' },
-
-  // المخازن والأصناف
-  { id: 'inventory_view', name: 'استعراض المخازن والأرصدة', category: 'المخازن والأصناف' },
-  { id: 'items_view', name: 'استعراض قائمة الأصناف', category: 'المخازن والأصناف' },
-  { id: 'items_create', name: 'إضافة صنف جديد', category: 'المخازن والأصناف' },
-  { id: 'items_edit', name: 'تعديل صنف', category: 'المخازن والأصناف' },
-  { id: 'items_delete', name: 'حذف صنف', category: 'المخازن والأصناف' },
-  { id: 'inventory_stocktaking', name: 'الجرد الفعلي للمخازن', category: 'المخازن والأصناف' },
-  { id: 'inventory_transfers', name: 'التحويلات المخزنية بين الفروع', category: 'المخازن والأصناف' },
-
-  // العملاء والموردين
-  { id: 'customers_manage', name: 'إدارة العملاء وتعديل الأرصدة', category: 'العملاء والموردين' },
-  { id: 'suppliers_manage', name: 'إدارة الموردين والمديونيات', category: 'العملاء والموردين' },
-
-  // الخزينة والمالية
-  { id: 'treasury_view', name: 'استعراض الخزينة والأرصدة النقدية', category: 'الخزينة والمالية' },
-  { id: 'cash_receipt', name: 'إنشاء سند قبض نقدية', category: 'الخزينة والمالية' },
-  { id: 'cash_payment', name: 'إنشاء سند صرف نقدية', category: 'الخزينة والمالية' },
-  { id: 'banks_manage', name: 'حسابات البنوك والتسوية البنكية', category: 'الخزينة والمالية' },
-  { id: 'cheques_manage', name: 'إدارة الشيكات وأوراق القبض والدفع', category: 'الخزينة والمالية' },
-
-  // الحسابات العامة
-  { id: 'accounts_view', name: 'دليل الحسابات الشجري', category: 'الحسابات العامة' },
-  { id: 'daily_entries', name: 'دفتر القيود اليومية المحاسبية', category: 'الحسابات العامة' },
-  { id: 'year_end_closing', name: 'الإقفال السنوي وترحيل الحسابات', category: 'الحسابات العامة' },
-
-  // التقارير والتصدير
-  { id: 'reports_view', name: 'استعراض التقارير المالية والإدارية', category: 'التقارير' },
-  { id: 'reports_export', name: 'تصدير التقارير (Excel / PDF)', category: 'التقارير' },
-
-  // الموارد البشرية والرواتب
-  { id: 'hr_payroll', name: 'شؤون الموظفين ومسير الرواتب', category: 'الموارد البشرية' },
-
-  // التصنيع والأصول
-  { id: 'manufacturing', name: 'أوامر التصنيع ومعادلات التكوين BOM', category: 'التصنيع والأصول' },
-  { id: 'fixed_assets', name: 'الأصول الثابتة وحساب الإهلاك', category: 'التصنيع والأصول' },
-
-  // المبيعات والتسعير
-  { id: 'sales_reps', name: 'مناديب المبيعات وعمولات التحصيل', category: 'إدارة متقدمة' },
-  { id: 'price_management', name: 'إدارة وتعديل قوائم الأسعار', category: 'إدارة متقدمة' },
-  { id: 'e_invoicing', name: 'الفاتورة الإلكترونية والضرائب', category: 'إدارة متقدمة' },
-
-  // الإعدادات والإدارة
-  { id: 'company_settings', name: 'إعدادات الشركة والمطبوعات', category: 'إعدادات النظام' },
-  { id: 'users_manage', name: 'إدارة المستخدمين والصلاحيات', category: 'إعدادات النظام' },
-  { id: 'backup_export', name: 'النسخ الاحتياطي وتصدير البيانات', category: 'إعدادات النظام' },
-  { id: 'website_catalog', name: 'إدارة الويب سايت والكتالوج الخاص بالشركة', category: 'إعدادات النظام' },
-];
 
 export const UsersView: React.FC<UsersViewProps> = ({ appData, onUpdateData, showToast }) => {
   const currentCompanyId = appData.companyId || 'COMP-000001';
@@ -295,10 +222,18 @@ export const UsersView: React.FC<UsersViewProps> = ({ appData, onUpdateData, sho
 
       showToast(`تم تعديل بيانات وصلاحيات المستخدم "${name}" بنجاح`, 'success');
     } else {
-      // Creating new user
+      // Creating new user with sequential user code
+      const existingCodes = companyUsers
+        .map((u) => Number(u.code ?? (u as any).userCode ?? 0))
+        .filter((n) => !isNaN(n) && n > 0);
+      const nextUserCode = existingCodes.length > 0 ? Math.max(...existingCodes) + 1 : companyUsers.length + 1;
+
       const newUser: User = {
         id: `u-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        code: nextUserCode,
+        userCode: nextUserCode,
         companyId: currentCompanyId,
+        companyCode: appData.settings?.companyCode || '101',
         name: name.trim(),
         username: username.trim(),
         password: password.trim(),

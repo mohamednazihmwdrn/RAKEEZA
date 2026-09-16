@@ -26,6 +26,7 @@ export interface Settings {
   showLogoInPrint?: boolean;
   printerType?: 'standard' | 'thermal';
   companyId?: string;
+  companyCode?: string;
   apiKey?: string;
 }
 

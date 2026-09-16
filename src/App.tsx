@@ -727,7 +727,7 @@ export default function App() {
   const renderContent = () => {
     switch (currentPage) {
       case 'home':
-        return <HomeView appData={appData} onNavigate={handleNavigate} />;
+        return <HomeView appData={appData} onNavigate={handleNavigate} currentUser={currentUser} />;
       case 'pos':
         return <PosView appData={appData} onUpdateData={updateData} showToast={showToast} />;
       case 'sales':
@@ -873,7 +873,8 @@ export default function App() {
             />
           );
         }
-        return <HomeView appData={appData} onNavigate={handleNavigate} />;
+        const activeUser = appData.users?.find((u) => u.username === appData.currentUser || String(u.code) === String(appData.currentUser) || u.id === appData.currentUser) || appData.users?.[0];
+        return <HomeView appData={appData} onNavigate={handleNavigate} currentUser={activeUser} />;
     }
   };
 

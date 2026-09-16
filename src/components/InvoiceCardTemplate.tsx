@@ -1,11 +1,13 @@
 import React from 'react';
 import { SaleInvoice, PurchaseInvoice, Settings } from '../types';
+import { printInvoiceWindow } from '../utils/printInvoice';
 
 interface InvoiceCardTemplateProps {
   invoice: SaleInvoice | PurchaseInvoice;
   isSales: boolean;
   settings: Settings;
   onPrint?: () => void;
+  onPrintFormat?: (format: 'A4' | 'A5' | '80mm') => void;
   onClose?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -16,10 +18,20 @@ export const InvoiceCardTemplate: React.FC<InvoiceCardTemplateProps> = ({
   isSales,
   settings,
   onPrint,
+  onPrintFormat,
   onClose,
   onEdit,
   onDelete,
 }) => {
+  const handlePrintWithSize = (size: 'A4' | 'A5' | '80mm') => {
+    if (onPrintFormat) {
+      onPrintFormat(size);
+    } else if (onPrint && size === 'A4') {
+      onPrint();
+    } else {
+      printInvoiceWindow(invoice, isSales, settings, undefined, size);
+    }
+  };
   const isSaleInv = isSales;
   const partyLabel = isSaleInv ? 'اسم العميل' : 'اسم المورد';
   const partyIdLabel = isSaleInv ? 'رقم العميل / الهاتف' : 'رقم المورد / الهاتف';
@@ -107,15 +119,31 @@ export const InvoiceCardTemplate: React.FC<InvoiceCardTemplateProps> = ({
             #{invoiceNumber}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          {onPrint && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {/* Standardized Printing Options: A4, A5, Thermal 80mm */}
+          <div className="inline-flex rounded-lg overflow-hidden border border-emerald-600 bg-emerald-700/60 p-0.5">
             <button
-              onClick={onPrint}
-              className="bg-[#198754] hover:bg-[#157347] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+              onClick={() => handlePrintWithSize('A4')}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded text-xs font-bold transition cursor-pointer flex items-center gap-1"
+              title="طباعة A4 قياسي"
             >
-              🖨️ طباعة
+              🖨️ A4
             </button>
-          )}
+            <button
+              onClick={() => handlePrintWithSize('A5')}
+              className="hover:bg-emerald-600/80 text-white px-2 py-1 rounded text-xs font-bold transition cursor-pointer flex items-center gap-1"
+              title="طباعة A5 مدمج"
+            >
+              📄 A5
+            </button>
+            <button
+              onClick={() => handlePrintWithSize('80mm')}
+              className="hover:bg-emerald-600/80 text-white px-2 py-1 rounded text-xs font-bold transition cursor-pointer flex items-center gap-1"
+              title="طباعة إيصال حراري (Thermal 80mm)"
+            >
+              🧾 حراري 80mm
+            </button>
+          </div>
           {onEdit && (
             <button
               onClick={onEdit}
