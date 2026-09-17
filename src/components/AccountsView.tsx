@@ -6,6 +6,7 @@ import { exportElementToPdf } from '../utils/pdfExport';
 import { exportToExcel } from '../utils/excelExport';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { TableActionButtons } from './TableActionButtons';
+import { generateStatementWhatsAppMessage, openWhatsAppChat } from '../services/whatsappService';
 
 interface AccountsViewProps {
   appData: AppData;
@@ -276,6 +277,17 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
     setInitialRepPhone('');
   };
 
+  const handleWhatsAppCustomer = (c: Customer) => {
+    const msg = generateStatementWhatsAppMessage(
+      c.name,
+      c.balance || 0,
+      new Date().toISOString().split('T')[0],
+      appData.settings
+    );
+    openWhatsAppChat(c.phone || '', msg);
+    showToast('جاري فتح محادثة واتساب لإرسال كشف الحساب والرصيد للعميل', 'info');
+  };
+
   const handleAddRepresentative = () => {
     if (!managingRepsParty || !newRepName.trim()) {
       showToast('يرجى إدخال اسم المندوب', 'warning');
@@ -492,6 +504,13 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                       📄 كشف حساب
                     </button>
                     <button
+                      onClick={() => handleWhatsAppCustomer(c)}
+                      className="min-h-[38px] bg-[#25D366] hover:bg-[#128C7E] text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-xs"
+                      title="إرسال كشف الحساب والرصيد واتساب"
+                    >
+                      💬 واتساب
+                    </button>
+                    <button
                       onClick={() => handleOpenEdit('customer', c)}
                       className="min-h-[38px] bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1"
                     >
@@ -572,12 +591,21 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ appData, onUpdateDat
                         {(c.balance || 0).toFixed(2)}
                       </td>
                       <td className="p-2.5">
-                        <button
-                          onClick={() => openStatementModal(c.name, 'customer')}
-                          className="bg-[#3b0764] text-white px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-[#2a0845] transition flex items-center gap-1 cursor-pointer"
-                        >
-                          📄 كشف حساب
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openStatementModal(c.name, 'customer')}
+                            className="bg-[#3b0764] text-white px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-[#2a0845] transition flex items-center gap-1 cursor-pointer"
+                          >
+                            📄 كشف حساب
+                          </button>
+                          <button
+                            onClick={() => handleWhatsAppCustomer(c)}
+                            className="bg-[#25D366] text-white px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-[#128C7E] transition flex items-center gap-1 cursor-pointer"
+                            title="إرسال الرصيد عبر واتساب"
+                          >
+                            💬
+                          </button>
+                        </div>
                       </td>
                       <td className="p-2.5">
                         <button

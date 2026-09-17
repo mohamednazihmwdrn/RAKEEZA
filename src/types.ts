@@ -1018,6 +1018,13 @@ export interface AppData {
 
   // 18. Dashboard Customization & User Preferences
   userDashboardWidgets?: Record<string, DashboardWidgetConfig[]>;
+
+  // 19. Global & Egyptian Enterprise Extensions
+  crmLeads?: CrmLead[];
+  serialRecords?: SerialItemRecord[];
+  currencies?: CurrencyDef[];
+  exchangeRates?: ExchangeRate[];
+  multiCurrencyConfig?: MultiCurrencyConfig;
 }
 
 export type DashboardWidgetId =
@@ -1226,5 +1233,86 @@ export interface PriceHistoryRecord {
   date: string;
   time: string;
   reason?: string;
+}
+
+// 19. Global Multi-Currency Engine
+export interface CurrencyDef {
+  code: string; // e.g. EGP, USD, EUR, SAR, AED, KWD
+  name: string; // e.g. الجنيه المصري, الدولار الأمريكي
+  symbol: string; // e.g. ج.م, $, €, ر.س, د.إ, د.ك
+  isBaseCurrency: boolean;
+  exchangeRate: number; // relative to base (EGP = 1.0)
+  lastUpdated?: string;
+  fractionUnit?: string; // قرش, سنت, هللة, فلس
+}
+
+export interface ExchangeRate {
+  id: string;
+  currencyCode: string;
+  rate: number;
+  date: string;
+  updatedBy: string;
+}
+
+export interface MultiCurrencyConfig {
+  enabled: boolean;
+  baseCurrency: string; // 'EGP'
+  allowAutoFxGainLoss: boolean;
+  fxGainAccountId?: string;
+  fxLossAccountId?: string;
+}
+
+// 20. Serial Numbers & Warranty Certificates
+export interface SerialItemRecord {
+  id: string;
+  serialNumber: string;
+  itemId: string;
+  itemName: string;
+  itemCode?: string;
+  invoiceId?: number;
+  invoiceNumber?: string;
+  customerName?: string;
+  customerPhone?: string;
+  saleDate?: string;
+  warrantyMonths: number;
+  warrantyExpiryDate: string;
+  status: 'available' | 'sold' | 'in_warranty' | 'warranty_expired' | 'maintenance';
+  notes?: string;
+  batchNumber?: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+// 21. CRM & Lead Pipeline
+export type LeadStage = 'new' | 'contacted' | 'quotation_sent' | 'negotiation' | 'won' | 'lost';
+
+export interface CrmActivity {
+  id: string;
+  date: string;
+  type: 'call' | 'whatsapp' | 'meeting' | 'note' | 'email';
+  summary: string;
+  createdBy: string;
+}
+
+export interface CrmLead {
+  id: string;
+  clientName: string;
+  companyName?: string;
+  phone: string;
+  whatsapp?: string;
+  email?: string;
+  expectedValue: number;
+  currency?: string;
+  stage: LeadStage;
+  source?: string; // إعلانات, ترشيح, معرض, اتصال مباشر
+  salesRep?: string;
+  assignedUserId?: string;
+  notes?: string;
+  nextFollowupDate?: string;
+  activities?: CrmActivity[];
+  convertedInvoiceId?: number;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
 }
 

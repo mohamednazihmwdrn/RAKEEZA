@@ -8,6 +8,7 @@ import { InvoiceItemModal } from './InvoiceItemModal';
 import { exportToExcel } from '../utils/excelExport';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { TableActionButtons } from './TableActionButtons';
+import { generateInvoiceWhatsAppMessage, openWhatsAppChat } from '../services/whatsappService';
 
 interface SalesViewProps {
   appData: AppData;
@@ -809,6 +810,14 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
     printInvoiceWindow(inv, true, appData.settings, showToast);
   };
 
+  const handleWhatsAppShare = (inv: SaleInvoice) => {
+    const customer = appData.customers.find((c) => c.name.trim() === inv.customerName.trim());
+    const phone = customer?.phone || '';
+    const msg = generateInvoiceWhatsAppMessage(inv, appData.settings);
+    openWhatsAppChat(phone, msg);
+    showToast('جاري فتح محادثة واتساب لإرسال تفاصيل الفاتورة للعميل', 'info');
+  };
+
   const getMethodLabel = (m: string) => {
     switch (m) {
       case 'drawer':
@@ -1080,6 +1089,13 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
                     🖨️ طباعة
                   </button>
                   <button
+                    onClick={() => handleWhatsAppShare(inv)}
+                    className="min-h-[44px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
+                    title="إرسال عبر واتساب"
+                  >
+                    💬 واتساب
+                  </button>
+                  <button
                     onClick={() => handleDeleteInvoice(inv.id)}
                     className="min-h-[44px] bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1"
                   >
@@ -1198,6 +1214,13 @@ export const SalesView: React.FC<SalesViewProps> = ({ appData, onUpdateData, sho
                           title="طباعة"
                         >
                           🖨️
+                        </button>
+                        <button
+                          onClick={() => handleWhatsAppShare(inv)}
+                          className="bg-[#25D366] text-white p-2 rounded-lg text-xs hover:bg-[#128C7E] transition cursor-pointer font-bold"
+                          title="إرسال الفاتورة عبر واتساب"
+                        >
+                          💬
                         </button>
                         <button
                           onClick={() => openEditModal(inv)}
