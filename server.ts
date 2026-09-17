@@ -25,6 +25,7 @@ import {
   getCompanyByApiKey,
   regenerateCompanyApiKey,
   updateCompanyProfileCloud,
+  findCompanyByAnyIdentifier,
 } from './server/cloudDb';
 
 async function startServer() {
@@ -105,18 +106,53 @@ async function startServer() {
   const companyDataVersions = new Map<string, number>();
   const companyLastActions = new Map<string, any>();
 
+  const getCompanySyncKeys = (companyId: string): string[] => {
+    const clean = (companyId || '').trim();
+    if (!clean) return ['COMP-000001'];
+    const keys = new Set<string>([clean]);
+    try {
+      const db = getCloudDatabase();
+      const { company } = findCompanyByAnyIdentifier(db, clean);
+      if (company) {
+        if (company.id) keys.add(company.id);
+        if (company.code) keys.add(String(company.code));
+        if (company.companyCode) keys.add(String(company.companyCode));
+        if (company.tenantId) keys.add(company.tenantId);
+      }
+    } catch {}
+    return Array.from(keys);
+  };
+
   const broadcastSyncUpdate = (companyId: string, payload: any) => {
-    const clients = sseCompanyClients.get(companyId);
-    if (clients && clients.size > 0) {
-      const msg = `data: ${JSON.stringify(payload)}\n\n`;
-      clients.forEach((client) => {
-        try {
-          client.write(msg);
-        } catch {
-          clients.delete(client);
-        }
-      });
-    }
+    const keys = getCompanySyncKeys(companyId);
+    const sentResponses = new Set<express.Response>();
+    const msg = `data: ${JSON.stringify(payload)}\n\n`;
+
+    keys.forEach((k) => {
+      const clients = sseCompanyClients.get(k);
+      if (clients && clients.size > 0) {
+        clients.forEach((client) => {
+          if (!sentResponses.has(client)) {
+            sentResponses.add(client);
+            try {
+              client.write(msg);
+            } catch {
+              clients.delete(client);
+            }
+          }
+        });
+      }
+    });
+  };
+
+  const setCompanyVersion = (companyId: string, version: number, actionInfo?: any) => {
+    const keys = getCompanySyncKeys(companyId);
+    keys.forEach((k) => {
+      companyDataVersions.set(k, version);
+      if (actionInfo) {
+        companyLastActions.set(k, actionInfo);
+      }
+    });
   };
 
   const requireOwner = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -384,8 +420,13 @@ async function startServer() {
     const saved = saveTenantDataStrict(targetCompanyId, req.body.data, actorUser, req.body.actionInfo);
     
     // Increment version & record last action for instant synchronization
-    const nextVer = (companyDataVersions.get(targetCompanyId) || 1) + 1;
-    companyDataVersions.set(targetCompanyId, nextVer);
+    let curVer = 1;
+    const keys = getCompanySyncKeys(targetCompanyId);
+    keys.forEach((k) => {
+      const v = companyDataVersions.get(k) || 1;
+      if (v > curVer) curVer = v;
+    });
+    const nextVer = curVer + 1;
     
     const lastAction = {
       version: nextVer,
@@ -397,9 +438,9 @@ async function startServer() {
         details: `قام ${actorUser.name} (كود ${actorUser.code}) بتحديث بيانات المنظومة`,
       },
     };
-    companyLastActions.set(targetCompanyId, lastAction);
+    setCompanyVersion(targetCompanyId, nextVer, lastAction);
 
-    // Broadcast instant sync to all other users/codes of this company
+    // Broadcast instant sync to all other users/codes of this company across all alias keys
     broadcastSyncUpdate(targetCompanyId, {
       type: 'REALTIME_SYNC',
       companyId: targetCompanyId,
@@ -426,7 +467,8 @@ async function startServer() {
       return res.status(401).end();
     }
 
-    const companyId = verification.session.companyId === 'OWNER' ? 'COMP-000001' : verification.session.companyId;
+    const rawCompanyId = verification.session.companyId === 'OWNER' ? 'COMP-000001' : verification.session.companyId;
+    const keys = getCompanySyncKeys(rawCompanyId);
 
     // Setup SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
@@ -435,14 +477,20 @@ async function startServer() {
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders?.();
 
-    if (!sseCompanyClients.has(companyId)) {
-      sseCompanyClients.set(companyId, new Set());
-    }
-    const clientSet = sseCompanyClients.get(companyId)!;
-    clientSet.add(res);
+    keys.forEach((k) => {
+      if (!sseCompanyClients.has(k)) {
+        sseCompanyClients.set(k, new Set());
+      }
+      sseCompanyClients.get(k)!.add(res);
+    });
 
-    const currentVersion = companyDataVersions.get(companyId) || 1;
-    res.write(`data: ${JSON.stringify({ type: 'CONNECTED', version: currentVersion, companyId })}\n\n`);
+    let currentVersion = 1;
+    keys.forEach((k) => {
+      const v = companyDataVersions.get(k) || 1;
+      if (v > currentVersion) currentVersion = v;
+    });
+
+    res.write(`data: ${JSON.stringify({ type: 'CONNECTED', version: currentVersion, companyId: rawCompanyId })}\n\n`);
 
     // Keep-alive ping interval
     const keepAlive = setInterval(() => {
@@ -455,19 +503,50 @@ async function startServer() {
 
     req.on('close', () => {
       clearInterval(keepAlive);
-      clientSet.delete(res);
+      keys.forEach((k) => {
+        sseCompanyClients.get(k)?.delete(res);
+      });
     });
   });
 
   // ----------------------------------------------------
   // Lightweight Polling Fallback for Real-time Synchronization
   // ----------------------------------------------------
-  app.get('/api/tenant/sync-check', requireAuth, (req, res) => {
-    const auth = (req as any).auth;
-    const companyId = auth.session.companyId === 'OWNER' ? 'COMP-000001' : auth.session.companyId;
+  app.get('/api/tenant/sync-check', (req, res) => {
+    let companyId = '';
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : (req.query.token as string);
+
+    if (token) {
+      const verification = validateSession(token);
+      if (verification.valid && verification.session) {
+        companyId = verification.session.companyId;
+      }
+    }
+
+    if (!companyId && req.query.companyId) {
+      const db = getCloudDatabase();
+      const { company } = findCompanyByAnyIdentifier(db, req.query.companyId as string);
+      if (company) {
+        companyId = company.id;
+      }
+    }
+
+    if (!companyId) {
+      companyId = 'COMP-000001';
+    }
+
+    if (companyId === 'OWNER') companyId = 'COMP-000001';
+
+    const keys = getCompanySyncKeys(companyId);
+    let serverVersion = 1;
+    keys.forEach((k) => {
+      const v = companyDataVersions.get(k) || 1;
+      if (v > serverVersion) serverVersion = v;
+    });
+
     const clientVersion = parseInt((req.query.version as string) || '0', 10);
-    const serverVersion = companyDataVersions.get(companyId) || 1;
-    const lastAction = companyLastActions.get(companyId);
+    const lastAction = companyLastActions.get(companyId) || companyLastActions.get(keys[0]);
 
     if (serverVersion > clientVersion) {
       const data = getTenantDataStrict(companyId);

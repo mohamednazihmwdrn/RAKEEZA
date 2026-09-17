@@ -5,6 +5,7 @@ import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
 import { TableActionButtons } from './TableActionButtons';
 import { SYSTEM_PERMISSIONS, PermissionDefinition } from '../utils/permissions';
+import { getStoredLocalSession } from '../services/cloudApi';
 import {
   Shield,
   UserPlus,
@@ -184,12 +185,25 @@ export const UsersView: React.FC<UsersViewProps> = ({ appData, onUpdateData, sho
 
     let updatedUsers: User[];
 
+    const activeSession = getStoredLocalSession();
+    const activeCompCode =
+      activeSession?.company?.code ||
+      (activeSession?.company as any)?.companyCode ||
+      appData.settings?.companyCode ||
+      '101';
+
     if (editingUserId) {
       // Editing existing user
       updatedUsers = appData.users.map((u) => {
         if (u.id === editingUserId) {
+          const userCode = u.code || (u as any).userCode || 1;
           return {
             ...u,
+            code: userCode,
+            userCode: userCode,
+            uid: u.uid || `UID_${currentCompanyId}_USR_${userCode}`,
+            companyId: u.companyId || currentCompanyId,
+            companyCode: u.companyCode || String(activeCompCode),
             name: name.trim(),
             username: username.trim(),
             password: password.trim(),
@@ -227,13 +241,15 @@ export const UsersView: React.FC<UsersViewProps> = ({ appData, onUpdateData, sho
         .map((u) => Number(u.code ?? (u as any).userCode ?? 0))
         .filter((n) => !isNaN(n) && n > 0);
       const nextUserCode = existingCodes.length > 0 ? Math.max(...existingCodes) + 1 : companyUsers.length + 1;
+      const userUid = `UID_${currentCompanyId}_USR_${nextUserCode}`;
 
       const newUser: User = {
         id: `u-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        uid: userUid,
         code: nextUserCode,
         userCode: nextUserCode,
         companyId: currentCompanyId,
-        companyCode: appData.settings?.companyCode || '101',
+        companyCode: String(activeCompCode),
         name: name.trim(),
         username: username.trim(),
         password: password.trim(),

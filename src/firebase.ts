@@ -7,13 +7,13 @@ export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getA
 
 const customDatabaseId = firebaseConfig.firestoreDatabaseId || '(default)';
 
-// Initialize Cloud Firestore with auto-detect long polling to prevent 10s backend connection timeouts
+// Initialize Cloud Firestore with forced long polling to guarantee instant connectivity without WebSocket hangs
 let firestoreInstance;
 try {
   firestoreInstance = initializeFirestore(
     app,
     {
-      experimentalAutoDetectLongPolling: true,
+      experimentalForceLongPolling: true,
     },
     customDatabaseId
   );

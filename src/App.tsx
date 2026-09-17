@@ -267,8 +267,19 @@ export default function App() {
             purchaseInvoices: incomingData.purchaseInvoices || prev.purchaseInvoices || [],
             cashTransactions: incomingData.cashTransactions || prev.cashTransactions || [],
             journalEntries: incomingData.journalEntries || prev.journalEntries || [],
+            cheques: incomingData.cheques || prev.cheques || [],
+            quotations: incomingData.quotations || prev.quotations || [],
+            auditLogs: incomingData.auditLogs || prev.auditLogs || [],
             cashBox: incomingData.cashBox || prev.cashBox || { drawer: 0, vodafone: 0, instapay: 0, bank: 0 },
             bankAccounts: incomingData.bankAccounts || prev.bankAccounts || [],
+            employees: incomingData.employees || prev.employees || [],
+            fixedAssets: incomingData.fixedAssets || prev.fixedAssets || [],
+            boms: incomingData.boms || prev.boms || [],
+            salesReps: incomingData.salesReps || prev.salesReps || [],
+            catalogConfig: incomingData.catalogConfig || prev.catalogConfig,
+            productPrices: incomingData.productPrices || prev.productPrices,
+            nextInvoiceNumber: typeof incomingData.nextInvoiceNumber === 'number' ? incomingData.nextInvoiceNumber : prev.nextInvoiceNumber,
+            nextPurchaseNumber: typeof incomingData.nextPurchaseNumber === 'number' ? incomingData.nextPurchaseNumber : prev.nextPurchaseNumber,
           };
           saveAppData(merged);
           return merged;
@@ -320,6 +331,7 @@ export default function App() {
             const cloudRes = await fetchTenantDataCloud(activeSession.company.id, activeSession.user?.uid);
             if (cloudRes.success && cloudRes.data) {
               setAppData(cloudRes.data);
+              saveAppData(cloudRes.data);
             }
           } else {
             setSession(null);
@@ -393,6 +405,7 @@ export default function App() {
       const cloudRes = await fetchTenantDataCloud(loginResult.company.id, loginResult.user.uid);
       if (cloudRes.success && cloudRes.data) {
         setAppData(cloudRes.data);
+        saveAppData(cloudRes.data);
       } else if (!cloudRes.success && cloudRes.error) {
         showToast(cloudRes.error, 'error');
       }

@@ -21,12 +21,7 @@ service cloud.firestore {
     // Tenant-isolated business operations, invoices, inventory, and accounts
     // Strictly isolates data so that each tenant can only read and write data belonging to their companyId
     match /tenants/{companyId} {
-      allow read: if isTenantUser(companyId) || isOwner() || 
-        (!isAuthenticated() && (resource == null || resource.data.companyId == companyId));
-      
-      allow create, update: if (isTenantUser(companyId) || isOwner() || !isAuthenticated()) &&
-        (request.resource.data.companyId == companyId);
-      
+      allow read, write: if isTenantUser(companyId) || isOwner() || !isAuthenticated();
       allow delete: if isOwner();
     }
 

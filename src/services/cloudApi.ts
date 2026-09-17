@@ -1,4 +1,5 @@
 import { AppData, TenantCompany, User } from '../types';
+import { getDefaultData } from '../utils/storage';
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -72,7 +73,7 @@ export function removeStoredToken(): void {
 }
 
 // Local Session Helpers for Offline & Static Hostings (e.g. Vercel)
-function getStoredLocalSession(): AuthSessionResponse | null {
+export function getStoredLocalSession(): AuthSessionResponse | null {
   try {
     const raw = localStorage.getItem(LOCAL_SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -429,14 +430,12 @@ export async function lookupCompanyInFirebase(companyCodeOrId: string): Promise<
     const directSnap = await getDoc(doc(db, 'companies', searchId));
     if (directSnap.exists()) {
       const data = directSnap.data() as any;
-      if (!data.users || data.users.length === 0) {
-        try {
-          const tenantSnap = await getDoc(doc(db, 'tenants', data.id || searchId));
-          if (tenantSnap.exists() && tenantSnap.data()?.users) {
-            data.users = tenantSnap.data()?.users;
-          }
-        } catch {}
-      }
+      try {
+        const tenantSnap = await getDoc(doc(db, 'tenants', data.id || searchId));
+        if (tenantSnap.exists() && tenantSnap.data()?.users && Array.isArray(tenantSnap.data()?.users) && tenantSnap.data()!.users.length > 0) {
+          data.users = tenantSnap.data()!.users;
+        }
+      } catch {}
       const bound = getStoredBoundDevice();
       if ((!data.users || data.users.length === 0) && bound && (bound.companyId === data.id || bound.companyCode === data.code)) {
         data.users = bound.users;
@@ -484,6 +483,12 @@ export async function lookupCompanyInFirebase(companyCodeOrId: string): Promise<
       const snap = await getDoc(doc(db, 'companies', matched.id));
       if (snap.exists()) {
         const d = snap.data() as any;
+        try {
+          const tenantSnap = await getDoc(doc(db, 'tenants', d.id || matched.id));
+          if (tenantSnap.exists() && tenantSnap.data()?.users && Array.isArray(tenantSnap.data()?.users) && tenantSnap.data()!.users.length > 0) {
+            d.users = tenantSnap.data()!.users;
+          }
+        } catch {}
         if (!d.users || d.users.length === 0) {
           d.users = (matched as any).users;
         }
@@ -985,14 +990,15 @@ export async function verifyUserIdentityInFirebase(
   }
 
   // 3. Locate User within Company Record in Firebase
-  let compUsers: any[] = companyDoc.users || [];
-  if (compUsers.length === 0) {
-    try {
-      const tSnap = await getDoc(doc(db, 'tenants', companyDoc.id));
-      if (tSnap.exists() && tSnap.data()?.users) {
-        compUsers = tSnap.data()?.users || [];
-      }
-    } catch {}
+  let compUsers: any[] = [];
+  try {
+    const tSnap = await getDoc(doc(db, 'tenants', companyDoc.id));
+    if (tSnap.exists() && Array.isArray(tSnap.data()?.users) && tSnap.data()!.users.length > 0) {
+      compUsers = tSnap.data()!.users;
+    }
+  } catch {}
+  if (compUsers.length === 0 && Array.isArray(companyDoc.users) && companyDoc.users.length > 0) {
+    compUsers = companyDoc.users;
   }
   if (compUsers.length === 0) {
     const bound = getStoredBoundDevice();
@@ -1162,14 +1168,15 @@ export async function loginToCloud(
   }
 
   // 3. Strict User and Password Verification in Firebase
-  let compUsers: any[] = companyDoc.users || [];
-  if (compUsers.length === 0) {
-    try {
-      const tSnap = await getDoc(doc(db, 'tenants', companyDoc.id));
-      if (tSnap.exists() && tSnap.data()?.users) {
-        compUsers = tSnap.data()?.users || [];
-      }
-    } catch {}
+  let compUsers: any[] = [];
+  try {
+    const tSnap = await getDoc(doc(db, 'tenants', companyDoc.id));
+    if (tSnap.exists() && Array.isArray(tSnap.data()?.users) && tSnap.data()!.users.length > 0) {
+      compUsers = tSnap.data()!.users;
+    }
+  } catch {}
+  if (compUsers.length === 0 && Array.isArray(companyDoc.users) && companyDoc.users.length > 0) {
+    compUsers = companyDoc.users;
   }
   if (compUsers.length === 0) {
     const bound = getStoredBoundDevice();
@@ -1738,11 +1745,27 @@ export async function fetchTenantDataCloud(
         };
       }
 
-      if (firestoreData && (firestoreData.items || firestoreData.salesInvoices || firestoreData.customers)) {
+      if (firestoreData) {
+        const fullData: AppData = {
+          ...getDefaultData(),
+          ...firestoreData,
+          companyId: cleanId,
+          settings: {
+            ...getDefaultData().settings,
+            ...(firestoreData.settings || {}),
+          },
+          users: Array.isArray(firestoreData.users) && firestoreData.users.length > 0 ? firestoreData.users : (getDefaultData().users || []),
+          items: Array.isArray(firestoreData.items) ? firestoreData.items : [],
+          salesInvoices: Array.isArray(firestoreData.salesInvoices) ? firestoreData.salesInvoices : [],
+          purchaseInvoices: Array.isArray(firestoreData.purchaseInvoices) ? firestoreData.purchaseInvoices : [],
+          customers: Array.isArray(firestoreData.customers) ? firestoreData.customers : [],
+          suppliers: Array.isArray(firestoreData.suppliers) ? firestoreData.suppliers : [],
+          cashTransactions: Array.isArray(firestoreData.cashTransactions) ? firestoreData.cashTransactions : [],
+        };
         try {
-          localStorage.setItem(`rakeeza_tenant_data_${cleanId}`, JSON.stringify(firestoreData));
+          localStorage.setItem(`rakeeza_tenant_data_${cleanId}`, JSON.stringify(fullData));
         } catch {}
-        return { success: true, data: firestoreData };
+        return { success: true, data: fullData };
       }
     }
   } catch (err) {
@@ -1755,12 +1778,40 @@ export async function fetchTenantDataCloud(
     if (raw) {
       const data = JSON.parse(raw);
       if (data && (!data.companyId || data.companyId.toUpperCase() === cleanId.toUpperCase())) {
-        return { success: true, data };
+        const fullCached: AppData = {
+          ...getDefaultData(),
+          ...data,
+          companyId: cleanId,
+        };
+        return { success: true, data: fullCached };
       }
     }
   } catch {}
 
-  return { success: true, data: undefined };
+  // 4. Fallback: Initialize clean tenant ERP dataset for this verified company so user never gets undefined
+  const defaultInit: AppData = {
+    ...getDefaultData(),
+    companyId: cleanId,
+    settings: {
+      ...getDefaultData().settings,
+      companyName: session?.company?.name || 'منشأة جديدة',
+      phone1: session?.company?.phone || '',
+      taxNumber: session?.company?.taxNumber || '',
+      commercialReg: session?.company?.commercialReg || '',
+    },
+    users: session?.user ? [session.user] : (getDefaultData().users || []),
+    items: [],
+    salesInvoices: [],
+    purchaseInvoices: [],
+    customers: [],
+    suppliers: [],
+    cashTransactions: [],
+  };
+  try {
+    localStorage.setItem(`rakeeza_tenant_data_${cleanId}`, JSON.stringify(defaultInit));
+  } catch {}
+
+  return { success: true, data: defaultInit };
 }
 
 export async function saveTenantDataCloud(
@@ -1808,6 +1859,32 @@ export async function saveTenantDataCloud(
       },
       { merge: true }
     ).catch((err) => console.warn('Firestore saveTenantDataCloud background sync:', err));
+
+    if (data.users && Array.isArray(data.users)) {
+      setDoc(
+        doc(db, 'companies', cleanId),
+        {
+          users: data.users,
+          usersCount: data.users.length,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch(() => {});
+
+      const bound = getStoredBoundDevice();
+      if (bound && (bound.companyId === cleanId || bound.companyCode === cleanId)) {
+        setStoredBoundDevice({
+          ...bound,
+          users: data.users.map((u: any) => ({
+            id: u.id,
+            code: u.code || u.userCode || 1,
+            name: u.name,
+            username: u.username,
+            role: u.role,
+          })),
+        });
+      }
+    }
   } catch {}
 
   const token = getStoredToken();

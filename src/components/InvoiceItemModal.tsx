@@ -40,6 +40,7 @@ export const InvoiceItemModal: React.FC<InvoiceItemModalProps> = ({
   // Catalog search autocomplete
   const [showCatalogDropdown, setShowCatalogDropdown] = useState<boolean>(false);
   const [searchFilter, setSearchFilter] = useState<string>('');
+  const [validationError, setValidationError] = useState<string>('');
 
   // Prepopulate if editing
   useEffect(() => {
@@ -68,6 +69,7 @@ export const InvoiceItemModal: React.FC<InvoiceItemModalProps> = ({
           ? String(initialItem.tax)
           : ''
       );
+      setValidationError('');
     } else {
       // Clean slate - completely empty inputs
       setSelectedItemId('');
@@ -82,6 +84,7 @@ export const InvoiceItemModal: React.FC<InvoiceItemModalProps> = ({
       setTaxValue(''); // Empty! User types if needed
       setShowCatalogDropdown(false);
       setSearchFilter('');
+      setValidationError('');
     }
   }, [initialItem, isOpen]);
 
@@ -145,17 +148,19 @@ export const InvoiceItemModal: React.FC<InvoiceItemModalProps> = ({
 
   const handleSave = () => {
     if (!name.trim()) {
-      alert('يرجى إدخال اسم الصنف');
+      setValidationError('يرجى إدخال اسم الصنف أو اختياره من المخزن');
       return;
     }
     if (numQty <= 0) {
-      alert('يرجى إدخال عدد صحيح أكبر من صفر');
+      setValidationError('يرجى إدخال كمية صحيحة أكبر من صفر');
       return;
     }
     if (numPrice < 0) {
-      alert('يرجى إدخال سعر صحيح');
+      setValidationError('يرجى إدخال سعر صحيح (صفر أو أكثر)');
       return;
     }
+
+    setValidationError('');
 
     const itemToSave: InvoiceItem = {
       itemId: selectedItemId || undefined,
@@ -216,6 +221,22 @@ export const InvoiceItemModal: React.FC<InvoiceItemModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto bg-slate-50/50">
+          {validationError && (
+            <div className="bg-rose-50 border-r-4 border-rose-600 text-rose-800 p-3 rounded-xl text-xs font-bold flex items-center justify-between shadow-xs animate-in fade-in">
+              <span className="flex items-center gap-2">
+                <span>⚠️</span>
+                <span>{validationError}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setValidationError('')}
+                className="text-rose-500 hover:text-rose-800 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {/* 1. Item Name with Quick Warehouse Search */}
           <div className="relative">
             <div className="flex items-center justify-between mb-1.5">

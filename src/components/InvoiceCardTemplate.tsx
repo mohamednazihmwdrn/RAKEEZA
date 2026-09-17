@@ -267,10 +267,10 @@ export const InvoiceCardTemplate: React.FC<InvoiceCardTemplateProps> = ({
                     السعر
                   </th>
                   <th className="border border-black p-1.5" style={{ width: '8%' }}>
-                    خصم %
+                    الخصم
                   </th>
                   <th className="border border-black p-1.5" style={{ width: '8%' }}>
-                    ضريبة %
+                    الضريبة
                   </th>
                   <th className="border border-black p-1.5" style={{ width: '12%' }}>
                     الإجمالي
@@ -286,8 +286,20 @@ export const InvoiceCardTemplate: React.FC<InvoiceCardTemplateProps> = ({
                   </tr>
                 ) : (
                   items.map((item, idx) => {
-                    const itemDisc = (item as any).discount !== undefined ? (item as any).discount : 0;
-                    const itemTax = (item as any).tax !== undefined ? (item as any).tax : 0;
+                    const hasDisc = (item.discountValue !== undefined && item.discountValue > 0) || ((item.discount || 0) > 0);
+                    const discDisplay = !hasDisc
+                      ? '-'
+                      : item.discountType === 'percent'
+                      ? `${item.discountValue ?? item.discount}%`
+                      : `${parseFloat((item.discountValue ?? item.discount ?? 0).toString()).toFixed(2)} ج.م`;
+
+                    const hasTax = (item.taxValue !== undefined && item.taxValue > 0) || ((item.tax || 0) > 0);
+                    const taxDisplay = !hasTax
+                      ? '-'
+                      : item.taxType === 'percent'
+                      ? `${item.taxValue ?? item.tax}%`
+                      : `${parseFloat((item.taxValue ?? item.tax ?? 0).toString()).toFixed(2)} ج.م`;
+
                     return (
                       <tr key={idx}>
                         <td className="border border-black p-1.5 font-semibold text-right pr-2">
@@ -300,11 +312,11 @@ export const InvoiceCardTemplate: React.FC<InvoiceCardTemplateProps> = ({
                         <td className="border border-black p-1.5 font-mono">
                           {parseFloat(item.price.toString()).toFixed(2)}
                         </td>
-                        <td className="border border-black p-1.5 font-mono">
-                          {typeof itemDisc === 'number' ? itemDisc : 0}%
+                        <td className="border border-black p-1.5 font-mono text-[11px]">
+                          {discDisplay}
                         </td>
-                        <td className="border border-black p-1.5 font-mono">
-                          {typeof itemTax === 'number' ? itemTax : 0}%
+                        <td className="border border-black p-1.5 font-mono text-[11px]">
+                          {taxDisplay}
                         </td>
                         <td className="border border-black p-1.5 font-bold font-mono">
                           {parseFloat(item.total.toString()).toFixed(2)}
