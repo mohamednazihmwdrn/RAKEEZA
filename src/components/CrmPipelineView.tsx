@@ -208,8 +208,7 @@ export const CrmPipelineView: React.FC<CrmPipelineViewProps> = ({
       address: lead.companyName || 'القاهرة',
       balance: 0,
       creditLimit: 50000,
-      pricingCategory: 'cash',
-      createdAt: new Date().toISOString(),
+      priceTier: 'retail',
     };
 
     let updatedData: AppData = {
@@ -241,7 +240,24 @@ export const CrmPipelineView: React.FC<CrmPipelineViewProps> = ({
       'المتابعة القادمة': l.nextFollowupDate || '',
       'ملاحظات': l.notes || '',
     }));
-    exportToExcel(rows, 'سجل_فرص_المبيعات_CRM_ركيزة');
+    exportToExcel({
+      filename: 'سجل_فرص_المبيعات_CRM_ركيزة',
+      sheetName: 'الفرص البيعية',
+      data: rows,
+      columns: [
+        { header: 'م', key: 'م', width: 6 },
+        { header: 'اسم العميل', key: 'اسم العميل', width: 22 },
+        { header: 'الشركة', key: 'الشركة', width: 20 },
+        { header: 'رقم الهاتف', key: 'رقم الهاتف', width: 16 },
+        { header: 'القيمة المتوقعة (ج.م)', key: 'القيمة المتوقعة (ج.م)', width: 18, isNumeric: true },
+        { header: 'المرحلة', key: 'المرحلة', width: 16 },
+        { header: 'المصدر', key: 'المصدر', width: 16 },
+        { header: 'المندوب', key: 'المندوب', width: 18 },
+        { header: 'المتابعة القادمة', key: 'المتابعة القادمة', width: 15 },
+        { header: 'ملاحظات', key: 'ملاحظات', width: 25 },
+      ],
+      reportTitle: 'سجل إدارة الفرص والمبيعات والعملاء المحتملين (CRM)',
+    });
     showToast('تم تصدير سجل الفرص البيعية بنجاح إلى Excel', 'success');
   };
 

@@ -11,12 +11,15 @@ interface CustomerCatalogViewProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
   onExitToAdmin?: () => void;
   onShareCatalog?: () => void;
+  merchantCompanyId?: string;
+  isPublicCustomerView?: boolean;
 }
 
 interface CartItem {
   item: Item;
   qty: number;
   price: number;
+  selectedMaterial?: string;
 }
 
 export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
@@ -25,6 +28,8 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
   showToast,
   onExitToAdmin,
   onShareCatalog,
+  merchantCompanyId,
+  isPublicCustomerView,
 }) => {
   // 1. Resolve Available Companies
   const companies = useMemo(() => {
@@ -52,33 +57,50 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
   // Security guard: If a specific company code was requested in URL but doesn't exist
   const isInvalidCompanyRequested = Boolean(companyParam && !matchedCompany);
 
-  // 3. Selection mode: 'all' (السوق الإلكتروني الموحد لجميع التجار - مثل أمازون) أو شركة محددة
-  const [selectedVendorCompanyId, setSelectedVendorCompanyId] = useState<string>(() => {
+  // Strict Merchant Store vs. Unified Marketplace logic:
+  // If merchantCompanyId is provided OR user came from ERP admin OR specific company link was visited:
+  // This is strictly that merchant's private store. NO other merchants are shown!
+  const isMerchantStoreView = Boolean(
+    merchantCompanyId || (!isPublicCustomerView && onExitToAdmin) || (companyParam && matchedCompany)
+  );
+
+  const initialCompanyId = useMemo(() => {
+    if (merchantCompanyId) return merchantCompanyId;
     if (matchedCompany) return matchedCompany.id;
-    return 'all'; // Default to unified marketplace showing all companies!
-  });
+    if (!isPublicCustomerView && (appData.companyId || onExitToAdmin)) {
+      return appData.companyId || 'COMP-000001';
+    }
+    return 'all'; // Default to unified marketplace for public customer browsing
+  }, [merchantCompanyId, matchedCompany, isPublicCustomerView, appData.companyId, onExitToAdmin]);
 
-  const isUnifiedMarketplace = selectedVendorCompanyId === 'all';
+  const [selectedVendorCompanyId, setSelectedVendorCompanyId] = useState<string>(initialCompanyId);
 
-  // Active Company Context (Derived from selection, URL param, or primary tenant)
+  // In merchant mode, unified marketplace is NEVER true. In public view, it is true when 'all' is active.
+  const isUnifiedMarketplace = !isMerchantStoreView && selectedVendorCompanyId === 'all';
+
+  // Active Company Context
   const activeCompany = useMemo(() => {
-    if (selectedVendorCompanyId !== 'all') {
-      const found = companies.find((c) => c.id === selectedVendorCompanyId);
+    const targetId =
+      merchantCompanyId ||
+      (selectedVendorCompanyId !== 'all' ? selectedVendorCompanyId : null) ||
+      matchedCompany?.id ||
+      appData.companyId;
+
+    if (targetId) {
+      const found = companies.find((c) => c.id === targetId || c.code === targetId);
       if (found) return found;
     }
-    if (matchedCompany) return matchedCompany;
-    if (appData.companyId) {
-      const found = companies.find((c) => c.id === appData.companyId);
-      if (found) return found;
-    }
-    return companies[0] || ({
-      id: 'COMP-000001',
-      code: 'RKZ-001',
-      name: appData.settings.companyName || 'شركة ركيزة للمحاسبة والتجارة RAKEEZA',
-      phone: appData.settings.phone1 || '01029190615',
-      status: 'active',
-    } as TenantCompany);
-  }, [selectedVendorCompanyId, matchedCompany, appData.companyId, companies, appData.settings]);
+    return (
+      companies[0] ||
+      ({
+        id: 'COMP-000001',
+        code: 'RKZ-001',
+        name: appData.settings.companyName || 'شركة ركيزة للمحاسبة والتجارة RAKEEZA',
+        phone: appData.settings.phone1 || '01029190615',
+        status: 'active',
+      } as TenantCompany)
+    );
+  }, [merchantCompanyId, selectedVendorCompanyId, matchedCompany, appData.companyId, companies, appData.settings]);
 
   // Check store activation status (1000 EGP subscription)
   const isCompanyStoreActive = (comp: typeof companies[0] | undefined | null): boolean => {
@@ -89,11 +111,20 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
     return false;
   };
 
-  // Helper to get vendor company for any product
+  // Helper to get vendor company for any product with strict multi-tenant resolution
   const getVendorForItem = (item: Item): typeof companies[0] => {
     if (item.companyId) {
-      const found = companies.find((c) => c.id === item.companyId);
+      const found = companies.find(
+        (c) => c.id === item.companyId || c.code === item.companyId || c.tenantId === item.companyId
+      );
       if (found) return found;
+    }
+    if (merchantCompanyId) {
+      const found = companies.find((c) => c.id === merchantCompanyId || c.code === merchantCompanyId);
+      if (found) return found;
+    }
+    if (!isUnifiedMarketplace && activeCompany && activeCompany.id !== 'all') {
+      return activeCompany;
     }
     return companies[0] || activeCompany;
   };
@@ -103,12 +134,13 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
     const counts: Record<string, number> = {};
     (appData.items || []).forEach((it) => {
       if (it.showInCatalog !== false) {
-        const cId = it.companyId || 'COMP-000001';
+        const vendor = getVendorForItem(it);
+        const cId = vendor.id || 'COMP-000001';
         counts[cId] = (counts[cId] || 0) + 1;
       }
     });
     return counts;
-  }, [appData.items]);
+  }, [appData.items, companies, activeCompany, merchantCompanyId, isUnifiedMarketplace]);
 
   // Catalog Configuration: Unified Marketplace vs. Single Company Store
   const config = useMemo(() => {
@@ -264,15 +296,48 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
       return (appData.items || []).filter((it) => it.showInCatalog !== false);
     }
     // In isolated single-company mode, display strictly that company's items:
+    const targetCompId = merchantCompanyId || activeCompany.id;
     return (appData.items || []).filter((it) => {
       if (it.companyId) {
-        return it.companyId === activeCompany.id;
+        return it.companyId === targetCompId;
       }
-      return activeCompany.id === companies[0]?.id || activeCompany.id === 'COMP-000001';
+      return targetCompId === companies[0]?.id || targetCompId === 'COMP-000001';
     });
-  }, [isUnifiedMarketplace, appData.items, activeCompany, companies]);
+  }, [isUnifiedMarketplace, appData.items, merchantCompanyId, activeCompany, companies]);
 
-  // STRICT ISOLATION: Categories derived ONLY from active company's items!
+  // Available Materials (dynamically gathered from items + standard textiles/materials)
+  const availableMaterials = useMemo(() => {
+    const set = new Set<string>();
+    companyItems.forEach((it) => {
+      if (it.material && it.material.trim()) {
+        it.material.split(/[,،]/).forEach((m) => {
+          const clean = m.trim();
+          if (clean) set.add(clean);
+        });
+      }
+    });
+    // Standard baseline materials
+    ['قطن مصري 100%', 'كتان فاخر', 'صوف طبيعي', 'حرير', 'جلد طبيعي', 'خشب طبيعي', 'حديد ومعادن', 'بوليستر'].forEach((m) =>
+      set.add(m)
+    );
+    return ['all', ...Array.from(set)];
+  }, [companyItems]);
+
+  // Filters State
+  const [selectedMaterialFilter, setSelectedMaterialFilter] = useState<string>('all');
+  const [selectedMerchantFilter, setSelectedMerchantFilter] = useState<string>('all');
+
+  // Direct Order Modal State (for sending invoice directly to chosen vendor via WhatsApp)
+  const [directOrderModalItem, setDirectOrderModalItem] = useState<Item | null>(null);
+  const [directOrderQty, setDirectOrderQty] = useState(1);
+  const [directOrderSelectedMaterial, setDirectOrderSelectedMaterial] = useState('');
+  const [directOrderClientName, setDirectOrderClientName] = useState('');
+  const [directOrderClientPhone, setDirectOrderClientPhone] = useState('');
+  const [directOrderAddress, setDirectOrderAddress] = useState('');
+  const [directOrderNotes, setDirectOrderNotes] = useState('');
+  const [isSubmittingDirectOrder, setIsSubmittingDirectOrder] = useState(false);
+
+  // STRICT ISOLATION: Categories derived ONLY from current displayed items!
   const categories = useMemo(() => {
     const set = new Set<string>();
     companyItems.forEach((it) => {
@@ -285,12 +350,29 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
 
   // Filtered Items for Display
   const filteredItems = useMemo(() => {
-    // Only show items enabled for catalog belonging strictly to this company
+    // Only show items enabled for catalog belonging strictly to this scope
     let result = companyItems.filter((it) => it.showInCatalog !== false);
 
     // Category filter
     if (selectedCategory !== 'all') {
       result = result.filter((it) => it.category?.trim() === selectedCategory);
+    }
+
+    // Material filter
+    if (selectedMaterialFilter !== 'all') {
+      const qMat = selectedMaterialFilter.toLowerCase();
+      result = result.filter((it) => {
+        const mat = (it.material || it.unit || it.description || '').toLowerCase();
+        return mat.includes(qMat);
+      });
+    }
+
+    // Merchant filter (in Unified Marketplace only)
+    if (isUnifiedMarketplace && selectedMerchantFilter !== 'all') {
+      result = result.filter((it) => {
+        const vendor = getVendorForItem(it);
+        return vendor.id === selectedMerchantFilter;
+      });
     }
 
     // Search filter
@@ -304,7 +386,8 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
           it.category?.toLowerCase().includes(q) ||
           it.description?.toLowerCase().includes(q) ||
           it.catalogDescription?.toLowerCase().includes(q) ||
-          it.catalogBadge?.toLowerCase().includes(q)
+          it.catalogBadge?.toLowerCase().includes(q) ||
+          (it.material && it.material.toLowerCase().includes(q))
       );
     }
 
@@ -339,7 +422,203 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
     }
 
     return result;
-  }, [appData.items, appData.companies, matchedCompany, selectedCategory, searchQuery, onlyInStock, sortBy, activePriceMode]);
+  }, [
+    companyItems,
+    selectedCategory,
+    selectedMaterialFilter,
+    selectedMerchantFilter,
+    isUnifiedMarketplace,
+    searchQuery,
+    onlyInStock,
+    sortBy,
+    activePriceMode,
+  ]);
+
+  // Open Direct Order Modal with prefilled material
+  const handleOpenDirectOrderModal = (item: Item) => {
+    setDirectOrderModalItem(item);
+    setDirectOrderQty(1);
+    setDirectOrderSelectedMaterial(item.material || 'قطن مصري 100%');
+    setDirectOrderClientName(customerName || '');
+    setDirectOrderClientPhone(customerPhone || '');
+    setDirectOrderAddress(deliveryAddress || '');
+    setDirectOrderNotes('');
+  };
+
+  // Submit Direct Order: Creates invoice for specific vendor and dispatches WhatsApp
+  const handleSubmitDirectOrder = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!directOrderModalItem) return;
+
+    if (!directOrderClientName.trim()) {
+      showToast('يرجى إدخال اسم العميل للتواصل', 'warning');
+      return;
+    }
+    if (!directOrderClientPhone.trim()) {
+      showToast('يرجى إدخال رقم الهاتف أو الواتساب', 'warning');
+      return;
+    }
+
+    setIsSubmittingDirectOrder(true);
+
+    try {
+      const item = directOrderModalItem;
+      const vendor = getVendorForItem(item);
+      const targetCompanyId = vendor.id || 'COMP-000001';
+
+      const effectivePrice =
+        item.catalogDiscountPrice && item.catalogDiscountPrice > 0
+          ? item.catalogDiscountPrice
+          : item.catalogPrice !== undefined && item.catalogPrice > 0
+          ? item.catalogPrice
+          : item.salePrice || 0;
+
+      const total = directOrderQty * effectivePrice;
+      const nextId = appData.nextQuoteId || (appData.quotations?.length || 0) + 1;
+      const orderRef = `ORD-${new Date().getFullYear()}-${String(nextId).padStart(4, '0')}`;
+      const today = new Date().toISOString().split('T')[0];
+      const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+      // Multi-Tenant Order Document strictly bound to this merchant's companyId
+      const newOrderDoc: Quotation = {
+        id: nextId,
+        type: 'sale_quote',
+        status: 'online_order',
+        source: 'online_catalog',
+        orderReference: orderRef,
+        clientName: directOrderClientName.trim(),
+        phone: directOrderClientPhone.trim(),
+        customerAddress: directOrderAddress.trim() || undefined,
+        deliveryNotes: directOrderNotes.trim() || undefined,
+        notes: `طلب أونلاين مباشر لشركة [${vendor.tradeName || vendor.name}]. الخامة المختارة: ${directOrderSelectedMaterial}. ${
+          directOrderAddress ? `العنوان: ${directOrderAddress}. ` : ''
+        }${directOrderNotes ? `ملاحظات: ${directOrderNotes}` : ''}`,
+        date: today,
+        time: nowTime,
+        items: [
+          {
+            itemId: item.id,
+            name: `${item.name} (${directOrderSelectedMaterial})`,
+            qty: directOrderQty,
+            price: effectivePrice,
+            total,
+            notes: `الخامة: ${directOrderSelectedMaterial}`,
+          },
+        ],
+        subtotal: total,
+        discount: 0,
+        tax: 0,
+        total,
+        createdBy: `العميل (المتجر الإلكتروني - ${vendor.tradeName || vendor.name})`,
+        companyId: targetCompanyId,
+        orderStatus: 'new',
+        autoPrinted: Boolean(config.autoPrintOrders),
+      };
+
+      const updatedQuotations = [newOrderDoc, ...(appData.quotations || [])];
+      let updatedData = {
+        ...appData,
+        quotations: updatedQuotations,
+        nextQuoteId: nextId + 1,
+      };
+
+      updatedData = addAuditLog(
+        updatedData,
+        'create',
+        'المتجر الإلكتروني',
+        `استلام طلب مباشر #${orderRef} لشركة (${vendor.tradeName || vendor.name}) للصنف: ${item.name} بخامة (${directOrderSelectedMaterial}) بقيمة ${total.toFixed(2)} ${currency}`
+      );
+
+      // Direct local update to merchant's cached database if present
+      try {
+        const tenantStorageKey = `rakeeza_tenant_data_${targetCompanyId}`;
+        const rawTenant = localStorage.getItem(tenantStorageKey);
+        if (rawTenant) {
+          const parsedTenant = JSON.parse(rawTenant);
+          parsedTenant.quotations = [newOrderDoc, ...(parsedTenant.quotations || [])];
+          parsedTenant.nextQuoteId = Math.max(parsedTenant.nextQuoteId || 1, nextId + 1);
+          localStorage.setItem(tenantStorageKey, JSON.stringify(parsedTenant));
+        }
+      } catch {}
+
+      onUpdateData(updatedData);
+
+      // ☁️ Multi-Tenant Cloud API Sync:
+      // Send direct order directly to the merchant's companyId on the cloud backend
+      try {
+        fetch('/api/marketplace/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName: directOrderClientName.trim(),
+            customerPhone: directOrderClientPhone.trim(),
+            deliveryAddress: directOrderAddress.trim(),
+            orderNotes: `الخامة المختارة: ${directOrderSelectedMaterial}. ${directOrderNotes.trim()}`,
+            items: [
+              {
+                companyId: targetCompanyId,
+                item: {
+                  ...item,
+                  name: `${item.name} (${directOrderSelectedMaterial})`,
+                  companyId: targetCompanyId,
+                },
+                qty: directOrderQty,
+                price: effectivePrice,
+              },
+            ],
+          }),
+        }).catch((e) => console.warn('Direct order cloud sync warning:', e));
+      } catch {}
+
+      if (config.soundAlertEnabled) {
+        playOrderAlertChime();
+      }
+
+      // Format WhatsApp message to this specific merchant
+      const cleanPhone = (vendor.whatsapp || vendor.phone || '01029190615').replace(/[^0-9]/g, '');
+      const fullPhone = cleanPhone.startsWith('2')
+        ? cleanPhone
+        : cleanPhone.startsWith('0')
+        ? `2${cleanPhone}`
+        : `20${cleanPhone}`;
+
+      const waMessage = `السلام عليكم ورحمة الله وبركاته،
+مرحباً شركة (${vendor.tradeName || vendor.name})،
+أود طلب المنتج التالي عبر المتجر الإلكتروني:
+━━━━━━━━━━━━━━━
+📦 المنتج: ${item.name}
+🧵 الخامة المختارة: ${directOrderSelectedMaterial}
+🔢 الكمية: ${directOrderQty} ${item.unit || 'قطعة'}
+💰 السعر: ${effectivePrice.toFixed(2)} ${currency}
+💵 الإجمالي: ${total.toFixed(2)} ${currency}
+━━━━━━━━━━━━━━━
+👤 اسم العميل: ${directOrderClientName.trim()}
+📞 هاتف العميل: ${directOrderClientPhone.trim()}
+${directOrderAddress ? `📍 العنوان: ${directOrderAddress.trim()}\n` : ''}${
+        directOrderNotes ? `📝 ملاحظات: ${directOrderNotes.trim()}\n` : ''
+      }📑 رقم الفاتورة والطلب بالمنظومة: ${orderRef}
+━━━━━━━━━━━━━━━
+✅ تم توجيه وتسجيل الفاتورة برقم (${orderRef}) تلقائياً إلى لوحة تحكم وارد الويب بشركتكم [${vendor.tradeName || vendor.name}].
+يرجى تأكيد استلام الطلب وتجهيز الشحنة. شكراً جزيلاً.`;
+
+      const waUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(waMessage)}`;
+
+      // Cache details
+      setCustomerName(directOrderClientName);
+      setCustomerPhone(directOrderClientPhone);
+      setDeliveryAddress(directOrderAddress);
+
+      // Close modal
+      setDirectOrderModalItem(null);
+
+      showToast(`تم توجيه وتسجيل الفاتورة #${orderRef} بنجاح إلى حساب ${vendor.tradeName || vendor.name} وجاري فتح الواتساب...`, 'success');
+      window.open(waUrl, '_blank');
+    } catch (err: any) {
+      showToast('حدث خطأ أثناء تسجيل الطلب', 'error');
+    } finally {
+      setIsSubmittingDirectOrder(false);
+    }
+  };
 
   // Cart totals
   const cartItemsList = useMemo(() => Object.values(cart), [cart]);
@@ -461,7 +740,10 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
       let primaryOrderDoc: Quotation | null = null;
 
       Object.entries(itemsByCompany).forEach(([vCompanyId, vItems]) => {
-        const vCompany = companies.find((c) => c.id === vCompanyId) || companies[0];
+        const vCompany =
+          companies.find((c) => c.id === vCompanyId || c.code === vCompanyId || c.tenantId === vCompanyId) ||
+          companies[0];
+        const canonicalCompId = vCompany.id || vCompanyId;
         const nextId = currentNextQuoteId++;
         const orderRef = `ORD-${new Date().getFullYear()}-${String(nextId).padStart(4, '0')}`;
         const vTotal = vItems.reduce((sum, it) => sum + it.qty * it.price, 0);
@@ -485,7 +767,7 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
           phone: customerPhone.trim(),
           customerAddress: deliveryAddress.trim() || undefined,
           deliveryNotes: orderNotes.trim() || undefined,
-          notes: `طلب أونلاين عبر المتجر الإلكتروني والسوق الموحد لشركة ${vCompany.name}. ${
+          notes: `طلب أونلاين عبر المتجر الإلكتروني والسوق الموحد لشركة [${vCompany.tradeName || vCompany.name}]. ${
             deliveryAddress ? `العنوان: ${deliveryAddress}. ` : ''
           }${orderNotes ? `ملاحظات: ${orderNotes}` : ''}`,
           date: today,
@@ -495,8 +777,8 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
           discount: 0,
           tax: 0,
           total: vTotal,
-          createdBy: `العميل (المتجر الإلكتروني - ${vCompany.name})`,
-          companyId: vCompanyId,
+          createdBy: `العميل (المتجر الإلكتروني - ${vCompany.tradeName || vCompany.name})`,
+          companyId: canonicalCompId,
           orderStatus: 'new',
           autoPrinted: Boolean(config.autoPrintOrders),
         };
@@ -507,10 +789,22 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
 
         updatedQuotations.unshift(newOrderDoc);
 
+        // Update individual tenant local storage cache if available
+        try {
+          const tenantStorageKey = `rakeeza_tenant_data_${canonicalCompId}`;
+          const rawTenant = localStorage.getItem(tenantStorageKey);
+          if (rawTenant) {
+            const parsedTenant = JSON.parse(rawTenant);
+            parsedTenant.quotations = [newOrderDoc, ...(parsedTenant.quotations || [])];
+            parsedTenant.nextQuoteId = Math.max(parsedTenant.nextQuoteId || 1, nextId + 1);
+            localStorage.setItem(tenantStorageKey, JSON.stringify(parsedTenant));
+          }
+        } catch {}
+
         createdOrdersInfo.push({
           orderId: nextId,
           orderReference: orderRef,
-          companyId: vCompanyId,
+          companyId: canonicalCompId,
           companyName: vCompany.tradeName || vCompany.name,
           companyPhone: vCompany.phone || '01029190615',
           companyWhatsapp: vCompany.whatsapp || vCompany.phone || '01029190615',
@@ -522,7 +816,7 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
           updatedData,
           'create',
           'المتجر الإلكتروني والسوق الموحد',
-          `استلام طلب شراء أونلاين جديد #${orderRef} لشركة (${vCompany.name}) من العميل: ${customerName.trim()} بقيمة ${vTotal.toFixed(
+          `استلام طلب شراء أونلاين جديد #${orderRef} لشركة (${vCompany.tradeName || vCompany.name}) من العميل: ${customerName.trim()} بقيمة ${vTotal.toFixed(
             2
           )} ${currency}`
         );
@@ -542,12 +836,16 @@ export const CustomerCatalogView: React.FC<CustomerCatalogViewProps> = ({
             customerPhone: customerPhone.trim(),
             deliveryAddress: deliveryAddress.trim(),
             orderNotes: orderNotes.trim(),
-            items: cartItemsList.map((c) => ({
-              companyId: getVendorForItem(c.item).id,
-              item: c.item,
-              qty: c.qty,
-              price: c.price,
-            })),
+            items: cartItemsList.map((c) => {
+              const vendor = getVendorForItem(c.item);
+              const targetCompId = vendor.id || 'COMP-000001';
+              return {
+                companyId: targetCompId,
+                item: { ...c.item, companyId: targetCompId },
+                qty: c.qty,
+                price: c.price,
+              };
+            }),
           }),
         }).catch((e) => console.warn('Cloud marketplace order sync warning:', e));
       } catch {}
@@ -763,7 +1061,7 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-28 font-sans" dir="rtl">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-28 font-sans w-full max-w-full overflow-x-hidden" dir="rtl">
       {/* Top Admin / Staff Notification Bar (If visited within ERP or with onExitToAdmin) */}
       {onExitToAdmin && (
         <div className="bg-slate-900 text-white px-3 py-2 text-xs flex items-center justify-between shadow-xs sticky top-0 z-50">
@@ -796,69 +1094,22 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
         </div>
       )}
 
-      {/* Amazon-like Multi-Vendor Navigation Bar (السوق الإلكتروني الموحد) */}
-      <div className="bg-slate-900 text-white border-b border-slate-800 px-4 py-2.5 shadow-inner">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-400 font-black text-xs flex items-center gap-1">
-              <span>🌐</span> السوق الإلكتروني الموحد:
-            </span>
-            <span className="text-slate-400 text-[11px] hidden sm:inline">
-              تصفح كل الشركات أو حدد متجراً خاصاً
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setSelectedVendorCompanyId('all')}
-              className={`px-3 py-1.5 rounded-lg font-black transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                isUnifiedMarketplace
-                  ? 'bg-amber-400 text-slate-950 shadow-xs ring-2 ring-amber-300'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-              }`}
-            >
-              <span>🛒 جميع التجار (السوق الموحد)</span>
-              <span className="bg-black/20 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold">
-                {appData.items?.filter((it) => it.showInCatalog !== false).length || 0}
+      {/* Marketplace Context Notice (only when in Unified Marketplace mode) */}
+      {isUnifiedMarketplace && (
+        <div className="bg-slate-900 text-white border-b border-slate-800 px-4 py-2 text-xs shadow-inner">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-right">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-400 font-black">🌐 السوق الإلكتروني الموحد:</span>
+              <span className="text-slate-300">
+                تصفح منتجات كافة التجار المعتمدين، حدد الخامة والمواصفات، وسيتم توجيه الفاتورة والطلب إلى التاجر المختار مباشرة.
               </span>
-            </button>
-
-            {companies.map((comp) => {
-              const isSelected = selectedVendorCompanyId === comp.id;
-              const count = companyItemCounts[comp.id] || 0;
-              const isActive = isCompanyStoreActive(comp);
-              return (
-                <button
-                  key={comp.id}
-                  type="button"
-                  onClick={() => setSelectedVendorCompanyId(comp.id)}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                    isSelected
-                      ? 'bg-blue-600 text-white shadow-xs ring-2 ring-blue-400'
-                      : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                  }`}
-                >
-                  <span>🏢 {comp.tradeName || comp.name}</span>
-                  {comp.code && (
-                    <span className="text-[10px] font-mono text-amber-300/90 bg-black/30 px-1 rounded">
-                      {comp.code}
-                    </span>
-                  )}
-                  <span className="bg-black/20 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
-                    {count}
-                  </span>
-                  {!isActive && (
-                    <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 rounded">
-                      بانتظار التفعيل
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            </div>
+            <span className="text-[11px] text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700">
+              إجمالي المنتجات: {companyItems.length} صنف
+            </span>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Store Header */}
       <header className="bg-gradient-to-r from-[#1a237e] via-[#0d47a1] to-[#1565c0] text-white shadow-lg sticky top-0 z-40">
@@ -1200,6 +1451,44 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
                   </div>
                 )}
 
+                {/* Material Filter */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+                  <span className="text-slate-500 font-bold whitespace-nowrap">🧵 الخامة:</span>
+                  <select
+                    value={selectedMaterialFilter}
+                    onChange={(e) => setSelectedMaterialFilter(e.target.value)}
+                    className="bg-transparent font-bold text-slate-800 focus:outline-hidden cursor-pointer max-w-[130px] truncate"
+                  >
+                    <option value="all">كل الخامات</option>
+                    {availableMaterials
+                      .filter((m) => m !== 'all')
+                      .map((mat) => (
+                        <option key={mat} value={mat}>
+                          {mat}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {/* Merchant Filter (Only in Unified Marketplace mode) */}
+                {isUnifiedMarketplace && (
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+                    <span className="text-slate-500 font-bold whitespace-nowrap">🏢 التاجر:</span>
+                    <select
+                      value={selectedMerchantFilter}
+                      onChange={(e) => setSelectedMerchantFilter(e.target.value)}
+                      className="bg-transparent font-bold text-slate-800 focus:outline-hidden cursor-pointer max-w-[140px] truncate"
+                    >
+                      <option value="all">جميع التجار (الكل)</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.tradeName || c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Stock Toggle */}
                 <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl cursor-pointer hover:bg-slate-100 transition select-none">
                   <input
@@ -1225,26 +1514,53 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
               </div>
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs">
-              {categories.map((cat) => {
-                const isSelected = selectedCategory === cat;
-                const label = cat === 'all' ? '🛍️ جميع المنتجات' : `${getCategoryIcon(cat)} ${cat}`;
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#1a237e] text-white shadow-xs'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+            {/* Category Filter Pills & Material Quick Chips */}
+            <div className="space-y-1.5 pt-1 border-t border-slate-100">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs">
+                <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap ml-1">الأقسام:</span>
+                {categories.map((cat) => {
+                  const isSelected = selectedCategory === cat;
+                  const label = cat === 'all' ? '🛍️ جميع المنتجات' : `${getCategoryIcon(cat)} ${cat}`;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer text-xs ${
+                        isSelected
+                          ? 'bg-[#1a237e] text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Material Quick Filters */}
+              {availableMaterials.length > 2 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px]">
+                  <span className="font-bold text-slate-400 whitespace-nowrap ml-1">خامة سريعة:</span>
+                  {availableMaterials.slice(0, 8).map((mat) => {
+                    const isSelected = selectedMaterialFilter === mat;
+                    return (
+                      <button
+                        key={mat}
+                        type="button"
+                        onClick={() => setSelectedMaterialFilter(isSelected && mat !== 'all' ? 'all' : mat)}
+                        className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-emerald-700 text-white shadow-xs'
+                            : 'bg-emerald-50/80 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80'
+                        }`}
+                      >
+                        {mat === 'all' ? 'الكل' : `🧵 ${mat}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1364,25 +1680,21 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
                     {/* Body Content */}
                     <div className="p-3 sm:p-3.5 flex-1 flex flex-col justify-between space-y-2.5">
                       <div>
-                        {/* Merchant Seller Badge (Amazon-style) */}
-                        {(() => {
+                        {/* Merchant Seller Badge (Only shown in Unified Marketplace) */}
+                        {isUnifiedMarketplace && (() => {
                           const itVendor = getVendorForItem(item);
                           return (
-                            <div className="flex items-center justify-between gap-1 mb-1.5">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedVendorCompanyId(itVendor.id);
-                                }}
-                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition cursor-pointer truncate max-w-[140px]"
-                                title={`تصفح منتجات ${itVendor.tradeName || itVendor.name} فقط`}
-                              >
-                                <span>🏢</span>
-                                <span className="truncate">{itVendor.tradeName || itVendor.name}</span>
-                              </button>
+                            <div className="flex items-center justify-between gap-1 mb-1.5 bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded-lg">
+                              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-700 truncate">
+                                <span className="text-amber-500">🏢</span>
+                                <span className="text-[#1a237e] font-extrabold truncate">
+                                  {itVendor.tradeName || itVendor.name}
+                                </span>
+                              </div>
                               {itVendor.code && (
-                                <span className="font-mono text-[9px] text-slate-400">#{itVendor.code}</span>
+                                <span className="font-mono text-[9px] text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                                  #{itVendor.code}
+                                </span>
                               )}
                             </div>
                           );
@@ -1391,6 +1703,17 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
                         <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 leading-snug">
                           {item.name}
                         </h4>
+
+                        {/* Material (الخامة) Display */}
+                        <div className="my-1.5 bg-emerald-50/70 border border-emerald-100 rounded-lg px-2 py-1 text-[11px] flex items-center justify-between gap-1">
+                          <span className="text-emerald-900 font-bold flex items-center gap-1 shrink-0">
+                            <span>🧵</span> الخامة:
+                          </span>
+                          <span className="font-bold text-emerald-950 truncate" title={item.material || 'خامة معتمدة ممتازة'}>
+                            {item.material || 'خامة ممتازة معتمدة'}
+                          </span>
+                        </div>
+
                         <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-1">
                           {item.unit && <span>الوحدة: {item.unit}</span>}
                           {item.barcode && <span className="font-mono text-[10px] text-slate-400">({item.barcode})</span>}
@@ -1431,8 +1754,18 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
                         )}
                       </div>
 
-                      {/* Action Button: Add to cart / Qty stepper */}
-                      <div>
+                      {/* Action Buttons: Direct WhatsApp Order (Select Material) + Cart */}
+                      <div className="space-y-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDirectOrderModal(item)}
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white py-2 px-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                          title="اختر الخامة وأرسل رسالة بالطلب والفاتورة إلى التاجر"
+                        >
+                          <span>💬</span>
+                          <span>طلب ورسالة للتاجر</span>
+                        </button>
+
                         {inCart ? (
                           <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl p-1">
                             <button
@@ -1457,10 +1790,10 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
                           <button
                             type="button"
                             onClick={() => handleAddToCart(item)}
-                            className="w-full bg-[#1a237e] hover:bg-[#0d47a1] active:bg-[#002171] text-white py-2 px-3 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 px-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200"
                           >
                             <span>🛒</span>
-                            <span>إضافة للطلب</span>
+                            <span>إضافة للسلة</span>
                           </button>
                         )}
                       </div>
@@ -1722,6 +2055,239 @@ _تم الإرسال عبر الكتالوج الإلكتروني - منظومة
           </div>
         </div>
       )}
+
+      {/* Direct Order & WhatsApp Dispatch Modal (اختيار الخامة وإرسال الفاتورة للتاجر المختار) */}
+      {directOrderModalItem && (() => {
+        const item = directOrderModalItem;
+        const vendor = getVendorForItem(item);
+        const effectivePrice =
+          item.catalogDiscountPrice && item.catalogDiscountPrice > 0
+            ? item.catalogDiscountPrice
+            : item.catalogPrice !== undefined && item.catalogPrice > 0
+            ? item.catalogPrice
+            : item.salePrice || 0;
+        const total = directOrderQty * effectivePrice;
+
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in overflow-y-auto"
+            dir="rtl"
+          >
+            <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden my-auto">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-[#1a237e] text-white p-4 sm:p-5 flex items-center justify-between">
+                <div>
+                  <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    طلب مباشر من التاجر
+                  </span>
+                  <h3 className="text-base sm:text-lg font-black mt-1">
+                    طلب المنتج وإرسال الفاتورة للتاجر
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDirectOrderModalItem(null)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <form onSubmit={handleSubmitDirectOrder} className="p-4 sm:p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+                {/* Product & Merchant Info Card */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex gap-3 items-center">
+                  <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-3xl overflow-hidden shrink-0">
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>📦</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-black text-slate-900 text-xs sm:text-sm truncate">{item.name}</h4>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 mt-0.5">
+                      <span className="text-amber-500">🏢 التاجر:</span>
+                      <strong className="text-blue-900">{vendor.tradeName || vendor.name}</strong>
+                      {vendor.code && <span className="font-mono text-[10px] text-slate-400">({vendor.code})</span>}
+                    </div>
+                    <div className="text-xs font-black text-emerald-700 mt-1">
+                      {effectivePrice.toFixed(2)} {currency} {item.unit ? ` / ${item.unit}` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Material Selection (اختيار الخامة) */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-black text-slate-800 flex items-center gap-1">
+                    <span>🧵</span>
+                    <span>حدد الخامة أو نوع القماش / المواصفات المطلوبة:</span>
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[
+                      item.material,
+                      'قطن مصري 100%',
+                      'كتان فاخر',
+                      'صوف طبيعي',
+                      'حرير ناعم',
+                      'جلد طبيعي',
+                    ]
+                      .filter((m, idx, arr): m is string => Boolean(m && m.trim() && arr.indexOf(m) === idx))
+                      .map((mat) => {
+                        const isSelected = directOrderSelectedMaterial === mat;
+                        return (
+                          <button
+                            key={mat}
+                            type="button"
+                            onClick={() => setDirectOrderSelectedMaterial(mat)}
+                            className={`py-2 px-2.5 rounded-xl text-xs font-bold transition cursor-pointer border text-center truncate ${
+                              isSelected
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            {mat}
+                          </button>
+                        );
+                      })}
+                  </div>
+                  {/* Or Custom Material Input */}
+                  <input
+                    type="text"
+                    value={directOrderSelectedMaterial}
+                    onChange={(e) => setDirectOrderSelectedMaterial(e.target.value)}
+                    placeholder="أو اكتب الخامة / المواصفات الخاصة هنا يدويًا..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden mt-1"
+                    required
+                  />
+                </div>
+
+                {/* Quantity Stepper */}
+                <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                  <div className="text-xs font-bold text-slate-800">
+                    <span>الكمية المطلوبة:</span>
+                    <span className="text-slate-500 mr-1 text-[11px]">({item.unit || 'قطعة'})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDirectOrderQty((q) => Math.max(1, q - 1))}
+                      className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-800 font-black text-sm hover:bg-slate-100 transition cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="font-black text-base text-[#1a237e] min-w-[28px] text-center">
+                      {directOrderQty}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setDirectOrderQty((q) => q + 1)}
+                      className="w-8 h-8 rounded-lg bg-emerald-600 text-white font-black text-sm hover:bg-emerald-700 transition cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="text-xs font-black text-slate-900">
+                    الإجمالي: {total.toFixed(2)} {currency}
+                  </div>
+                </div>
+
+                {/* Customer Details Form */}
+                <div className="space-y-2.5 pt-1">
+                  <div className="font-bold text-xs text-slate-800 border-b border-slate-200 pb-1 flex items-center gap-1">
+                    <span>👤</span>
+                    <span>بيانات المستلم والتوصيل:</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        الاسم بالكامل <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={directOrderClientName}
+                        onChange={(e) => setDirectOrderClientName(e.target.value)}
+                        placeholder="اسم العميل أو المحل"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        رقم الهاتف / الواتساب <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={directOrderClientPhone}
+                        onChange={(e) => setDirectOrderClientPhone(e.target.value)}
+                        placeholder="مثال: 01012345678"
+                        dir="ltr"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden text-right"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      عنوان التسليم أو المحافظة
+                    </label>
+                    <input
+                      type="text"
+                      value={directOrderAddress}
+                      onChange={(e) => setDirectOrderAddress(e.target.value)}
+                      placeholder="العنوان أو المكان المراد التوصيل إليه"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      ملاحظات خاصة على الخامة أو المقاس
+                    </label>
+                    <input
+                      type="text"
+                      value={directOrderNotes}
+                      onChange={(e) => setDirectOrderNotes(e.target.value)}
+                      placeholder="أي تفاصيل خاصة بالمقاس أو اللون أو موعد الشحن..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* Notice that order will be dispatched to this specific vendor */}
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-[11px] text-emerald-900 flex items-center gap-2">
+                  <span>ℹ️</span>
+                  <span>
+                    سيتم تسجيل هذه الفاتورة مباشرة في حساب شركة (<strong>{vendor.tradeName || vendor.name}</strong>) وفتح محادثة واتساب معها لإتمام التجهيز.
+                  </span>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingDirectOrder}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-black text-xs sm:text-sm py-3 px-4 rounded-xl transition cursor-pointer shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <span>💬</span>
+                    <span>{isSubmittingDirectOrder ? 'جاري تسجيل الطلب...' : 'إرسال الفاتورة والرسالة للتاجر عبر الواتساب'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDirectOrderModalItem(null)}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs py-3 px-4 rounded-xl transition cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

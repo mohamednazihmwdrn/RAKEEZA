@@ -237,9 +237,15 @@ export function getDefaultData(): AppData {
   };
 }
 
-export function loadAppData(): AppData {
+export function loadAppData(companyId?: string): AppData {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw: string | null = null;
+    if (companyId) {
+      raw = localStorage.getItem(`rakeeza_tenant_data_${companyId}`);
+    }
+    if (!raw) {
+      raw = localStorage.getItem(STORAGE_KEY);
+    }
     const defaults = getDefaultData();
     const storedLogo = localStorage.getItem('company_logo_base64');
     if (raw) {
@@ -354,9 +360,13 @@ export function loadAppData(): AppData {
   return ensureProductPricesSynced(getDefaultData());
 }
 
-export function saveAppData(data: AppData): void {
+export function saveAppData(data: AppData, companyId?: string): void {
+  const targetCompId = companyId || data.companyId || 'COMP-000001';
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    if (targetCompId) {
+      localStorage.setItem(`rakeeza_tenant_data_${targetCompId}`, JSON.stringify(data));
+    }
   } catch (e: any) {
     console.warn('Storage quota warning, performing defensive cache pruning:', e);
     try {
@@ -373,16 +383,112 @@ export function saveAppData(data: AppData): void {
         auditLogs: trimmedAudit,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(prunedData));
+      if (targetCompId) {
+        localStorage.setItem(`rakeeza_tenant_data_${targetCompId}`, JSON.stringify(prunedData));
+      }
     } catch (e2) {
       try {
         // Fallback: save without backups to guarantee core ERP state is always persisted
         const strippedData = { ...data, backups: [], auditLogs: (data.auditLogs || []).slice(0, 50) };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(strippedData));
+        if (targetCompId) {
+          localStorage.setItem(`rakeeza_tenant_data_${targetCompId}`, JSON.stringify(strippedData));
+        }
       } catch (e3) {
         console.error('Critical localStorage save failure:', e3);
       }
     }
   }
+}
+
+/**
+ * 🛡️ Monotonic Record Merge:
+ * Ensures that newly created or existing records in `prevList` are NEVER wiped out by an
+ * empty or partial `incomingList` array, unless an explicit deletion was intended.
+ * If both arrays contain a record with the same ID, incoming (latest) is preferred.
+ * Any ID in `prevList` that is not in `incomingList` is safely retained!
+ */
+export function mergeCollectionRecords<T = any>(
+  prevList: T[] = [],
+  incomingList: T[] = [],
+  isExplicitDeletion: boolean = false
+): T[] {
+  if (isExplicitDeletion) {
+    return Array.isArray(incomingList) ? incomingList : (Array.isArray(prevList) ? prevList : []);
+  }
+  if (!Array.isArray(incomingList) || incomingList.length === 0) {
+    return Array.isArray(prevList) ? prevList : [];
+  }
+  if (!Array.isArray(prevList) || prevList.length === 0) {
+    return incomingList;
+  }
+
+  const map = new Map<string | number, T>();
+  for (const item of prevList) {
+    if (item && typeof item === 'object') {
+      const key = (item as any).id !== undefined && (item as any).id !== null ? (item as any).id : (item as any).code;
+      if (key !== undefined && key !== null) {
+        map.set(key, item);
+      }
+    }
+  }
+  for (const item of incomingList) {
+    if (item && typeof item === 'object') {
+      const key = (item as any).id !== undefined && (item as any).id !== null ? (item as any).id : (item as any).code;
+      if (key !== undefined && key !== null) {
+        map.set(key, item);
+      }
+    }
+  }
+  return Array.from(map.values());
+}
+
+/**
+ * 🛡️ Merge full AppData payload preserving all business collections
+ */
+export function mergeAppDataMonotonically(
+  prev: AppData,
+  incoming: Partial<AppData>,
+  isExplicitDeletion: boolean = false
+): AppData {
+  if (!incoming || typeof incoming !== 'object') return prev;
+
+  return {
+    ...prev,
+    ...incoming,
+    settings: { ...prev.settings, ...(incoming.settings || {}) },
+    advancedSettings: incoming.advancedSettings || prev.advancedSettings,
+    branches: mergeCollectionRecords(prev.branches, incoming.branches, isExplicitDeletion),
+    costCenters: mergeCollectionRecords(prev.costCenters, incoming.costCenters, isExplicitDeletion),
+    accounts: mergeCollectionRecords(prev.accounts, incoming.accounts, isExplicitDeletion),
+    users: mergeCollectionRecords(prev.users, incoming.users, isExplicitDeletion),
+    customers: mergeCollectionRecords(prev.customers, incoming.customers, isExplicitDeletion),
+    suppliers: mergeCollectionRecords(prev.suppliers, incoming.suppliers, isExplicitDeletion),
+    items: mergeCollectionRecords(prev.items, incoming.items, isExplicitDeletion),
+    salesInvoices: mergeCollectionRecords(prev.salesInvoices, incoming.salesInvoices, isExplicitDeletion),
+    purchaseInvoices: mergeCollectionRecords(prev.purchaseInvoices, incoming.purchaseInvoices, isExplicitDeletion),
+    cashTransactions: mergeCollectionRecords(prev.cashTransactions, incoming.cashTransactions, isExplicitDeletion),
+    journalEntries: mergeCollectionRecords(prev.journalEntries, incoming.journalEntries, isExplicitDeletion),
+    cheques: mergeCollectionRecords(prev.cheques, incoming.cheques, isExplicitDeletion),
+    quotations: mergeCollectionRecords(prev.quotations, incoming.quotations, isExplicitDeletion),
+    auditLogs: mergeCollectionRecords(prev.auditLogs, incoming.auditLogs, isExplicitDeletion),
+    bankAccounts: mergeCollectionRecords(prev.bankAccounts, incoming.bankAccounts, isExplicitDeletion),
+    employees: mergeCollectionRecords(prev.employees, incoming.employees, isExplicitDeletion),
+    fixedAssets: mergeCollectionRecords(prev.fixedAssets, incoming.fixedAssets, isExplicitDeletion),
+    boms: mergeCollectionRecords(prev.boms, incoming.boms, isExplicitDeletion),
+    salesReps: mergeCollectionRecords(prev.salesReps, incoming.salesReps, isExplicitDeletion),
+    cashBox: incoming.cashBox ? { ...prev.cashBox, ...incoming.cashBox } : prev.cashBox,
+    catalogConfig: incoming.catalogConfig || prev.catalogConfig,
+    productPrices: Array.isArray(incoming.productPrices) && incoming.productPrices.length > 0
+      ? incoming.productPrices
+      : prev.productPrices,
+    nextInvoiceNumber: typeof incoming.nextInvoiceNumber === 'number'
+      ? Math.max(incoming.nextInvoiceNumber, prev.nextInvoiceNumber || 1)
+      : prev.nextInvoiceNumber,
+    nextPurchaseNumber: typeof incoming.nextPurchaseNumber === 'number'
+      ? Math.max(incoming.nextPurchaseNumber, prev.nextPurchaseNumber || 1)
+      : prev.nextPurchaseNumber,
+  };
 }
 
 // Helper to append audit logs easily across the app

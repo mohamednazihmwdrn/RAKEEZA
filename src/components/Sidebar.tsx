@@ -177,6 +177,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
+        {/* 🎯 إدارة الفرص والعملاء المحتملين (CRM Pipeline) */}
+        {canAccessPage(currentUser, 'crm_pipeline') && (
+          <div
+            onClick={() => onNavigate('crm_pipeline')}
+            className={`min-h-[44px] px-4 sm:px-5 py-2.5 cursor-pointer border-b border-white/5 transition hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+              activePage === 'crm_pipeline' ? 'bg-white/15 text-[#ffd54f] font-bold' : 'text-indigo-200 hover:text-white'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span>🎯</span> إدارة علاقات العملاء (CRM)
+            </span>
+            <span className="bg-indigo-500 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">فرص</span>
+          </div>
+        )}
+
         {/* 📥 طلبات الويب سايت والكتالوج */}
         {canAccessPage(currentUser, 'web_orders') && (
           <div
@@ -407,6 +422,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     مطابقة وتسوية الجرد
                   </div>
                 )}
+                {canAccessPage(currentUser, 'serial_warranty') && (
+                  <div
+                    onClick={() => onNavigate('serial_warranty')}
+                    className={`min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+                      activePage === 'serial_warranty' ? 'text-amber-300 font-bold bg-white/10' : 'text-amber-200 hover:text-white'
+                    }`}
+                  >
+                    <span>الأرقام التسلسلية وتتبع الضمان (S/N)</span>
+                    <span className="bg-amber-400 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black">سيريال</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -485,6 +511,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   >
                     <span>💰 تقرير الأرباح وتكلفة المبيعات (COGS)</span>
                     <span className="bg-emerald-500 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black">جديد</span>
+                  </div>
+                )}
+                {canAccessPage(currentUser, 'cash_flow_closing') && (
+                  <div
+                    onClick={() => onNavigate('cash_flow_closing')}
+                    className={`min-h-[40px] px-8 sm:px-10 py-2.5 cursor-pointer border-b border-white/5 hover:bg-white/10 active:bg-white/20 flex justify-between items-center ${
+                      activePage === 'cash_flow_closing' ? 'text-amber-300 font-bold bg-white/10' : 'text-cyan-300 hover:text-white'
+                    }`}
+                  >
+                    <span>🌊 قائمة التدفقات النقدية المعيارية</span>
+                    <span className="bg-cyan-500 text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black">EAS</span>
                   </div>
                 )}
                 {canAccessPage(currentUser, 'year_end_closing') && (

@@ -177,9 +177,15 @@ export const OwnerPanelView: React.FC<OwnerPanelViewProps> = ({
         const remaining = companies.filter((c) => c.id !== companyToDelete.id);
         setCloudCompanies(remaining);
         updateOwnerState({ companies: remaining });
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(`rakeeza_tenant_data_${companyToDelete.id}`);
+          }
+        } catch {}
         setIsDeleteModalOpen(false);
         setCompanyToDelete(null);
         setDeleteConfirmText('');
+        setDeleteError('');
       } else {
         setDeleteError(res.error || 'فشل حذف الشركة من الخادم السحابي.');
       }

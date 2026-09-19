@@ -1,6 +1,6 @@
 import { AppData, TenantCompany, User } from '../types';
 import { getDefaultData } from '../utils/storage';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const TOKEN_KEY = 'rakeeza_cloud_session_token';
@@ -2008,10 +2008,27 @@ export async function deleteCompanyCloudApi(companyId: string): Promise<{
       headers,
     });
     const contentType = res.headers.get('content-type') || '';
+    let result: any = { success: res.ok };
     if (contentType.includes('application/json')) {
-      return await res.json();
+      result = await res.json();
     }
-    return { success: res.ok };
+
+    if (result.success) {
+      try {
+        if (db) {
+          await deleteDoc(doc(db, 'tenants', companyId));
+        }
+      } catch (fbErr) {
+        console.warn('Firebase tenant deletion note:', fbErr);
+      }
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem(`rakeeza_tenant_data_${companyId}`);
+        }
+      } catch {}
+    }
+
+    return result;
   } catch (err: any) {
     return { success: false, error: err.message || 'حدث خطأ في الاتصال بالخادم السحابي أثناء حذف الشركة' };
   }

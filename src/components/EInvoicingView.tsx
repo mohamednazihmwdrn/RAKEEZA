@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppData, EInvoiceConfig, SalesInvoice } from '../types';
+import { AppData, EInvoiceConfig, SaleInvoice } from '../types';
 import { addAuditLog } from '../utils/storage';
 import { openUnifiedPrintWindow } from '../utils/printUnified';
 import { exportToExcel } from '../utils/excelExport';
@@ -28,7 +28,7 @@ export const EInvoicingView: React.FC<EInvoicingViewProps> = ({
   );
 
   const [activeTab, setActiveTab] = useState<'status' | 'eta_json' | 'vatReturn' | 'withholding' | 'config'>('status');
-  const [selectedInvoiceForEta, setSelectedInvoiceForEta] = useState<SalesInvoice | null>(
+  const [selectedInvoiceForEta, setSelectedInvoiceForEta] = useState<SaleInvoice | null>(
     appData.salesInvoices[0] || null
   );
   const [isSigning, setIsSigning] = useState(false);
@@ -68,7 +68,7 @@ export const EInvoicingView: React.FC<EInvoicingViewProps> = ({
   }, 0);
 
   // Generate Official ETA JSON Schema v1.0
-  const generateEtaJson = (inv: SalesInvoice) => {
+  const generateEtaJson = (inv: SaleInvoice) => {
     const rawLines = inv.items || [
       { name: 'بند مبيعات تجاري', qty: 1, price: inv.subtotal, total: inv.subtotal },
     ];
@@ -150,7 +150,7 @@ export const EInvoicingView: React.FC<EInvoicingViewProps> = ({
     };
   };
 
-  const handleDownloadEtaJson = (inv: SalesInvoice) => {
+  const handleDownloadEtaJson = (inv: SaleInvoice) => {
     const data = generateEtaJson(inv);
     const jsonStr = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
@@ -295,7 +295,59 @@ export const EInvoicingView: React.FC<EInvoicingViewProps> = ({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card List (< md) */}
+          <div className="block md:hidden space-y-3">
+            {appData.salesInvoices.length === 0 ? (
+              <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl">
+                لا توجد فواتير مبيعات مسجلة بعد.
+              </div>
+            ) : (
+              appData.salesInvoices.map((inv) => {
+                const uuid = inv.eInvoiceUuid || `E-INV-2026-${String(inv.id).padStart(6, '0')}`;
+                return (
+                  <div key={inv.id} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <span className="font-mono font-bold text-indigo-900 text-sm">#{inv.id}</span>
+                      <span className="font-mono text-slate-500">{inv.date}</span>
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                        ✅ معتمد ضريبياً
+                      </span>
+                    </div>
+
+                    <div className="font-bold text-slate-800 text-sm">{inv.customerName}</div>
+
+                    <div className="grid grid-cols-2 gap-2 bg-white p-2 rounded-lg border border-slate-200 text-center font-mono">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans">الضريبة:</span>
+                        <span className="font-bold text-blue-700">{inv.tax.toFixed(2)} ج.م</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans">الإجمالي:</span>
+                        <span className="font-bold text-emerald-700">{inv.total.toFixed(2)} ج.م</span>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] font-mono text-slate-500 break-all bg-slate-100 p-1.5 rounded">
+                      UUID: {uuid}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedInvoiceForEta(inv);
+                        setActiveTab('eta_json');
+                      }}
+                      className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5"
+                    >
+                      🧬 عرض ملف الـ JSON الضريبي
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs md:text-sm">
               <thead className="bg-[#1a237e] text-white">
                 <tr>
@@ -413,8 +465,8 @@ export const EInvoicingView: React.FC<EInvoicingViewProps> = ({
           </div>
 
           {selectedInvoiceForEta ? (
-            <div className="relative">
-              <pre className="bg-slate-900 text-emerald-400 p-4 rounded-2xl text-xs font-mono overflow-x-auto max-h-[450px] leading-relaxed">
+            <div className="relative max-w-full overflow-hidden">
+              <pre className="bg-slate-900 text-emerald-400 p-3 sm:p-4 rounded-2xl text-xs font-mono max-h-[450px] leading-relaxed whitespace-pre-wrap break-all max-w-full overflow-y-auto">
                 {JSON.stringify(generateEtaJson(selectedInvoiceForEta), null, 2)}
               </pre>
             </div>
@@ -501,8 +553,50 @@ export const EInvoicingView: React.FC<EInvoicingViewProps> = ({
             </div>
           </div>
 
-          {/* Table of Withholding records */}
-          <div className="overflow-x-auto">
+          {/* Mobile Cards (< md) */}
+          <div className="block md:hidden space-y-3">
+            {appData.purchaseInvoices.length === 0 ? (
+              <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl">
+                لا توجد فواتير مشتريات خاضعة للخصم
+              </div>
+            ) : (
+              appData.purchaseInvoices.map((inv, idx) => {
+                const rate = appData.settings.withholdingTaxRate || 1;
+                const taxAmt = inv.withholdingTax || ((inv.total || 0) * rate) / 100;
+                return (
+                  <div key={inv.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold bg-white px-1.5 py-0.5 rounded text-slate-600 border border-slate-200">
+                          #{idx + 1}
+                        </span>
+                        <span className="font-mono font-bold text-slate-800">فاتورة #{inv.id}</span>
+                      </div>
+                      <span className="font-mono text-slate-500">{inv.date}</span>
+                    </div>
+                    <div className="font-bold text-slate-800">{inv.supplierName}</div>
+                    <div className="grid grid-cols-3 gap-1 bg-white p-2 rounded-lg border border-slate-200 text-center font-mono">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans">قيمة الفاتورة</span>
+                        <span className="font-bold text-slate-800">{(inv.total || 0).toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans">نسبة الخصم</span>
+                        <span className="font-bold text-indigo-700">{rate}%</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans">المقتطع</span>
+                        <span className="font-bold text-rose-700">{taxAmt.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table of Withholding records (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-right text-xs">
               <thead className="bg-[#1a237e] text-white">
                 <tr>

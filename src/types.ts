@@ -184,6 +184,7 @@ export interface Item {
   lastPriceUpdatedBy?: string;
 
   // Online Catalog & Multi-Company Specifics
+  material?: string; // نوع الخامة أو القماش أو المادة أو المواصفة المحددة (قطن، صوف، خشب، حديد...)
   showInCatalog?: boolean; // هل يظهر الصنف في الكتالوج / الويب سايت
   catalogPrice?: number; // سعر البيع المخصص للويب سايت (إذا رغبت الشركة بسعر مختلف)
   catalogWholesalePrice?: number; // سعر الجملة المخصص للكتالوج

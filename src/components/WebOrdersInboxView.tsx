@@ -14,6 +14,8 @@ interface WebOrdersInboxViewProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
   onNavigateToSales?: () => void;
   onInspectItem?: (type: string, data: any) => void;
+  userCompanyId?: string;
+  isOwner?: boolean;
 }
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
@@ -31,6 +33,8 @@ export const WebOrdersInboxView: React.FC<WebOrdersInboxViewProps> = ({
   showToast,
   onNavigateToSales,
   onInspectItem,
+  userCompanyId: propUserCompanyId,
+  isOwner: propIsOwner,
 }) => {
   const companies: TenantCompany[] = useMemo(() => {
     return appData.companies && appData.companies.length > 0 ? appData.companies : DEFAULT_COMPANIES;
@@ -40,18 +44,40 @@ export const WebOrdersInboxView: React.FC<WebOrdersInboxViewProps> = ({
     return appData.users.find((u) => u.id === appData.currentUser) || appData.users[0];
   }, [appData.users, appData.currentUser]);
 
-  const isOwner = currentUser?.role === 'owner' || appData.isOwnerAuthenticated;
-  const userCompanyId = currentUser?.companyId || appData.companyId || companies[0]?.id || 'COMP-000001';
+  const isOwner =
+    propIsOwner !== undefined
+      ? propIsOwner
+      : (currentUser?.role === 'owner' || appData.isOwnerAuthenticated);
+
+  const userCompanyId =
+    propUserCompanyId ||
+    currentUser?.companyId ||
+    appData.companyId ||
+    companies[0]?.id ||
+    'COMP-000001';
 
   // Selected company filter: Non-owners are strictly locked to their own company
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>(() => {
     if (!isOwner) return userCompanyId;
-    return appData.companyId || 'all';
+    return appData.companyId && appData.companyId !== 'all' ? appData.companyId : 'all';
   });
+
+  // Keep selectedCompanyId in sync when user switches company or prop changes
+  useEffect(() => {
+    if (!isOwner) {
+      setSelectedCompanyId(userCompanyId);
+    } else if (appData.companyId && appData.companyId !== 'all') {
+      setSelectedCompanyId(appData.companyId);
+    }
+  }, [isOwner, userCompanyId, appData.companyId]);
 
   const activeCompany = useMemo(() => {
     if (selectedCompanyId === 'all') return companies[0];
-    return companies.find((c) => c.id === selectedCompanyId) || companies[0];
+    return (
+      companies.find(
+        (c) => c.id === selectedCompanyId || c.code === selectedCompanyId || c.tenantId === selectedCompanyId
+      ) || companies[0]
+    );
   }, [companies, selectedCompanyId]);
 
   // Filter status tab
@@ -170,9 +196,23 @@ export const WebOrdersInboxView: React.FC<WebOrdersInboxViewProps> = ({
 
     // Strict Company filter
     if (selectedCompanyId !== 'all') {
+      const currentTargetCompany = companies.find(
+        (c) => c.id === selectedCompanyId || c.code === selectedCompanyId || c.tenantId === selectedCompanyId
+      );
+      const matchedIds = new Set<string>(
+        [
+          selectedCompanyId,
+          currentTargetCompany?.id || '',
+          currentTargetCompany?.code || '',
+          currentTargetCompany?.tenantId || '',
+        ].filter(Boolean)
+      );
+
       list = list.filter((q) => {
-        if (q.companyId) return q.companyId === selectedCompanyId;
-        return selectedCompanyId === companies[0]?.id || selectedCompanyId === 'COMP-000001';
+        if (q.companyId) {
+          return matchedIds.has(q.companyId);
+        }
+        return matchedIds.has(companies[0]?.id) || matchedIds.has('COMP-000001');
       });
     }
 
@@ -204,8 +244,12 @@ export const WebOrdersInboxView: React.FC<WebOrdersInboxViewProps> = ({
     }
 
     // Sort newest first
-    return list.sort((a, b) => b.id - a.id);
-  }, [appData.quotations, selectedCompanyId, activeTab, searchTerm]);
+    return list.sort((a, b) => {
+      const timeA = new Date(a.date + ' ' + (a.time || '00:00')).getTime() || Number(a.id) || 0;
+      const timeB = new Date(b.date + ' ' + (b.time || '00:00')).getTime() || Number(b.id) || 0;
+      return timeB - timeA;
+    });
+  }, [appData.quotations, selectedCompanyId, activeTab, searchTerm, companies]);
 
   // Counts for tabs
   const tabCounts = useMemo(() => {
@@ -220,8 +264,21 @@ export const WebOrdersInboxView: React.FC<WebOrdersInboxViewProps> = ({
       selectedCompanyId === 'all'
         ? allQuotes
         : allQuotes.filter((q) => {
-            if (q.companyId) return q.companyId === selectedCompanyId;
-            return selectedCompanyId === companies[0]?.id || selectedCompanyId === 'COMP-000001';
+            const currentTargetCompany = companies.find(
+              (c) => c.id === selectedCompanyId || c.code === selectedCompanyId || c.tenantId === selectedCompanyId
+            );
+            const matchedIds = new Set<string>(
+              [
+                selectedCompanyId,
+                currentTargetCompany?.id || '',
+                currentTargetCompany?.code || '',
+                currentTargetCompany?.tenantId || '',
+              ].filter(Boolean)
+            );
+            if (q.companyId) {
+              return matchedIds.has(q.companyId);
+            }
+            return matchedIds.has(companies[0]?.id) || matchedIds.has('COMP-000001');
           });
 
     return {
@@ -233,7 +290,7 @@ export const WebOrdersInboxView: React.FC<WebOrdersInboxViewProps> = ({
       converted: scoped.filter((q) => q.status === 'converted' || q.convertedInvoiceId).length,
       cancelled: scoped.filter((q) => q.status === 'cancelled' || q.orderStatus === 'cancelled').length,
     };
-  }, [appData.quotations, selectedCompanyId]);
+  }, [appData.quotations, selectedCompanyId, companies]);
 
   // Update order status
   const handleUpdateOrderStatus = (
@@ -442,7 +499,7 @@ ${itemsSummary}
   };
 
   return (
-    <div className="space-y-5 pb-16" dir="rtl">
+    <div className="space-y-5 pb-16 w-full max-w-full overflow-x-hidden" dir="rtl">
       {/* Top Banner Card with Auto-Print Controls */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white p-5 md:p-7 rounded-3xl shadow-md border border-slate-700 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -473,7 +530,7 @@ ${itemsSummary}
           </div>
 
           {/* Quick Hardware Controls: Auto-Print, Sound, Test */}
-          <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 flex flex-col gap-3 min-w-[320px]">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-white/20 flex flex-col gap-3 w-full sm:w-auto sm:min-w-[300px]">
             <div className="text-xs font-black text-amber-300 flex items-center justify-between">
               <span>⚙️ إعدادات الطباعة والتنبيه اللحظي:</span>
               <span className="text-[10px] text-slate-300 font-normal">نظام ركيزة Rakeeza</span>
@@ -651,7 +708,7 @@ ${itemsSummary}
           </div>
 
           {/* Company Filter & Search */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
             {!isOwner ? (
               <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl px-3 py-2 text-xs font-black flex items-center gap-1.5">
                 <span>🔒</span>
@@ -679,7 +736,7 @@ ${itemsSummary}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ابحث برقم الطلب أو العميل أو الهاتف..."
-              className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none w-56 md:w-64"
+              className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none flex-1 min-w-[150px] md:w-64"
             />
 
             <TableActionButtons
@@ -754,6 +811,9 @@ ${itemsSummary}
             const isNew = order.status === 'online_order' || order.orderStatus === 'new';
             const isConverted = order.status === 'converted' || Boolean(order.convertedInvoiceId);
             const currentStatus = order.orderStatus || (isNew ? 'new' : 'delivered');
+            const orderCompany = companies.find(
+              (c) => c.id === order.companyId || c.code === order.companyId || c.tenantId === order.companyId
+            );
 
             return (
               <div
@@ -773,6 +833,11 @@ ${itemsSummary}
                       <span className="font-black text-base md:text-lg text-slate-900">
                         {order.orderReference || `#ORD-${order.id}`}
                       </span>
+                      {orderCompany && (
+                        <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200 flex items-center gap-1">
+                          <span>🏢</span> {orderCompany.tradeName || orderCompany.name}
+                        </span>
+                      )}
                       {isNew && (
                         <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">
                           طلب جديد بانتظار التأكيد

@@ -18,42 +18,43 @@ export const CashFlowClosingView: React.FC<CashFlowClosingViewProps> = ({
   // Calculate Real Operating Cash Flows
   // 1. Operating Inflows
   const salesCashInflow = appData.salesInvoices
-    .filter((inv) => inv.type === 'nagdi' || inv.paidAmount > 0)
+    .filter((inv) => inv.type === 'nagdi' || (inv.paidAmount && inv.paidAmount > 0))
     .reduce((sum, inv) => sum + (inv.paidAmount || 0), 0);
 
   const receiptVouchersInflow = appData.cashTransactions
-    .filter((t) => t.type === 'receipt')
+    .filter((t) => t.type === 'receive' || t.type === 'deposit')
     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   const totalOperatingInflow = salesCashInflow + receiptVouchersInflow;
 
   // 2. Operating Outflows
   const purchasesCashOutflow = appData.purchaseInvoices
-    .filter((inv) => inv.type === 'nagdi' || inv.paidAmount > 0)
+    .filter((inv) => inv.type === 'nagdi' || (inv.paidAmount && inv.paidAmount > 0))
     .reduce((sum, inv) => sum + (inv.paidAmount || 0), 0);
 
   const paymentVouchersOutflow = appData.cashTransactions
-    .filter((t) => t.type === 'payment')
+    .filter((t) => t.type === 'pay' || t.type === 'withdraw')
     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-  const payrollOutflow = (appData.payrollRuns || [])
-    .reduce((sum, p) => sum + (p.totalNetPay || 0), 0);
+  const payrollOutflow = (appData.payrollSlips || [])
+    .filter((p) => p.status === 'paid')
+    .reduce((sum, p) => sum + (p.netSalary || 0), 0);
 
   const totalOperatingOutflow = purchasesCashOutflow + paymentVouchersOutflow + payrollOutflow;
   const netOperatingCashFlow = totalOperatingInflow - totalOperatingOutflow;
 
   // 3. Investing Activities (Fixed Assets purchases)
   const fixedAssetsPurchased = (appData.fixedAssets || [])
-    .reduce((sum, a) => sum + (a.purchaseCost || 0), 0);
+    .reduce((sum, a) => sum + (a.purchasePrice || 0), 0);
   const netInvestingCashFlow = -fixedAssetsPurchased;
 
   // 4. Financing Activities (Cheques collected vs paid)
   const chequesCollected = (appData.cheques || [])
-    .filter((c) => c.direction === 'inward' && c.status === 'collected')
+    .filter((c) => c.type === 'receivable' && c.status === 'collected')
     .reduce((sum, c) => sum + (c.amount || 0), 0);
 
   const chequesPaid = (appData.cheques || [])
-    .filter((c) => c.direction === 'outward' && c.status === 'collected')
+    .filter((c) => c.type === 'payable' && c.status === 'collected')
     .reduce((sum, c) => sum + (c.amount || 0), 0);
 
   const netFinancingCashFlow = chequesCollected - chequesPaid;
@@ -63,11 +64,11 @@ export const CashFlowClosingView: React.FC<CashFlowClosingViewProps> = ({
 
   // Cash Equivalents (Treasury + Bank Balances)
   const currentTreasuryBalance = appData.cashTransactions.reduce((acc, t) => {
-    return t.type === 'receipt' ? acc + t.amount : acc - t.amount;
+    return (t.type === 'receive' || t.type === 'deposit') ? acc + t.amount : acc - t.amount;
   }, 0);
 
-  const currentBankBalance = (appData.bankTransactions || []).reduce((acc, t) => {
-    return t.type === 'deposit' ? acc + t.amount : acc - t.amount;
+  const currentBankBalance = (appData.bankAccounts || []).reduce((acc, b) => {
+    return acc + (b.balance || 0);
   }, 0);
 
   const endingCashBalance = Math.max(0, currentTreasuryBalance + currentBankBalance);
@@ -81,7 +82,7 @@ export const CashFlowClosingView: React.FC<CashFlowClosingViewProps> = ({
       company: {
         name: appData.settings.companyName || 'منظومة ركيزة للحلول الإدارية والمحاسبية',
         address: appData.settings.address || 'القاهرة - جمهورية مصر العربية',
-        phones: [appData.settings.phone || '01029190615'],
+        phones: [appData.settings.phone1 || appData.settings.phone2 || '01029190615'],
       },
       kpis: [
         { title: 'صافي التدفق التشغيلي', value: `${netOperatingCashFlow.toLocaleString()} ج.م` },
@@ -118,7 +119,17 @@ export const CashFlowClosingView: React.FC<CashFlowClosingViewProps> = ({
       { 'القسم': 'الأرصدة', 'البيان': 'رصيد النقدية وما في حكمها أول المدة', 'القيمة (ج.م)': beginningCashBalance },
       { 'القسم': 'الأرصدة', 'البيان': 'رصيد النقدية وما في حكمها آخر المدة', 'القيمة (ج.م)': endingCashBalance },
     ];
-    exportToExcel(rows, `قائمة_التدفقات_النقدية_${selectedYear}`);
+    exportToExcel({
+      filename: `قائمة_التدفقات_النقدية_${selectedYear}`,
+      sheetName: 'قائمة التدفقات النقدية',
+      data: rows,
+      columns: [
+        { header: 'القسم', key: 'القسم', width: 22 },
+        { header: 'البيان', key: 'البيان', width: 35 },
+        { header: 'القيمة (ج.م)', key: 'القيمة (ج.م)', width: 20, isNumeric: true },
+      ],
+      reportTitle: `قائمة التدفقات النقدية المعيارية لسنة ${selectedYear}`,
+    });
     showToast('تم تصدير قائمة التدفقات النقدية بنجاح إلى Excel', 'success');
   };
 

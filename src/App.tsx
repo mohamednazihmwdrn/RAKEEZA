@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AppData } from './types';
-import { loadAppData, saveAppData } from './utils/storage';
+import { loadAppData, saveAppData, mergeAppDataMonotonically } from './utils/storage';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { Toast } from './components/Toast';
@@ -43,6 +43,9 @@ import { ShareCatalogModal } from './components/ShareCatalogModal';
 import { CatalogManagerView } from './components/CatalogManagerView';
 import { WebOrdersInboxView } from './components/WebOrdersInboxView';
 import { MonthlyProfitReportView } from './components/MonthlyProfitReportView';
+import { CrmPipelineView } from './components/CrmPipelineView';
+import { SerialWarrantyTrackingView } from './components/SerialWarrantyTrackingView';
+import { CashFlowClosingView } from './components/CashFlowClosingView';
 import { printWebOrderReceipt } from './utils/printOrderReceipt';
 import { playOrderAlertChime } from './utils/audioChime';
 import {
@@ -178,7 +181,7 @@ export default function App() {
     }
 
     setAppData(newData);
-    saveAppData(newData);
+    saveAppData(newData, session?.company?.id);
     if (session?.company?.id) {
       offlineSyncManager.setCompanyId(session.company.id);
 
@@ -246,44 +249,17 @@ export default function App() {
       currentUserName: currentName,
       onDataUpdated: (incomingData, meta) => {
         if (!incomingData || typeof incomingData !== 'object') return;
+        const isExplicitDelete =
+          meta?.actionInfo?.action === 'delete' ||
+          meta?.actionInfo?.action === 'delete_invoice' ||
+          meta?.actionInfo?.action === 'delete_item';
+
         setAppData((prev) => {
-          const merged: AppData = {
-            ...prev,
-            ...incomingData,
-            settings: { ...prev.settings, ...(incomingData.settings || {}) },
-            advancedSettings: incomingData.advancedSettings || prev.advancedSettings || {
-              categories: ['أجهزة كمبيوتر', 'طابعات ومعدات', 'شاشات', 'إكسسوارات', 'شبكات وكاميرات'],
-              itemGroups: ['إلكترونيات', 'مكتبية', 'أجهزة ذكية'],
-              units: ['جهاز', 'قطعة', 'طقم', 'علبة', 'كرتونة', 'متر'],
-            },
-            branches: incomingData.branches || prev.branches || [],
-            costCenters: incomingData.costCenters || prev.costCenters || [],
-            accounts: incomingData.accounts || prev.accounts || [],
-            users: incomingData.users || prev.users || [],
-            customers: incomingData.customers || prev.customers || [],
-            suppliers: incomingData.suppliers || prev.suppliers || [],
-            items: incomingData.items || prev.items || [],
-            salesInvoices: incomingData.salesInvoices || prev.salesInvoices || [],
-            purchaseInvoices: incomingData.purchaseInvoices || prev.purchaseInvoices || [],
-            cashTransactions: incomingData.cashTransactions || prev.cashTransactions || [],
-            journalEntries: incomingData.journalEntries || prev.journalEntries || [],
-            cheques: incomingData.cheques || prev.cheques || [],
-            quotations: incomingData.quotations || prev.quotations || [],
-            auditLogs: incomingData.auditLogs || prev.auditLogs || [],
-            cashBox: incomingData.cashBox || prev.cashBox || { drawer: 0, vodafone: 0, instapay: 0, bank: 0 },
-            bankAccounts: incomingData.bankAccounts || prev.bankAccounts || [],
-            employees: incomingData.employees || prev.employees || [],
-            fixedAssets: incomingData.fixedAssets || prev.fixedAssets || [],
-            boms: incomingData.boms || prev.boms || [],
-            salesReps: incomingData.salesReps || prev.salesReps || [],
-            catalogConfig: incomingData.catalogConfig || prev.catalogConfig,
-            productPrices: incomingData.productPrices || prev.productPrices,
-            nextInvoiceNumber: typeof incomingData.nextInvoiceNumber === 'number' ? incomingData.nextInvoiceNumber : prev.nextInvoiceNumber,
-            nextPurchaseNumber: typeof incomingData.nextPurchaseNumber === 'number' ? incomingData.nextPurchaseNumber : prev.nextPurchaseNumber,
-          };
-          saveAppData(merged);
+          const merged = mergeAppDataMonotonically(prev, incomingData, isExplicitDelete);
+          saveAppData(merged, session.company.id);
           return merged;
         });
+
         if (meta?.actorCode && meta.actorCode !== currentCode) {
           const actionMsg = meta.actionInfo?.details || 'تعديل وتحديث بيانات المنظومة';
           showToast(
@@ -330,8 +306,16 @@ export default function App() {
             // Fetch isolated tenant data directly from cloud database strictly matching company ID and user UID
             const cloudRes = await fetchTenantDataCloud(activeSession.company.id, activeSession.user?.uid);
             if (cloudRes.success && cloudRes.data) {
-              setAppData(cloudRes.data);
-              saveAppData(cloudRes.data);
+              setAppData((prev) => {
+                const merged = mergeAppDataMonotonically(prev, cloudRes.data);
+                saveAppData(merged, activeSession.company.id);
+                return merged;
+              });
+            } else {
+              const localData = loadAppData(activeSession.company.id);
+              if (localData) {
+                setAppData(localData);
+              }
             }
           } else {
             setSession(null);
@@ -404,13 +388,26 @@ export default function App() {
     try {
       const cloudRes = await fetchTenantDataCloud(loginResult.company.id, loginResult.user.uid);
       if (cloudRes.success && cloudRes.data) {
-        setAppData(cloudRes.data);
-        saveAppData(cloudRes.data);
-      } else if (!cloudRes.success && cloudRes.error) {
-        showToast(cloudRes.error, 'error');
+        setAppData((prev) => {
+          const merged = mergeAppDataMonotonically(prev, cloudRes.data);
+          saveAppData(merged, loginResult.company.id);
+          return merged;
+        });
+      } else {
+        const localData = loadAppData(loginResult.company.id);
+        if (localData) {
+          setAppData(localData);
+        }
+        if (!cloudRes.success && cloudRes.error) {
+          showToast(cloudRes.error, 'error');
+        }
       }
     } catch (e) {
       console.error('Failed fetching tenant cloud data on login:', e);
+      const localData = loadAppData(loginResult.company.id);
+      if (localData) {
+        setAppData(localData);
+      }
     }
 
     if (loginResult.user.role === 'owner') {
@@ -765,6 +762,8 @@ export default function App() {
             showToast={showToast}
             onNavigateToSales={() => handleNavigate('sales')}
             onInspectItem={handleInspectItem}
+            userCompanyId={userCompanyId}
+            isOwner={isOwner}
           />
         );
       case 'catalog_manager':
@@ -788,6 +787,8 @@ export default function App() {
             showToast={showToast}
             onExitToAdmin={() => handleNavigate('home')}
             onShareCatalog={() => setIsShareCatalogOpen(true)}
+            merchantCompanyId={userCompanyId || session?.company?.id || appData.companyId}
+            isPublicCustomerView={false}
           />
         );
       case 'purchases':
@@ -802,6 +803,31 @@ export default function App() {
         return <BranchesView appData={appData} onUpdateData={updateData} showToast={showToast} />;
       case 'e_invoicing':
         return <EInvoicingView appData={appData} onUpdateData={updateData} showToast={showToast} />;
+      case 'crm_pipeline':
+        return (
+          <CrmPipelineView
+            appData={appData}
+            onUpdateData={updateData}
+            showToast={showToast}
+            onNavigateToSales={() => handleNavigate('sales')}
+          />
+        );
+      case 'serial_warranty':
+        return (
+          <SerialWarrantyTrackingView
+            appData={appData}
+            onUpdateData={updateData}
+            showToast={showToast}
+          />
+        );
+      case 'cash_flow_closing':
+        return (
+          <CashFlowClosingView
+            appData={appData}
+            onUpdateData={updateData}
+            showToast={showToast}
+          />
+        );
       case 'bi_analytics':
         return <BiAnalyticsView appData={appData} onNavigate={handleNavigate} />;
       case 'audit_trail':
@@ -866,9 +892,30 @@ export default function App() {
               const updated = { ...appData, ...partial };
               updateData(updated);
             }}
-            onEnterCompany={(company, asSupport, supportReason) => {
-              showToast(`تم الدخول إلى شركة: ${company.name} ${asSupport ? '(جلسة دعم فني)' : ''}`, 'success');
-              handleNavigate('home');
+            onEnterCompany={async (company, asSupport, supportReason) => {
+              try {
+                if (session) {
+                  setSession({
+                    ...session,
+                    company: company,
+                  });
+                }
+                const cloudRes = await fetchTenantDataCloud(company.id, session?.user?.uid);
+                if (cloudRes.success && cloudRes.data) {
+                  setAppData(cloudRes.data);
+                  saveAppData(cloudRes.data, company.id);
+                } else {
+                  const localData = loadAppData(company.id);
+                  if (localData) {
+                    setAppData(localData);
+                  }
+                }
+                showToast(`تم الدخول بنجاح إلى شركة: ${company.name} ${asSupport ? '(وضع الدعم الفني)' : ''}`, 'success');
+                handleNavigate('home');
+              } catch (e) {
+                console.error('Failed to enter company:', e);
+                showToast('حدث خطأ أثناء تحميل بيانات الشركة', 'error');
+              }
             }}
             onClose={() => handleNavigate('home')}
             onLogout={handleLogout}
@@ -893,14 +940,17 @@ export default function App() {
 
   // Standalone Customer Storefront Route (?mode=catalog or user browsing catalog)
   if (currentPage === 'catalog') {
+    const isPublic = !session?.valid;
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans" dir="rtl">
+      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans max-w-full overflow-x-hidden" dir="rtl">
         <CustomerCatalogView
           appData={appData}
           onUpdateData={updateData}
           showToast={showToast}
-          onExitToAdmin={() => handleNavigate('home')}
+          onExitToAdmin={session?.valid ? () => handleNavigate('home') : undefined}
           onShareCatalog={() => setIsShareCatalogOpen(true)}
+          merchantCompanyId={session?.valid ? userCompanyId : undefined}
+          isPublicCustomerView={isPublic}
         />
         <ShareCatalogModal
           isOpen={isShareCatalogOpen}
@@ -980,6 +1030,26 @@ export default function App() {
         onNavigateWebOrders={() => handleNavigate('web_orders')}
       />
 
+      {/* 👑 Owner Browsing Company Banner */}
+      {isOwner && session?.company?.id && session.company.id !== 'OWNER' && (
+        <div className="bg-slate-900 border-b border-amber-500/40 text-white px-3 sm:px-5 py-2 z-40 shadow-md flex items-center justify-between gap-3 text-xs sm:text-sm no-print" dir="rtl">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold">👑 وضع مالك المنظومة:</span>
+            <span className="text-slate-200">
+              تتصفح حالياً شركة <strong className="text-white font-bold">{session.company.name}</strong> [كود: <span className="font-mono text-amber-300 font-bold">{session.company.code || session.company.id}</span>]
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleNavigate('owner_panel')}
+            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1 rounded-md text-xs transition cursor-pointer flex items-center gap-1.5 shrink-0 shadow-sm"
+          >
+            <span>👑</span>
+            <span>العودة للوحة المالك</span>
+          </button>
+        </div>
+      )}
+
       {/* 🔒 Closed Fiscal Year Banner with Return Switcher */}
       {appData.viewingClosedYear && (
         <div className="fixed top-[60px] right-0 left-0 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 text-white px-3 sm:px-5 py-2 z-40 shadow-md flex items-center justify-between gap-3 text-xs sm:text-sm border-b border-amber-400/40 animate-fade-in no-print" dir="rtl">
@@ -1044,11 +1114,11 @@ export default function App() {
       <main
         className={`${
           appData.viewingClosedYear ? 'mt-[105px]' : 'mt-[60px]'
-        } p-2.5 sm:p-4 md:p-6 pb-24 md:pb-6 transition-all duration-300 flex-1 max-w-full overflow-x-hidden ${
+        } p-2.5 sm:p-4 md:p-6 pb-24 md:pb-6 transition-all duration-300 flex-1 min-w-0 max-w-full overflow-x-hidden ${
           isSidebarOpen ? 'md:mr-[290px]' : 'mr-0'
         }`}
       >
-        <div className="w-full max-w-[1720px] mx-auto">
+        <div className="w-full max-w-[1720px] mx-auto min-w-0">
           {/* Subscription Status Banner if expired or warning */}
           {session?.subscription?.isExpired && (
             <div className="mb-4 p-3.5 bg-amber-500/15 border-2 border-amber-500/40 rounded-2xl text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-fade-in">

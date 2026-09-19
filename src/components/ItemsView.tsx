@@ -414,13 +414,13 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
       )}
 
       {subPage === 'item_movement' && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm overflow-x-auto space-y-4">
-          <div className="flex justify-between items-center">
+        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-4 max-w-full overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <h4 className="font-bold text-[#1a237e] text-base">سجل حركة الأصناف والعمليات المخزنية</h4>
               <p className="text-xs text-slate-500">متابعة دقيقة لحركة الوارد والمنصرف والمرتجع والتسويات للأصناف</p>
             </div>
-            <div className="flex gap-1 text-[11px] font-bold">
+            <div className="flex flex-wrap gap-1.5 text-[11px] font-bold">
               <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">🟢 بيع نقدي</span>
               <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">🟠 بيع آجل</span>
               <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">🔵 شراء</span>

@@ -177,7 +177,7 @@ export const SerialWarrantyTrackingView: React.FC<SerialWarrantyTrackingViewProp
       company: {
         name: appData.settings.companyName || 'منظومة ركيزة للحلول التقنية',
         address: appData.settings.address || 'جمهورية مصر العربية',
-        phones: [appData.settings.phone || '01029190615'],
+        phones: [appData.settings.phone1 || appData.settings.phone2 || '01029190615'],
       },
       infoExtra: [
         { label: 'اسم العميل المعتمد', value: rec.customerName || 'عميل نقدي' },
@@ -213,7 +213,25 @@ export const SerialWarrantyTrackingView: React.FC<SerialWarrantyTrackingViewProp
       'الحالة': r.status === 'in_warranty' ? 'ساري' : 'منتهي',
       'ملاحظات': r.notes || '',
     }));
-    exportToExcel(rows, 'سجل_السيريالات_والضمانات_ركيزة');
+    exportToExcel({
+      filename: 'سجل_السيريالات_والضمانات_ركيزة',
+      sheetName: 'الأرقام التسلسلية والضمانات',
+      data: rows,
+      columns: [
+        { header: 'م', key: 'م', width: 6 },
+        { header: 'الرقم التسلسلي', key: 'الرقم التسلسلي', width: 18 },
+        { header: 'اسم الصنف', key: 'اسم الصنف', width: 22 },
+        { header: 'اسم العميل', key: 'اسم العميل', width: 20 },
+        { header: 'هاتف العميل', key: 'هاتف العميل', width: 16 },
+        { header: 'رقم الفاتورة', key: 'رقم الفاتورة', width: 14 },
+        { header: 'تاريخ البيع', key: 'تاريخ البيع', width: 14 },
+        { header: 'مدة الضمان (شهور)', key: 'مدة الضمان (شهور)', width: 16, isNumeric: true },
+        { header: 'تاريخ انتهاء الضمان', key: 'تاريخ انتهاء الضمان', width: 16 },
+        { header: 'الحالة', key: 'الحالة', width: 12 },
+        { header: 'ملاحظات', key: 'ملاحظات', width: 25 },
+      ],
+      reportTitle: 'سجل الأرقام التسلسلية وشهادات الضمان للمنتجات المباعة',
+    });
     showToast('تم تصدير سجل السيريالات بنجاح إلى Excel', 'success');
   };
 
